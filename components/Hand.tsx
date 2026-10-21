@@ -105,7 +105,7 @@ export function Hand({
   };
 
   return (
-    <div ref={rowRef} className="-mx-5 flex w-[calc(100%+2.5rem)] items-start justify-center pb-6">
+    <div ref={rowRef} className="flex w-full items-start justify-center pb-6">
       {hand.map((h, i) => (
         <button
           key={i}
@@ -113,10 +113,10 @@ export function Hand({
           disabled={!canPick}
           onClick={() => pick(i)}
           aria-label={`${h.theme}, profondeur ${h.depth}`}
-          className="relative flex w-[35vw] max-w-[160px] flex-col items-center gap-3 disabled:cursor-default"
+          className="relative flex w-[33vw] max-w-[150px] flex-none flex-col items-center gap-6 disabled:cursor-default"
           style={{
             "--i": i,
-            marginLeft: i === 0 ? 0 : "-6.5vw",
+            marginLeft: i === 0 ? 0 : "-5vw",
             zIndex: hand.length - Math.abs(i - (hand.length - 1) / 2) * 2,
           } as React.CSSProperties}
         >

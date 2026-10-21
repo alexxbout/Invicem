@@ -339,7 +339,7 @@ export function Stage({
         }
       />
 
-      <div className="flex flex-1 items-center justify-center py-3">
+      <div className="flex w-full flex-1 items-center justify-center py-3">
         {choosing && card && shown && (
           <Hand
             key={shown.step}
