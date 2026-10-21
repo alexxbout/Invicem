@@ -33,10 +33,11 @@ function Foil() {
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[7%/5%]">
       <div data-foil className="absolute inset-y-0 left-0 w-[55%]" style={{ transform: "translateX(-140%)", opacity: 0 }}>
         <div
-          className="h-full w-full mix-blend-overlay"
+          className="h-full w-full"
           style={{
             transform: "skewX(-18deg)",
-            background: "linear-gradient(90deg, transparent, rgba(255,255,255,.75) 50%, transparent)",
+            // plain alpha instead of a blend mode: blend modes on a flipping 3D layer make the frame drop
+            background: "linear-gradient(90deg, transparent, rgba(255,255,255,.42) 50%, transparent)",
           }}
         />
       </div>
@@ -282,10 +283,10 @@ export function Card({
         // the shadow shrinks and fades while the card is up, then spreads back as it lands
         .to(shadow, { scaleX: 0.74, opacity: 0.35, y: 22, duration: d * 0.45, ease: "power2.out" }, 0)
         .to(shadow, { scaleX: 1, opacity: 1, y: 0, duration: d * 0.55, ease: "power2.inOut" }, d * 0.45)
-        // visible only during the sweep, so no trace of it stays on the card at rest
-        .set(foils, { opacity: 1 }, d * 0.12)
-        .fromTo(foils, { xPercent: -140 }, { xPercent: 330, duration: d * 0.7, ease: "power2.inOut" }, d * 0.12)
-        .set(foils, { opacity: 0 }, d * 0.84);
+        // fades in, sweeps, and is already fully faded before it reaches the end, so nothing cuts off
+        .fromTo(foils, { xPercent: -140 }, { xPercent: 330, duration: d * 0.72, ease: "sine.inOut" }, d * 0.12)
+        .to(foils, { opacity: 1, duration: d * 0.12, ease: "none" }, d * 0.12)
+        .to(foils, { opacity: 0, duration: d * 0.3, ease: "power1.in" }, d * 0.54);
     }
     tl.call(
       () => {
