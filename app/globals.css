@@ -118,3 +118,23 @@ button {
 .sheet-fade {
   animation: sheet-fade 0.3s ease both;
 }
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.78;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.halo {
+  animation: breathe 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halo {
+    animation: none;
+  }
+}

@@ -3,6 +3,7 @@
 import gsap from "gsap";
 import { useEffect, useRef, type ReactNode } from "react";
 import { buzz, chime, reduced, tick } from "@/lib/feel";
+import { ambient } from "./Ambient";
 import { COLORS } from "@/lib/palette";
 import { Glyph } from "./Glyph";
 
@@ -294,6 +295,7 @@ export function Card({
             if (burstRef.current) sparks(burstRef.current);
           }
           chime();
+          ambient.burst();
           buzz([30, 40, 30, 40, 160]);
         } else {
           tick();
@@ -333,9 +335,11 @@ export function Card({
     const spinB = gsap.to(rings[1], { "--ang": -360, duration: 3.1, repeat: -1, ease: "none" });
     gsap.fromTo(rings, { opacity: 0 }, { opacity: 1, duration: 0.7, stagger: 0.15 });
     const parts = [pulse, spinA, spinB, ...(hum ? [hum] : [])];
+    ambient.charge(true);
     // the charge ramps up so the flip feels earned
     const ramp = gsap.to(parts, { timeScale: 3.4, duration: 2.4, ease: "power2.in" });
     return () => {
+      ambient.charge(false);
       ramp.kill();
       parts.forEach((p) => p.kill());
       gsap.set(lift, { scale: 1 });

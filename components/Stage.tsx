@@ -15,7 +15,7 @@ import {
 } from "@/lib/client";
 import { reduced } from "@/lib/feel";
 import { COLORS, SYMBOLS } from "@/lib/palette";
-import { setAccent } from "./Ambient";
+import { ambient, setAccent } from "./Ambient";
 import { Card } from "./Card";
 import { Criteria } from "./Criteria";
 import { Hand, type HandHandle } from "./Hand";
@@ -331,6 +331,13 @@ export function Stage({
     if (forget) writeSaved(null);
     onExit();
   };
+
+  // the room gets deeper and darker as the chosen depth does
+  const depths = shown?.criteria.depths;
+  useEffect(() => {
+    if (depths?.length) ambient.depth(depths.reduce((a, b) => a + b, 0) / depths.length);
+  }, [depths]);
+  useEffect(() => () => ambient.depth(2), []);
 
   const color = card ? COLORS[card.color] : null;
   const mine = shown ? shown.turn === role : false;
