@@ -113,10 +113,12 @@ export function Hand({
           disabled={!canPick}
           onClick={() => pick(i)}
           aria-label={`${h.theme}, profondeur ${h.depth}`}
-          className="relative flex w-[33vw] max-w-[150px] flex-none flex-col items-center gap-6 disabled:cursor-default"
+          className="relative flex w-[var(--w)] flex-none flex-col items-center gap-6 disabled:cursor-default"
           style={{
             "--i": i,
-            marginLeft: i === 0 ? 0 : "-5vw",
+            // overlap is a share of the card, so it holds on any window width
+            "--w": "min(33vw, 140px)",
+            marginLeft: i === 0 ? 0 : "calc(var(--w) * -0.14)",
             zIndex: hand.length - Math.abs(i - (hand.length - 1) / 2) * 2,
           } as React.CSSProperties}
         >
