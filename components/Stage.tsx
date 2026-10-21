@@ -175,14 +175,14 @@ export function Stage({
         if (target.phase === "card") setFlipped(true);
         busy.current = false;
         if (latest.current && latest.current.step !== shownRef.current?.step) showNext(latest.current);
-      }, fromHand ? 250 : 700);
+      }, fromHand ? 250 : 450);
     };
 
     if (fromHand && !played && v.phase === "card" && v.pickedSlot !== null && handRef.current) {
       // the other player chose: replay their card rising to the table before it turns
       void handRef.current.playPick(v.pickedSlot).then(() => alive.current && swap());
     } else {
-      later(swap, fromHand ? 0 : 650);
+      later(swap, fromHand ? 0 : 850);
     }
   };
 
@@ -409,7 +409,7 @@ export function Stage({
               symbol={card.symbol}
               flipped={flipped}
               charging={mode === "charging"}
-              duration={firstReveal ? 1.5 : 0.6}
+              duration={firstReveal ? 1.9 : 0.85}
               burst={firstReveal}
               front={shown ? shown.question && <QuestionFace question={shown.question} play={flipped} /> : null}
             />

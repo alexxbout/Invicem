@@ -30,7 +30,7 @@ type Props = {
 function Foil() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[7%/5%]">
-      <div data-foil className="absolute inset-y-0 left-0 w-[55%]" style={{ transform: "translateX(-140%)" }}>
+      <div data-foil className="absolute inset-y-0 left-0 w-[55%]" style={{ transform: "translateX(-140%)", opacity: 0 }}>
         <div
           className="h-full w-full mix-blend-overlay"
           style={{
@@ -194,7 +194,7 @@ export function Card({
   flipped = false,
   front,
   charging = false,
-  duration = 0.9,
+  duration = 1.25,
   burst = false,
   tilt = true,
   idle = true,
@@ -281,7 +281,10 @@ export function Card({
         // the shadow shrinks and fades while the card is up, then spreads back as it lands
         .to(shadow, { scaleX: 0.74, opacity: 0.35, y: 22, duration: d * 0.45, ease: "power2.out" }, 0)
         .to(shadow, { scaleX: 1, opacity: 1, y: 0, duration: d * 0.55, ease: "power2.inOut" }, d * 0.45)
-        .fromTo(foils, { xPercent: -140 }, { xPercent: 330, duration: d * 0.7, ease: "power2.inOut" }, d * 0.12);
+        // visible only during the sweep, so no trace of it stays on the card at rest
+        .set(foils, { opacity: 1 }, d * 0.12)
+        .fromTo(foils, { xPercent: -140 }, { xPercent: 330, duration: d * 0.7, ease: "power2.inOut" }, d * 0.12)
+        .set(foils, { opacity: 0 }, d * 0.84);
     }
     tl.call(
       () => {
@@ -302,6 +305,7 @@ export function Card({
     );
     return () => {
       tl.kill();
+      gsap.set(foils, { opacity: 0 });
     };
     // duration / burst are read once per flip on purpose
     // eslint-disable-next-line react-hooks/exhaustive-deps
