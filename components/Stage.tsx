@@ -7,6 +7,7 @@ import {
   msUntil,
   usePoll,
   writeSaved,
+  type Criteria as CriteriaValue,
   type Match,
   type Question,
   type Role,
@@ -15,8 +16,10 @@ import {
 import { COLORS, SYMBOLS } from "@/lib/palette";
 import { setAccent } from "./Ambient";
 import { Card } from "./Card";
+import { Criteria } from "./Criteria";
 import { Hand } from "./Hand";
 import { History } from "./History";
+import { Sheet } from "./Sheet";
 import { Screen, Wordmark } from "./Screen";
 
 type Mode = "drawing" | "waiting" | "charging" | "open" | "full";
@@ -69,6 +72,9 @@ export function Stage({
   const [firstReveal, setFirstReveal] = useState(true);
   const [note, setNote] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [moodOpen, setMoodOpen] = useState(false);
+  const editedAt = useRef(0);
+  const editSeq = useRef(0);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const alive = useRef(true);
@@ -231,6 +237,8 @@ export function Stage({
       if (!sessionId || busy.current) return;
       const { data, status } = await call<SessionView>(`/api/session/${sessionId}`);
       if (!alive.current) return;
+      // a poll that was in flight during a local edit would roll the chips back
+      if (Date.now() - editedAt.current < 2500) return;
       if (status === 404) {
         writeSaved(null);
         return onExit();
@@ -256,6 +264,29 @@ export function Stage({
     if (data && alive.current) showNext(data);
   };
 
+  const start = async () => {
+    if (!sessionId || !shownRef.current || busy.current) return;
+    const { data } = await call<SessionView>(`/api/session/${sessionId}/start`, "POST", { step: shownRef.current.step });
+    if (data && alive.current) showNext(data);
+  };
+
+  /** optimistic: chips move at once, the server answer (and the partner's screen) follow */
+  const changeCriteria = async (update: (prev: CriteriaValue) => CriteriaValue) => {
+    const cur = shownRef.current;
+    if (!sessionId || !cur) return;
+    const criteria = update(cur.criteria);
+    if (criteria === cur.criteria) return;
+    editedAt.current = Date.now();
+    const seq = ++editSeq.current;
+    commitView({ ...cur, criteria });
+    const { data } = await call<SessionView>(`/api/session/${sessionId}/criteria`, "POST", criteria);
+    // only the answer to the latest tap may touch the chips
+    if (data && alive.current && seq === editSeq.current && shownRef.current?.step === data.step) {
+      editedAt.current = Date.now();
+      commitView({ ...shownRef.current, criteria: data.criteria, matching: data.matching });
+    }
+  };
+
   const leave = (forget: boolean) => {
     if (forget) writeSaved(null);
     onExit();
@@ -264,6 +295,8 @@ export function Stage({
   const color = card ? COLORS[card.color] : null;
   const mine = shown ? shown.turn === role : false;
   const choosing = mode === "open" && shown?.phase === "choose";
+  const setup = mode === "open" && shown?.phase === "setup";
+  const offTable = choosing || setup;
   const pastCount = shown?.history.length ?? 0;
 
   return (
@@ -271,17 +304,32 @@ export function Stage({
       <Wordmark
         onBack={() => leave(false)}
         right={
-          mode === "open" && pastCount > 0 ? (
-            <button
-              onClick={() => setHistoryOpen(true)}
-              className="flex h-10 items-center gap-2 rounded-full px-3 text-[13px] text-paper/60 transition hover:bg-white/5 hover:text-paper"
-            >
-              <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <rect x="6" y="4" width="12" height="16" rx="2" />
-                <path d="M3 7v11a2 2 0 0 0 2 2M21 7v11" />
-              </svg>
-              {pastCount}
-            </button>
+          mode === "open" && !setup ? (
+            <div className="flex items-center">
+              <button
+                onClick={() => setMoodOpen(true)}
+                aria-label="Ambiance"
+                className="grid size-10 place-items-center rounded-full text-paper/60 transition hover:bg-white/5 hover:text-paper"
+              >
+                <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+                  <circle cx="15" cy="7" r="2" />
+                  <circle cx="9" cy="17" r="2" />
+                </svg>
+              </button>
+              {pastCount > 0 && (
+                <button
+                  onClick={() => setHistoryOpen(true)}
+                  className="flex h-10 items-center gap-1.5 rounded-full px-2.5 text-[13px] text-paper/60 transition hover:bg-white/5 hover:text-paper"
+                >
+                  <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <rect x="6" y="4" width="12" height="16" rx="2" />
+                    <path d="M3 7v11a2 2 0 0 0 2 2M21 7v11" />
+                  </svg>
+                  {pastCount}
+                </button>
+              )}
+            </div>
           ) : null
         }
       />
@@ -296,8 +344,23 @@ export function Stage({
             onPick={(slot) => void pick(slot)}
           />
         )}
-        <div ref={wrapRef} style={{ opacity: seed ? 1 : 0, display: choosing ? "none" : undefined }}>
-          {card && !choosing && (
+        {setup && shown && (
+          <div key={shown.step} data-rise className="flex w-full flex-col gap-6">
+            <h2 className="display text-center text-[26px] font-light leading-snug">
+              Quelle ambiance
+              <br />
+              <em className="text-paper/60">pour ce soir&nbsp;?</em>
+            </h2>
+            <Criteria
+              value={shown.criteria}
+              themes={shown.themes}
+              matching={shown.matching}
+              onChange={(u) => void changeCriteria(u)}
+            />
+          </div>
+        )}
+        <div ref={wrapRef} style={{ opacity: seed ? 1 : 0, display: offTable ? "none" : undefined }}>
+          {card && !offTable && (
             <Card
               key={card.id ?? "seed"}
               color={card.color}
@@ -345,7 +408,9 @@ export function Stage({
                 className="size-2 rounded-full bg-accent"
                 style={{ boxShadow: "0 0 12px var(--accent)", opacity: mine ? 1 : 0.35 }}
               />
-              {choosing
+              {setup
+                ? "Choisissez ensemble"
+                : choosing
                 ? mine
                   ? "À toi de choisir une carte"
                   : "L'autre choisit une carte…"
@@ -353,7 +418,14 @@ export function Stage({
                   ? "Tu réponds en premier"
                   : "L'autre répond en premier"}
             </p>
-            {choosing ? (
+            {setup ? (
+              <button
+                onClick={start}
+                className="rounded-full bg-gradient-to-b from-[#ecd09a] to-[#c79a50] px-9 py-3.5 text-[15px] font-medium text-[#2a1d0a] shadow-[0_10px_36px_-8px_rgba(217,183,121,.55)] transition active:scale-95"
+              >
+                Commencer
+              </button>
+            ) : choosing ? (
               <p className="display h-[50px] text-[15px] italic text-paper/45">
                 {mine ? "Thème et profondeur sont visibles, la question reste cachée." : "\u00a0"}
               </p>
@@ -380,6 +452,19 @@ export function Stage({
           </div>
         )}
       </div>
+      {moodOpen && shown && (
+        <Sheet title="Ambiance" label="Choisir l'ambiance" onClose={() => setMoodOpen(false)}>
+          <div className="pb-2">
+            <Criteria
+              value={shown.criteria}
+              themes={shown.themes}
+              matching={shown.matching}
+              onChange={(u) => void changeCriteria(u)}
+            />
+            <p className="display mt-5 text-center text-[14px] italic text-paper/40">Appliqué aux prochaines cartes.</p>
+          </div>
+        </Sheet>
+      )}
       {historyOpen && shown && <History items={shown.history} onClose={() => setHistoryOpen(false)} />}
     </Screen>
   );

@@ -20,3 +20,24 @@ export const QUESTIONS: Question[] = [
   { theme: "Relation", depth: 3, text: "Dans quelle situation as-tu le plus besoin de moi sans oser le demander ?" },
   { theme: "Peurs", depth: 3, text: "Quelle blessure t'a le plus façonné(e) ?" },
 ];
+
+export type Depth = Question["depth"];
+
+/** What the pair wants to talk about tonight. Empty `themes` means every theme. */
+export type Criteria = { depths: Depth[]; themes: string[] };
+
+export const DEFAULT_CRITERIA: Criteria = { depths: [1, 2, 3], themes: [] };
+
+export const THEMES = [...new Set(QUESTIONS.map((q) => q.theme))];
+
+export const matches = (q: Question, c: Criteria) =>
+  c.depths.includes(q.depth) && (c.themes.length === 0 || c.themes.includes(q.theme));
+
+/** Parse untrusted input; returns null when unusable. */
+export function parseCriteria(raw: unknown): Criteria | null {
+  const r = raw as { depths?: unknown; themes?: unknown } | null;
+  if (!Array.isArray(r?.depths) || !Array.isArray(r?.themes)) return null;
+  const depths = ([1, 2, 3] as Depth[]).filter((d) => (r.depths as unknown[]).includes(d));
+  const themes = THEMES.filter((t) => (r.themes as unknown[]).includes(t));
+  return depths.length ? { depths, themes } : null;
+}

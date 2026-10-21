@@ -3,12 +3,16 @@ import { useEffect, useRef } from "react";
 export type Role = "a" | "b";
 
 export type Question = { text: string; theme: string; depth: 1 | 2 | 3 };
+export type Criteria = { depths: (1 | 2 | 3)[]; themes: string[] };
 export type SessionView = {
   step: number;
   turn: Role;
-  phase: "card" | "choose";
+  phase: "card" | "choose" | "setup";
   question: Question | null;
   hand: Pick<Question, "theme" | "depth">[];
+  criteria: Criteria;
+  themes: string[];
+  matching: number;
   /** newest first, current question excluded */
   history: Question[];
   now: number;
