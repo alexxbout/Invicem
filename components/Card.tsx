@@ -194,7 +194,7 @@ export function Card({
   flipped = false,
   front,
   charging = false,
-  duration = 1.25,
+  duration = 1.6,
   burst = false,
   tilt = true,
   idle = true,
