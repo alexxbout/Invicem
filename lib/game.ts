@@ -18,9 +18,18 @@ type Card = {
 };
 
 type Session = {
-  deck: number[];
-  idx: number;
+  /** monotonic counter, bumped by every change; lets both phones detect and dedupe moves */
+  step: number;
   turn: "a" | "b";
+  phase: "card" | "choose";
+  /** question on the table (meaningful in phase "card") */
+  current: number;
+  /** three face-down candidates (phase "choose") */
+  hand: number[];
+  /** upcoming question ids */
+  queue: number[];
+  /** questions already put down, oldest first (the one on the table is not in it) */
+  history: number[];
 };
 
 const rand = (n: number) => Math.floor(Math.random() * n);
@@ -36,7 +45,6 @@ function shuffle<T>(items: T[]): T[] {
   return a;
 }
 
-const freshDeck = () => shuffle(QUESTIONS.map((_, i) => i));
 
 export class GameFullError extends Error {}
 
@@ -107,7 +115,16 @@ export async function findCard(color: number, symbol?: number): Promise<FindResu
 
   const now = Date.now();
   const flipAt = now + FLIP_DELAY_MS;
-  const session: Session = { deck: freshDeck(), idx: 0, turn: Math.random() < 0.5 ? "a" : "b" };
+  const queue = shuffle(QUESTIONS.map((_, i) => i));
+  const session: Session = {
+    step: 0,
+    turn: Math.random() < 0.5 ? "a" : "b",
+    phase: "card",
+    current: queue.shift()!,
+    hand: [],
+    queue,
+    history: [],
+  };
   await store.set(`sess:${id}`, session, SESSION_SEC);
   await store.set(`card:${id}`, { ...card, state: "matched", flipAt } satisfies Card, 600);
   await store.del(backKey(card.color, card.symbol));
@@ -115,32 +132,72 @@ export async function findCard(color: number, symbol?: number): Promise<FindResu
 }
 
 export type SessionView = {
-  idx: number;
+  step: number;
   turn: "a" | "b";
-  question: Question;
+  phase: "card" | "choose";
+  /** set in phase "card" */
+  question: Question | null;
+  /** set in phase "choose": theme and depth only, the text stays hidden until picked */
+  hand: Pick<Question, "theme" | "depth">[];
+  /** questions already shown, newest first, current one excluded */
+  history: Question[];
   now: number;
 };
 
 function view(s: Session): SessionView {
-  return { idx: s.idx, turn: s.turn, question: QUESTIONS[s.deck[s.idx]], now: Date.now() };
+  return {
+    step: s.step,
+    turn: s.turn,
+    phase: s.phase,
+    question: s.phase === "card" ? QUESTIONS[s.current] : null,
+    hand: s.phase === "choose" ? s.hand.map((id) => ({ theme: QUESTIONS[id].theme, depth: QUESTIONS[id].depth })) : [],
+    history: s.history.map((id) => QUESTIONS[id]).reverse(),
+    now: Date.now(),
+  };
 }
+
+const isSession = (s: Session | null): s is Session => !!s && Array.isArray(s.queue);
 
 export async function sessionView(id: string): Promise<SessionView | null> {
   const s = await store.get<Session>(`sess:${id}`);
-  return s ? view(s) : null;
+  return isSession(s) ? view(s) : null;
 }
 
-/** Idempotent: both phones may tap at once, only the first tap for `idx` counts. */
-export async function nextQuestion(id: string, idx: number): Promise<SessionView | null> {
+/** keep at least `n` ids in the queue, never reusing ones in play unless the bank is tiny */
+function refill(s: Session, n: number) {
+  if (s.queue.length >= n) return;
+  const busy = new Set([s.current, ...s.hand, ...s.queue]);
+  const fresh = shuffle(QUESTIONS.map((_, i) => i).filter((i) => !busy.has(i)));
+  s.queue.push(...(fresh.length ? fresh : shuffle(QUESTIONS.map((_, i) => i).filter((i) => !s.hand.includes(i)))));
+}
+
+/** Put the card down and deal three face-down candidates. Idempotent per `step`. */
+export async function nextQuestion(id: string, step: number): Promise<SessionView | null> {
   const s = await store.get<Session>(`sess:${id}`);
-  if (!s) return null;
-  if (s.idx === idx) {
-    s.idx += 1;
+  if (!isSession(s)) return null;
+  if (s.step === step && s.phase === "card") {
+    s.history.push(s.current);
+    refill(s, 3);
+    s.hand = s.queue.splice(0, 3);
+    s.phase = "choose";
     s.turn = s.turn === "a" ? "b" : "a";
-    if (s.idx >= s.deck.length) {
-      s.deck = freshDeck();
-      s.idx = 0;
-    }
+    s.step += 1;
+    await store.set(`sess:${id}`, s, SESSION_SEC);
+  }
+  return view(s);
+}
+
+/** Turn a candidate face up; the other two go back to the end of the queue. */
+export async function pickQuestion(id: string, step: number, slot: number): Promise<SessionView | null> {
+  const s = await store.get<Session>(`sess:${id}`);
+  if (!isSession(s)) return null;
+  if (s.step === step && s.phase === "choose" && slot >= 0 && slot < s.hand.length) {
+    const [chosen] = s.hand.splice(slot, 1);
+    s.queue.push(...s.hand);
+    s.hand = [];
+    s.current = chosen;
+    s.phase = "card";
+    s.step += 1;
     await store.set(`sess:${id}`, s, SESSION_SEC);
   }
   return view(s);

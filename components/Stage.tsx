@@ -8,12 +8,15 @@ import {
   usePoll,
   writeSaved,
   type Match,
+  type Question,
   type Role,
   type SessionView,
 } from "@/lib/client";
 import { COLORS, SYMBOLS } from "@/lib/palette";
 import { setAccent } from "./Ambient";
 import { Card } from "./Card";
+import { Hand } from "./Hand";
+import { History } from "./History";
 import { Screen, Wordmark } from "./Screen";
 
 type Mode = "drawing" | "waiting" | "charging" | "open" | "full";
@@ -26,8 +29,7 @@ type StatusResponse =
   | { state: "expired" }
   | { state: "matched"; sessionId: string; flipAt: number; now: number };
 
-function QuestionFace({ view }: { view: SessionView }) {
-  const { question } = view;
+function QuestionFace({ question }: { question: Question }) {
   return (
     <div className="flex h-full flex-col items-center text-center">
       <div className="pt-[2cqw] text-[3.4cqw] font-medium uppercase tracking-[0.3em] text-[#8a6a33]">
@@ -66,6 +68,7 @@ export function Stage({
   const [flipped, setFlipped] = useState(false);
   const [firstReveal, setFirstReveal] = useState(true);
   const [note, setNote] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const alive = useRef(true);
@@ -117,11 +120,11 @@ export function Stage({
     }
   };
 
-  /** swap the question: flip face-down, change text, flip back up */
+  /** every step: flip face down, apply the new state, then flip up again if a question is on the table */
   const showNext = (v: SessionView) => {
     latest.current = v;
     if (busy.current) return;
-    if (shownRef.current && v.idx === shownRef.current.idx) {
+    if (shownRef.current && v.step === shownRef.current.step) {
       commitView(v);
       return;
     }
@@ -129,12 +132,14 @@ export function Stage({
     setFirstReveal(false);
     setFlipped(false);
     later(() => {
-      commitView(latest.current!);
-      setFlipped(true);
+      const target = latest.current!;
+      commitView(target);
+      // the card remounts face down when coming back from the hand, give it a beat before flipping
       later(() => {
+        if (target.phase === "card") setFlipped(true);
         busy.current = false;
-        if (latest.current && latest.current.idx !== shownRef.current?.idx) showNext(latest.current);
-      }, 800);
+        if (latest.current && latest.current.step !== shownRef.current?.step) showNext(latest.current);
+      }, 700);
     }, 650);
   };
 
@@ -167,7 +172,7 @@ export function Stage({
         if (!alive.current) return;
         if (ok && data) {
           commitView(data);
-          setFlipped(true);
+          setFlipped(data.phase === "card");
           setFirstReveal(false);
         } else {
           writeSaved(null);
@@ -238,7 +243,16 @@ export function Stage({
 
   const next = async () => {
     if (!sessionId || !shownRef.current || busy.current) return;
-    const { data } = await call<SessionView>(`/api/session/${sessionId}/next`, "POST", { idx: shownRef.current.idx });
+    const { data } = await call<SessionView>(`/api/session/${sessionId}/next`, "POST", { step: shownRef.current.step });
+    if (data && alive.current) showNext(data);
+  };
+
+  const pick = async (slot: number) => {
+    if (!sessionId || !shownRef.current || busy.current) return;
+    const { data } = await call<SessionView>(`/api/session/${sessionId}/pick`, "POST", {
+      step: shownRef.current.step,
+      slot,
+    });
     if (data && alive.current) showNext(data);
   };
 
@@ -249,14 +263,41 @@ export function Stage({
 
   const color = card ? COLORS[card.color] : null;
   const mine = shown ? shown.turn === role : false;
+  const choosing = mode === "open" && shown?.phase === "choose";
+  const pastCount = shown?.history.length ?? 0;
 
   return (
     <Screen>
-      <Wordmark onBack={() => leave(false)} />
+      <Wordmark
+        onBack={() => leave(false)}
+        right={
+          mode === "open" && pastCount > 0 ? (
+            <button
+              onClick={() => setHistoryOpen(true)}
+              className="flex h-10 items-center gap-2 rounded-full px-3 text-[13px] text-paper/60 transition hover:bg-white/5 hover:text-paper"
+            >
+              <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <rect x="6" y="4" width="12" height="16" rx="2" />
+                <path d="M3 7v11a2 2 0 0 0 2 2M21 7v11" />
+              </svg>
+              {pastCount}
+            </button>
+          ) : null
+        }
+      />
 
       <div className="flex flex-1 items-center justify-center py-3">
-        <div ref={wrapRef} style={{ opacity: seed ? 1 : 0 }}>
-          {card && (
+        {choosing && card && shown && (
+          <Hand
+            key={shown.step}
+            color={card.color}
+            hand={shown.hand}
+            canPick={mine}
+            onPick={(slot) => void pick(slot)}
+          />
+        )}
+        <div ref={wrapRef} style={{ opacity: seed ? 1 : 0, display: choosing ? "none" : undefined }}>
+          {card && !choosing && (
             <Card
               key={card.id ?? "seed"}
               color={card.color}
@@ -265,7 +306,7 @@ export function Stage({
               charging={mode === "charging"}
               duration={firstReveal ? 1.5 : 0.6}
               burst={firstReveal}
-              front={shown ? <QuestionFace view={shown} /> : null}
+              front={shown ? shown.question && <QuestionFace question={shown.question} /> : null}
             />
           )}
         </div>
@@ -304,14 +345,26 @@ export function Stage({
                 className="size-2 rounded-full bg-accent"
                 style={{ boxShadow: "0 0 12px var(--accent)", opacity: mine ? 1 : 0.35 }}
               />
-              {mine ? "Tu réponds en premier" : "L'autre répond en premier"}
+              {choosing
+                ? mine
+                  ? "À toi de choisir une carte"
+                  : "L'autre choisit une carte…"
+                : mine
+                  ? "Tu réponds en premier"
+                  : "L'autre répond en premier"}
             </p>
-            <button
-              onClick={next}
-              className="rounded-full border border-white/15 bg-white/[.06] px-8 py-3.5 text-[15px] text-paper backdrop-blur transition active:scale-95"
-            >
-              Question suivante
-            </button>
+            {choosing ? (
+              <p className="display h-[50px] text-[15px] italic text-paper/45">
+                {mine ? "Thème et profondeur sont visibles, la question reste cachée." : "\u00a0"}
+              </p>
+            ) : (
+              <button
+                onClick={next}
+                className="rounded-full border border-white/15 bg-white/[.06] px-8 py-3.5 text-[15px] text-paper backdrop-blur transition active:scale-95"
+              >
+                Question suivante
+              </button>
+            )}
             <button onClick={() => leave(true)} className="text-[12px] text-paper/35 underline-offset-4 hover:underline">
               Terminer la partie
             </button>
@@ -327,6 +380,7 @@ export function Stage({
           </div>
         )}
       </div>
+      {historyOpen && shown && <History items={shown.history} onClose={() => setHistoryOpen(false)} />}
     </Screen>
   );
 }

@@ -3,7 +3,16 @@ import { useEffect, useRef } from "react";
 export type Role = "a" | "b";
 
 export type Question = { text: string; theme: string; depth: 1 | 2 | 3 };
-export type SessionView = { idx: number; turn: Role; question: Question; now: number };
+export type SessionView = {
+  step: number;
+  turn: Role;
+  phase: "card" | "choose";
+  question: Question | null;
+  hand: Pick<Question, "theme" | "depth">[];
+  /** newest first, current question excluded */
+  history: Question[];
+  now: number;
+};
 
 export type Match = {
   sessionId: string;

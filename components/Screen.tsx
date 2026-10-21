@@ -24,7 +24,7 @@ export function Screen({ children, className = "" }: { children: ReactNode; clas
   );
 }
 
-export function Wordmark({ onBack }: { onBack?: () => void }) {
+export function Wordmark({ onBack, right }: { onBack?: () => void; right?: ReactNode }) {
   return (
     <header className="relative flex h-10 w-full items-center justify-center">
       {onBack && (
@@ -39,6 +39,7 @@ export function Wordmark({ onBack }: { onBack?: () => void }) {
         </button>
       )}
       <span className="display text-[15px] italic tracking-[0.18em] text-paper/70">invicem</span>
+      {right && <div className="absolute right-0">{right}</div>}
     </header>
   );
 }
