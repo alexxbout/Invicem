@@ -4,9 +4,11 @@ import gsap from "gsap";
 import { useEffect, useRef } from "react";
 import { COLORS } from "@/lib/palette";
 import type { Saved } from "@/lib/client";
+import { requestTilt } from "@/lib/feel";
 import { setAccent } from "./Ambient";
 import { CardBack } from "./Card";
 import { Screen } from "./Screen";
+import { SoundToggle } from "./SoundToggle";
 
 const FAN = [
   { color: 4, symbol: 1, rot: -14, x: -64 },
@@ -65,6 +67,7 @@ export function Home({
 
   return (
     <Screen className="justify-between">
+      <SoundToggle className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-10" />
       <div ref={fanRef} className="flex w-full flex-1 flex-col items-center justify-center gap-[clamp(10px,3dvh,40px)]">
         <div className="relative h-[clamp(96px,21dvh,220px)] w-full">
           {FAN.map((f, i) => (
@@ -105,7 +108,10 @@ export function Home({
         {saved && (
           <button
             data-rise
-            onClick={onResume}
+            onClick={() => {
+              void requestTilt();
+              onResume();
+            }}
             className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[.04] px-5 py-2.5 text-left transition active:scale-[.98]"
           >
             <span
@@ -117,7 +123,10 @@ export function Home({
         )}
         <button
           data-rise
-          onClick={onDraw}
+          onClick={() => {
+            void requestTilt();
+            onDraw();
+          }}
           className="group rounded-[22px] bg-gradient-to-b from-[#ecd09a] to-[#c79a50] px-6 py-3 text-left text-[#2a1d0a] shadow-[0_10px_40px_-8px_rgba(217,183,121,.55)] transition active:scale-[.97]"
         >
           <span className="display block text-[22px] leading-tight">Tirer une carte</span>
@@ -125,7 +134,10 @@ export function Home({
         </button>
         <button
           data-rise
-          onClick={onFind}
+          onClick={() => {
+            void requestTilt();
+            onFind();
+          }}
           className="rounded-[22px] border border-gold/40 bg-white/[.03] px-6 py-3 text-left transition active:scale-[.97]"
         >
           <span className="display block text-[22px] leading-tight text-paper">Retourner sa carte</span>

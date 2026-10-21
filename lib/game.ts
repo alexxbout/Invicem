@@ -28,6 +28,8 @@ type Session = {
   /** three face-down candidates (phase "choose") */
   hand: number[];
   criteria: Criteria;
+  /** slot the last pick came from, so the other phone can replay the gesture */
+  lastPick?: number;
   /** the first hand is only dealt once the pair has seen the criteria screen */
   configured: boolean;
   /** questions already put down, oldest first (the one on the table is not in it) */
@@ -143,6 +145,8 @@ export type SessionView = {
   question: Question | null;
   /** set in phase "choose": theme and depth only, the text stays hidden until picked */
   hand: Pick<Question, "theme" | "depth">[];
+  /** in phase "card": which of the three cards was turned, if the question came from a hand */
+  pickedSlot: number | null;
   criteria: Criteria;
   /** every theme in the bank, for the criteria screen */
   themes: string[];
@@ -160,6 +164,7 @@ function view(s: Session): SessionView {
     phase: s.phase,
     question: s.phase === "card" ? QUESTIONS[s.current] : null,
     hand: s.phase === "choose" ? s.hand.map((id) => ({ theme: QUESTIONS[id].theme, depth: QUESTIONS[id].depth })) : [],
+    pickedSlot: s.phase === "card" && s.lastPick !== undefined ? s.lastPick : null,
     criteria: s.criteria,
     themes: THEMES,
     matching: QUESTIONS.filter((q) => matches(q, s.criteria)).length,
@@ -195,6 +200,7 @@ export async function nextQuestion(id: string, step: number): Promise<SessionVie
   if (!isSession(s)) return null;
   if (s.step === step && s.phase === "card") {
     s.history.push(s.current);
+    s.lastPick = undefined;
     if (s.configured) {
       s.hand = deal(s);
       s.phase = "choose";
@@ -237,6 +243,7 @@ export async function pickQuestion(id: string, step: number, slot: number): Prom
   if (!isSession(s)) return null;
   if (s.step === step && s.phase === "choose" && slot >= 0 && slot < s.hand.length) {
     s.current = s.hand[slot];
+    s.lastPick = slot;
     s.hand = [];
     s.phase = "card";
     s.step += 1;

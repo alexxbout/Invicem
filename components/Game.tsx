@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { armSound } from "@/lib/feel";
 import { readSaved, subscribeSaved, type Match, type Saved } from "@/lib/client";
 import { Ambient } from "./Ambient";
 import { Finder } from "./Finder";
@@ -19,6 +20,10 @@ export function Game() {
   const raw = useSyncExternalStore(subscribeSaved, readSaved, () => null);
   const saved: Saved | null = raw ? (JSON.parse(raw) as Saved) : null;
   const home = () => setScreen({ k: "home" });
+
+  useEffect(() => {
+    armSound();
+  }, []);
 
   return (
     <>

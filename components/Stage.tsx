@@ -13,13 +13,15 @@ import {
   type Role,
   type SessionView,
 } from "@/lib/client";
+import { reduced } from "@/lib/feel";
 import { COLORS, SYMBOLS } from "@/lib/palette";
 import { setAccent } from "./Ambient";
 import { Card } from "./Card";
 import { Criteria } from "./Criteria";
-import { Hand } from "./Hand";
+import { Hand, type HandHandle } from "./Hand";
 import { History } from "./History";
 import { Sheet } from "./Sheet";
+import { SoundToggle } from "./SoundToggle";
 import { Screen, Wordmark } from "./Screen";
 
 type Mode = "drawing" | "waiting" | "charging" | "open" | "full";
@@ -32,14 +34,39 @@ type StatusResponse =
   | { state: "expired" }
   | { state: "matched"; sessionId: string; flipAt: number; now: number };
 
-function QuestionFace({ question }: { question: Question }) {
+function QuestionFace({ question, play }: { question: Question; play: boolean }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+
+  // words surface one after another once the card is turned
+  useEffect(() => {
+    const words = ref.current?.querySelectorAll("[data-w]");
+    if (!words) return;
+    if (!play || reduced()) {
+      gsap.set(words, { opacity: play ? 1 : 0, y: 0, filter: "none" });
+      return;
+    }
+    gsap.fromTo(
+      words,
+      { opacity: 0, y: 10, filter: "blur(4px)" },
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.6, ease: "power2.out", stagger: 0.05, delay: 0.5 },
+    );
+  }, [play]);
+
   return (
     <div className="flex h-full flex-col items-center text-center">
       <div className="pt-[2cqw] text-[3.4cqw] font-medium uppercase tracking-[0.3em] text-[#8a6a33]">
         {question.theme}
       </div>
       <div className="flex flex-1 items-center px-[2cqw]">
-        <p className="display text-[7cqw] leading-[1.2]">{question.text}</p>
+        <p ref={ref} className="display text-[7cqw] leading-[1.2]">
+          {question.text.split(" ").map((w, i) => (
+            <span key={i}>
+              <span data-w className="inline-block">
+                {w}
+              </span>{" "}
+            </span>
+          ))}
+        </p>
       </div>
       <div className="flex gap-[2cqw] pb-[2cqw] text-[#b8914d]">
         {[1, 2, 3].map((d) => (
@@ -75,6 +102,7 @@ export function Stage({
   const [moodOpen, setMoodOpen] = useState(false);
   const editedAt = useRef(0);
   const editSeq = useRef(0);
+  const handRef = useRef<HandHandle>(null);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const alive = useRef(true);
@@ -106,7 +134,6 @@ export function Stage({
     flipDue.current = false;
     setModeBoth("open");
     setFlipped(true);
-    navigator.vibrate?.([40, 60, 90]);
     const c = cardRef.current;
     if (c) writeSaved({ sessionId: sid, color: c.color, symbol: c.symbol, role });
   };
@@ -127,7 +154,7 @@ export function Stage({
   };
 
   /** every step: flip face down, apply the new state, then flip up again if a question is on the table */
-  const showNext = (v: SessionView) => {
+  const showNext = (v: SessionView, played = false) => {
     latest.current = v;
     if (busy.current) return;
     if (shownRef.current && v.step === shownRef.current.step) {
@@ -139,7 +166,8 @@ export function Stage({
     // coming from the hand there is no card to turn face down first, so go straight to the new one
     const fromHand = shownRef.current !== null && shownRef.current.phase !== "card";
     setFlipped(false);
-    later(() => {
+
+    const swap = () => {
       const target = latest.current!;
       commitView(target);
       // the card remounts face down when coming back from the hand, give it a beat before flipping
@@ -148,7 +176,14 @@ export function Stage({
         busy.current = false;
         if (latest.current && latest.current.step !== shownRef.current?.step) showNext(latest.current);
       }, fromHand ? 250 : 700);
-    }, fromHand ? 0 : 650);
+    };
+
+    if (fromHand && !played && v.phase === "card" && v.pickedSlot !== null && handRef.current) {
+      // the other player chose: replay their card rising to the table before it turns
+      void handRef.current.playPick(v.pickedSlot).then(() => alive.current && swap());
+    } else {
+      later(swap, fromHand ? 0 : 650);
+    }
   };
 
   const draw = async () => {
@@ -266,7 +301,7 @@ export function Stage({
       settled,
     ]);
     busy.current = false;
-    if (data && alive.current) showNext(data);
+    if (data && alive.current) showNext(data, true);
   };
 
   const start = async () => {
@@ -311,6 +346,7 @@ export function Stage({
         right={
           mode === "open" && !setup ? (
             <div className="flex items-center">
+              <SoundToggle />
               <button
                 onClick={() => setMoodOpen(true)}
                 aria-label="Ambiance"
@@ -345,6 +381,7 @@ export function Stage({
             key={shown.step}
             color={card.color}
             hand={shown.hand}
+            handle={handRef}
             canPick={mine}
             onPick={(slot, settled) => void pick(slot, settled)}
           />
@@ -374,7 +411,7 @@ export function Stage({
               charging={mode === "charging"}
               duration={firstReveal ? 1.5 : 0.6}
               burst={firstReveal}
-              front={shown ? shown.question && <QuestionFace question={shown.question} /> : null}
+              front={shown ? shown.question && <QuestionFace question={shown.question} play={flipped} /> : null}
             />
           )}
         </div>

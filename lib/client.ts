@@ -10,6 +10,8 @@ export type SessionView = {
   phase: "card" | "choose" | "setup";
   question: Question | null;
   hand: Pick<Question, "theme" | "depth">[];
+  /** slot the question was picked from, for replaying the gesture on the other phone */
+  pickedSlot: number | null;
   criteria: Criteria;
   themes: string[];
   matching: number;

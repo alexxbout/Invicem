@@ -3,6 +3,7 @@
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 import { call, msUntil, type Match } from "@/lib/client";
+import { requestTilt } from "@/lib/feel";
 import { COLORS, SYMBOLS } from "@/lib/palette";
 import { setAccent } from "./Ambient";
 import { CardBack } from "./Card";
@@ -40,6 +41,7 @@ export function Finder({ onMatch, onBack }: { onMatch: (m: Match) => void; onBac
 
   const find = async (c: number, s?: number, tile?: HTMLElement) => {
     if (busy) return;
+    void requestTilt();
     setBusy(true);
     if (tile) gsap.fromTo(tile, { scale: 0.92 }, { scale: 1, duration: 0.5, ease: "elastic.out(1.2,.4)" });
     try {
