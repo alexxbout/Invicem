@@ -136,6 +136,8 @@ export function Stage({
     }
     busy.current = true;
     setFirstReveal(false);
+    // coming from the hand there is no card to turn face down first, so go straight to the new one
+    const fromHand = shownRef.current !== null && shownRef.current.phase !== "card";
     setFlipped(false);
     later(() => {
       const target = latest.current!;
@@ -145,8 +147,8 @@ export function Stage({
         if (target.phase === "card") setFlipped(true);
         busy.current = false;
         if (latest.current && latest.current.step !== shownRef.current?.step) showNext(latest.current);
-      }, 700);
-    }, 650);
+      }, fromHand ? 250 : 700);
+    }, fromHand ? 0 : 650);
   };
 
   const draw = async () => {
@@ -255,12 +257,15 @@ export function Stage({
     if (data && alive.current) showNext(data);
   };
 
-  const pick = async (slot: number) => {
+  /** the hand plays its lift-to-centre motion while the request runs; the swap waits for both */
+  const pick = async (slot: number, settled: Promise<unknown>) => {
     if (!sessionId || !shownRef.current || busy.current) return;
-    const { data } = await call<SessionView>(`/api/session/${sessionId}/pick`, "POST", {
-      step: shownRef.current.step,
-      slot,
-    });
+    busy.current = true;
+    const [{ data }] = await Promise.all([
+      call<SessionView>(`/api/session/${sessionId}/pick`, "POST", { step: shownRef.current.step, slot }),
+      settled,
+    ]);
+    busy.current = false;
     if (data && alive.current) showNext(data);
   };
 
@@ -341,7 +346,7 @@ export function Stage({
             color={card.color}
             hand={shown.hand}
             canPick={mine}
-            onPick={(slot) => void pick(slot)}
+            onPick={(slot, settled) => void pick(slot, settled)}
           />
         )}
         {setup && shown && (
