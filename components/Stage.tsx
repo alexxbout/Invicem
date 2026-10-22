@@ -79,15 +79,22 @@ function Recap({ items, words }: { items: Question[]; words: [string, string] | 
  * Whether this phone shows the question face. The one answering only hears it read aloud: their
  * card stays face down. The opening card is the shared reveal, so both see it.
  */
-const faceUpFor = (v: SessionView, role: Role) =>
-  onTable(v.phase) && !(v.phase === "card" && v.turn !== role && !(v.round === 1 && v.history.length === 0));
+const faceUpFor = (v: SessionView, role: Role) => {
+  if (!onTable(v.phase)) return false;
+  if (v.phase !== "card" || (v.round === 1 && v.history.length === 0)) return true;
+  // a question written on a blank card is a gift: the other reads it, its author keeps it face down
+  if (v.question?.written) return v.turn !== role;
+  return v.turn === role;
+};
 
 /** what the hidden question is about, laid over the back for the one listening */
 function Listening({ question }: { question: Question }) {
   return (
     <div className="pointer-events-none absolute inset-x-[9%] bottom-[9%] flex flex-col items-center gap-1.5 rounded-xl bg-black/35 px-3 py-2.5 text-center backdrop-blur-[2px]">
-      <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-white/90">{question.theme}</span>
-      <Depth depth={question.depth} />
+      <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-white/90">
+        {question.written ? "Ta question" : question.theme}
+      </span>
+      {question.written ? <span className="text-[11px] text-white/70">entre ses mains</span> : <Depth depth={question.depth} />}
     </div>
   );
 }
@@ -567,6 +574,9 @@ export function Stage({
   const opening = !!shown && shown.round === 1 && shown.history.length === 0;
   /** I answer this card: it stays face down, I only hear it */
   const listening = phase === "card" && !!shown && !faceUpFor(shown, role);
+  /** I answer this card (whether I hear it or read it): my joker is at hand */
+  const answering = phase === "card" && !!shown && shown.turn !== role && !(shown.round === 1 && shown.history.length === 0);
+  const written = !!shown?.question?.written;
   const lastOne = !!shown && shown.round >= shown.goal;
 
   const waiting = pending ? " pointer-events-none btn-pending" : "";
@@ -592,10 +602,14 @@ export function Stage({
             : sealing || revealing || ended
             ? ""
             : mine
-              ? "Lis-lui la question à voix haute"
+              ? written
+                ? "Ta question est sous ses yeux"
+                : "Lis-lui la question à voix haute"
               : opening
                 ? "C'est à toi de répondre"
-                : "Écoute, puis réponds";
+                : written
+                  ? "Une question écrite pour toi"
+                  : "Écoute, puis réponds";
 
   return (
     <Screen>
@@ -675,7 +689,7 @@ export function Stage({
         )}
         <div ref={wrapRef} className="relative" style={{ opacity: seed ? 1 : 0, display: offTable ? "none" : undefined }}>
           {/* my jokers, tucked behind the bottom-right corner while I answer */}
-          {listening && shown && !jokerRun && (
+          {answering && shown && !jokerRun && (
             <JokerFan kinds={shown.jokers[role].filter((k) => k !== flying)} onPlay={(k, el) => void pass(k, el)} />
           )}
           {card && !offTable && (
