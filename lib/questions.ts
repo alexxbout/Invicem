@@ -3,6 +3,10 @@ export type Question = {
   theme: string;
   /** 1 = léger, 2 = personnel, 3 = profond */
   depth: 1 | 2 | 3;
+  /** a golden card, dealt now and then */
+  rare?: boolean;
+  /** written by one of the players on a blank card */
+  written?: boolean;
 };
 
 // Placeholder deck, to be replaced by the real one.
@@ -27,6 +31,33 @@ export const QUESTIONS: Question[] = [
   { theme: "Regard", depth: 2, text: "Quel malentendu à ton sujet revient souvent ?" },
   { theme: "Regard", depth: 3, text: "Qu'est-ce que l'enfant que tu étais penserait de la personne que tu es devenue ?" },
   { theme: "Regard", depth: 3, text: "Qu'est-ce qu'on te reproche parfois et qui, au fond, est vrai ?" },
+];
+
+/**
+ * Rare cards: bolder or more playful, dealt about once every eight hands, never filtered by
+ * theme. They carry their own small labels.
+ */
+export const RARE_QUESTIONS: Question[] = [
+  { theme: "Audace", depth: 2, text: "Dis-moi une chose que tu n'oses pas me demander." },
+  { theme: "Audace", depth: 3, text: "Qu'est-ce que tu ne m'as jamais dit, parce que tu avais peur de ma réaction ?" },
+  { theme: "Audace", depth: 2, text: "Quelle est la chose la plus folle que tu aimerais vivre avec moi ?" },
+  { theme: "Audace", depth: 1, text: "Fais-moi un compliment que personne ne t'a jamais entendu faire." },
+  { theme: "Confidence", depth: 3, text: "Quand t'es-tu senti(e) le plus seul(e) au monde ?" },
+  { theme: "Confidence", depth: 3, text: "Quel rêve as-tu abandonné, et est-ce qu'il te manque ?" },
+  { theme: "Confidence", depth: 2, text: "Quel secret d'enfance n'as-tu jamais raconté ?" },
+  { theme: "Confidence", depth: 2, text: "De quoi es-tu le plus fier(e), en secret ?" },
+  { theme: "Vertige", depth: 3, text: "Si tu savais que tout s'arrête dans un an, que changerais-tu dès demain ?" },
+  { theme: "Vertige", depth: 3, text: "Qu'aimerais-tu que je comprenne de toi, même si tu ne sais pas l'expliquer ?" },
+  { theme: "Vertige", depth: 2, text: "Quelle question aimerais-tu qu'on te pose plus souvent ?" },
+  { theme: "Vertige", depth: 3, text: "À quel moment as-tu senti que ta vie prenait un tournant ?" },
+  { theme: "Jeu", depth: 1, text: "Imite-moi pendant dix secondes. Je jugerai." },
+  { theme: "Jeu", depth: 1, text: "Décris-moi en trois mots. Puis je fais pareil pour toi." },
+  { theme: "Jeu", depth: 1, text: "Devine : quel est mon plus grand plaisir coupable ?" },
+  { theme: "Jeu", depth: 2, text: "Raconte notre rencontre comme si c'était un film. Quel genre ?" },
+  { theme: "Jeu", depth: 1, text: "Si on partait demain, sans bagage, où irait-on ?" },
+  { theme: "Regard", depth: 2, text: "Qu'est-ce que tu as remarqué chez moi ce soir et que tu n'avais jamais vu ?" },
+  { theme: "Regard", depth: 3, text: "Qu'est-ce que tu admires chez moi, sans jamais me l'avoir dit ?" },
+  { theme: "Regard", depth: 2, text: "À ton avis, qu'est-ce que je cache le mieux ?" },
 ];
 
 /** The shared last card of an evening; both answer it. */

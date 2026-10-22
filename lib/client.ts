@@ -3,14 +3,15 @@ import { useEffect, useRef } from "react";
 export type Role = "a" | "b";
 export type JokerKind = "paper";
 
-export type Question = { text: string; theme: string; depth: 1 | 2 | 3 };
+export type Question = { text: string; theme: string; depth: 1 | 2 | 3; rare?: boolean; written?: boolean };
+export type HandCard = Pick<Question, "theme" | "depth"> & { rare?: boolean; blank?: boolean };
 export type Criteria = { depths: (1 | 2 | 3)[]; themes: string[] };
 export type SessionView = {
   step: number;
   turn: Role;
-  phase: "card" | "choose" | "setup" | "closing" | "end";
+  phase: "card" | "choose" | "setup" | "closing" | "write" | "words" | "reveal" | "end";
   question: Question | null;
-  hand: Pick<Question, "theme" | "depth">[];
+  hand: HandCard[];
   /** slot the question was picked from, for replaying the gesture on the other phone */
   pickedSlot: number | null;
   /** questions asked so far tonight, the one on the table included */
@@ -28,6 +29,12 @@ export type SessionView = {
   passed: boolean;
   /** the joker that was just played, when `passed` */
   lastJoker: JokerKind | null;
+  /** who has already sealed a last word */
+  sealed: Record<Role, boolean>;
+  /** both last words, once both are in */
+  words: Record<Role, string> | null;
+  /** server time of the shared reveal of the words */
+  revealAt: number | null;
   now: number;
 };
 

@@ -110,6 +110,56 @@ export function CardBack({ color, symbol }: { color: number; symbol?: number }) 
   );
 }
 
+/** golden back of a rare card, with a rainbow sheen and a star */
+export function RareBack() {
+  return (
+    <div
+      className="absolute inset-0 overflow-hidden rounded-[7%/5%]"
+      style={{
+        background: "linear-gradient(150deg, #fbe7a6 0%, #e0b54a 45%, #a7741c 100%)",
+        boxShadow: "inset 0 0 0 1px rgba(255,255,255,.55), inset 0 -30px 60px rgba(90,50,0,.25)",
+        color: "#5a3a08",
+      }}
+    >
+      <div className="absolute inset-0 opacity-25" style={{ backgroundImage: "radial-gradient(currentColor 1px, transparent 1.5px)", backgroundSize: "11px 11px" }} />
+      <div className="absolute inset-[3.2%] rounded-[5%/3.6%] border border-current opacity-60" />
+      <div className="absolute inset-[5.2%] rounded-[4%/2.8%] border border-current opacity-30" />
+      <div className="absolute left-1/2 top-1/2 grid aspect-square w-[60%] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-current">
+        <Glyph id={2} className="w-[52%] drop-shadow-[0_0_8px_rgba(255,240,180,.9)]" strokeWidth={1.3} />
+      </div>
+      <div className="holo absolute inset-0" />
+      <span className="twinkle" style={{ left: "22%", top: "16%" }} />
+      <span className="twinkle" style={{ left: "78%", top: "82%", animationDelay: "1.4s" }} />
+    </div>
+  );
+}
+
+/** a quill, for blank cards and the writing moments */
+export function Quill({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M20 3C12 4 6 10 5 19c4-6 9-10 15-16z" />
+      <path d="M5 19l-2 2M9 13c2-1 4-1 6 0M11 10c2-1 4-1 5-.5" />
+    </svg>
+  );
+}
+
+/** ivory back of the blank card: the picker writes the question */
+export function BlankBack() {
+  return (
+    <div
+      className="absolute inset-0 overflow-hidden rounded-[7%/5%] text-[#a7741c]"
+      style={{ background: "linear-gradient(160deg, #fbf3e2, #ead9b8)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.8), inset 0 -30px 60px rgba(120,80,30,.15)" }}
+    >
+      <div className="absolute inset-[3.2%] rounded-[5%/3.6%] border border-current opacity-70" />
+      <div className="absolute inset-[5.2%] rounded-[4%/2.8%] border border-current opacity-30" />
+      <div className="absolute left-1/2 top-1/2 grid aspect-square w-[56%] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-current opacity-80">
+        <Quill className="w-[52%]" />
+      </div>
+    </div>
+  );
+}
+
 function Paper({ children }: { children: ReactNode }) {
   return (
     <div

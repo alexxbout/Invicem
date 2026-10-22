@@ -240,3 +240,58 @@ button {
   background: linear-gradient(100deg, transparent, rgba(255, 240, 200, 0.4), transparent);
   animation: btn-pending 0.9s ease-in-out infinite;
 }
+
+/* what the players write themselves */
+.hand {
+  font-family: var(--font-caveat), "Segoe Script", cursive;
+}
+
+/* rare cards: a rainbow sheen sliding over the gold */
+@keyframes holo {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 200% 50%;
+  }
+}
+.holo {
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255, 120, 200, 0.35) 32%,
+    rgba(120, 220, 255, 0.35) 42%,
+    rgba(255, 245, 160, 0.45) 50%,
+    rgba(140, 255, 190, 0.3) 58%,
+    transparent 72%
+  );
+  background-size: 200% 100%;
+  mix-blend-mode: color-dodge;
+  animation: holo 3.4s linear infinite;
+}
+
+/* a quill scratching while the other writes */
+@keyframes scribble {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-8deg);
+  }
+  25% {
+    transform: translate(10px, 3px) rotate(-2deg);
+  }
+  50% {
+    transform: translate(20px, -1px) rotate(-10deg);
+  }
+  75% {
+    transform: translate(8px, 4px) rotate(-4deg);
+  }
+}
+.scribble {
+  animation: scribble 1.3s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .holo,
+  .scribble {
+    animation: none;
+  }
+}

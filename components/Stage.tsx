@@ -21,6 +21,7 @@ import { ambient, setAccent } from "./Ambient";
 import { Card } from "./Card";
 import { Criteria } from "./Criteria";
 import { Depth, Hand, type HandHandle } from "./Hand";
+import { QuillWait, WordSeal, WordsReveal, WriteCard } from "./Scribe";
 import { Glyph } from "./Glyph";
 import { JokerFan } from "./joker/JokerFan";
 import { JokerPlay } from "./joker/JokerPlay";
@@ -40,7 +41,7 @@ type StatusResponse =
   | { state: "matched"; sessionId: string; flipAt: number; now: number };
 
 /** the evening laid out once the closing card is answered */
-function Recap({ items }: { items: Question[] }) {
+function Recap({ items, words }: { items: Question[]; words: [string, string] | null }) {
   return (
     <div data-rise className="flex max-h-[62dvh] w-full flex-col gap-5">
       <h2 className="display text-center text-[28px] font-light leading-snug">
@@ -50,6 +51,11 @@ function Recap({ items }: { items: Question[] }) {
           {items.length} {items.length > 1 ? "questions partagées" : "question partagée"}
         </em>
       </h2>
+      {words && (
+        <p className="hand text-center text-[30px] leading-none text-gold">
+          {words[0]} <span className="text-paper/40">·</span> {words[1]}
+        </p>
+      )}
       <ol className="-mx-1 space-y-2.5 overflow-y-auto px-1">
         {items.map((q, i) => (
           <li
@@ -61,7 +67,7 @@ function Recap({ items }: { items: Question[] }) {
               <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-paper/50">{q.theme}</span>
               <Depth depth={q.depth} />
             </div>
-            <p className="display text-[16px] leading-snug text-paper/90">{q.text}</p>
+            <p className={q.written ? "hand text-[20px] leading-snug text-paper/90" : "display text-[16px] leading-snug text-paper/90"}>{q.text}</p>
           </li>
         ))}
       </ol>
@@ -149,12 +155,15 @@ function QuestionFace({ question, play }: { question: Question; play: boolean })
   }, [play]);
 
   return (
-    <div className="flex h-full flex-col items-center text-center">
-      <div className="pt-[2cqw] text-[3.4cqw] font-medium uppercase tracking-[0.3em] text-[#8a6a33]">
-        {question.theme}
+    <div className="relative flex h-full flex-col items-center text-center">
+      {question.rare && <div className="holo pointer-events-none absolute -inset-[15%] opacity-70" />}
+      <div
+        className={`relative pt-[2cqw] text-[3.4cqw] font-medium uppercase tracking-[0.3em] ${question.rare ? "text-[#a7741c]" : "text-[#8a6a33]"}`}
+      >
+        {question.rare ? `✦ Carte rare · ${question.theme} ✦` : question.written ? "Carte blanche" : question.theme}
       </div>
-      <div className="flex flex-1 items-center px-[2cqw]">
-        <p ref={ref} className="display text-[7cqw] leading-[1.2]">
+      <div className="relative flex flex-1 items-center px-[2cqw]">
+        <p ref={ref} className={question.written ? "hand text-[9.5cqw] leading-[1.1]" : "display text-[7cqw] leading-[1.2]"}>
           {question.text.split(" ").map((w, i) => (
             <span key={i}>
               <span data-w className="inline-block">
@@ -198,6 +207,11 @@ export function Stage({
   const [moodOpen, setMoodOpen] = useState(false);
   /** a move was sent and its answer is on its way: buttons show it at once */
   const [pending, setPending] = useState(false);
+  /** what I'm writing on a blank card, and my last word */
+  const [draft, setDraft] = useState("");
+  const [word, setWord] = useState("");
+  /** the last words have been turned over; the way to the recap opens */
+  const [revealed, setRevealed] = useState(false);
   /** bumped to replay the joker flash on both phones */
   /** a joker being played on the table (both phones), and the one that just left my hand */
   const [jokerRun, setJokerRun] = useState<{ kind: JokerKind; from: DOMRect | null; n: number } | null>(null);
@@ -467,10 +481,37 @@ export function Stage({
     else setFlying(null);
   };
 
+  /** the picker of the blank card puts their own question on the table */
+  const writeQuestion = async () => {
+    const cur = shownRef.current;
+    if (!sessionId || !cur || busy.current || pending) return;
+    setPending(true);
+    const { data } = await call<SessionView>(`/api/session/${sessionId}/write`, "POST", { step: cur.step, role, text: draft });
+    setPending(false);
+    if (data && alive.current) {
+      setDraft("");
+      showNext(data);
+    }
+  };
+
+  /** seal my last word; the reveal starts when the other's is in too */
+  const seal = async () => {
+    if (!sessionId || pending) return;
+    setPending(true);
+    const { data } = await call<SessionView>(`/api/session/${sessionId}/word`, "POST", { role, word });
+    setPending(false);
+    if (data && alive.current) showNext(data);
+  };
+
   /** a move that only needs the current step: start, finish, continue */
   const act = async (path: "start" | "finish" | "continue") => {
     if (!sessionId || !shownRef.current || busy.current || pending) return;
     setPending(true);
+    if (path === "continue") {
+      // a new stretch of the evening: fresh last words later
+      setRevealed(false);
+      setWord("");
+    }
     const { data } = await call<SessionView>(`/api/session/${sessionId}/${path}`, "POST", { step: shownRef.current.step });
     setPending(false);
     if (data && alive.current) showNext(data);
@@ -518,7 +559,11 @@ export function Stage({
   const choosing = phase === "choose";
   const setup = phase === "setup";
   const ended = phase === "end";
-  const offTable = choosing || setup || ended;
+  const writing = phase === "write";
+  const sealing = phase === "words";
+  const revealing = phase === "reveal";
+  const offTable = choosing || setup || ended || writing || sealing || revealing;
+  const other: Role = role === "a" ? "b" : "a";
   const opening = !!shown && shown.round === 1 && shown.history.length === 0;
   /** I answer this card: it stays face down, I only hear it */
   const listening = phase === "card" && !!shown && !faceUpFor(shown, role);
@@ -540,7 +585,11 @@ export function Stage({
           : "L'autre pioche une carte…"
         : phase === "closing"
           ? "Chacun votre tour"
-          : ended
+          : writing
+            ? mine
+              ? "Écris la question que tu veux lui poser"
+              : "L'autre écrit une question…"
+            : sealing || revealing || ended
             ? ""
             : mine
               ? "Lis-lui la question à voix haute"
@@ -604,7 +653,26 @@ export function Stage({
             />
           </div>
         )}
-        {ended && shown && <Recap key={shown.step} items={[...shown.history].reverse()} />}
+        {ended && shown && (
+          <Recap
+            key={shown.step}
+            items={[...shown.history].reverse()}
+            words={shown.words ? [shown.words[role], shown.words[other]] : null}
+          />
+        )}
+        {writing && shown && (mine ? <WriteCard value={draft} onChange={setDraft} /> : <QuillWait label="L'autre écrit une question…" />)}
+        {sealing && shown && (
+          <WordSeal value={word} onChange={setWord} sealed={shown.sealed[role]} partnerSealed={shown.sealed[other]} />
+        )}
+        {revealing && shown?.words && (
+          <WordsReveal
+            key={shown.step}
+            mine={shown.words[role]}
+            theirs={shown.words[other]}
+            delayMs={Math.max(0, (shown.revealAt ?? shown.now) - shown.now)}
+            onRevealed={() => setRevealed(true)}
+          />
+        )}
         <div ref={wrapRef} className="relative" style={{ opacity: seed ? 1 : 0, display: offTable ? "none" : undefined }}>
           {/* my jokers, tucked behind the bottom-right corner while I answer */}
           {listening && shown && !jokerRun && (
@@ -618,7 +686,7 @@ export function Stage({
               flipped={flipped}
               charging={mode === "charging"}
               duration={firstReveal ? 2.6 : 1.35}
-              burst={firstReveal}
+              burst={firstReveal || !!shown?.question?.rare}
               front={shown ? shown.question && <QuestionFace question={shown.question} play={flipped} /> : null}
               backNote={listening && shown?.question ? <Listening question={shown.question} /> : null}
             />
@@ -690,6 +758,31 @@ export function Stage({
 
             {phase === "closing" && (
               <button onClick={next} className={(primary) + waiting}>
+                Un dernier mot
+              </button>
+            )}
+
+            {writing && mine && (
+              <button
+                onClick={() => void writeQuestion()}
+                disabled={draft.trim().length < 4}
+                className={(primary) + waiting + " disabled:opacity-40"}
+              >
+                Poser la question
+              </button>
+            )}
+
+            {sealing && !shown.sealed[role] && (
+              <button onClick={() => void seal()} disabled={!word.trim()} className={(primary) + waiting + " disabled:opacity-40"}>
+                Sceller mon mot
+              </button>
+            )}
+            {sealing && shown.sealed[role] && (
+              <p className="display text-[15px] italic text-paper/50">{shown.sealed[other] ? "\u00a0" : "On attend le mot de l'autre…"}</p>
+            )}
+
+            {revealing && revealed && (
+              <button data-rise onClick={next} className={(primary) + waiting}>
                 Voir notre soirée
               </button>
             )}

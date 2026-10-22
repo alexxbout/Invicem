@@ -5,6 +5,7 @@ import { useRef, useState, type ComponentType } from "react";
 import type { JesterMood } from "@/components/joker/JesterHead";
 import { JokerClassic } from "@/components/joker/JokerClassic";
 import { JokerBack } from "@/components/joker/JokerCards";
+import { BlankBack, RareBack } from "@/components/Card";
 
 type Design = ComponentType<{ width?: number; mood?: JesterMood }>;
 
@@ -182,6 +183,26 @@ export default function Maquettes() {
         </div>
         <div className="flex items-center justify-center gap-3 text-[12px] text-paper/55">
           <JokerBack width={44} /> Dos commun, quand le joker est en main
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-6">
+        <h2 className="display text-[26px] font-light">Cartes spéciales</h2>
+        <div className="flex flex-wrap justify-center gap-8">
+          {[
+            ["Carte rare", RareBack],
+            ["Carte blanche", BlankBack],
+          ].map(([name, Back]) => {
+            const B = Back as () => React.ReactElement;
+            return (
+              <figure key={name as string} className="flex flex-col items-center gap-3">
+                <div className="relative aspect-[5/7] w-[160px]">
+                  <B />
+                </div>
+                <figcaption className="text-[13px] text-paper/70">{name as string}</figcaption>
+              </figure>
+            );
+          })}
         </div>
       </section>
 
