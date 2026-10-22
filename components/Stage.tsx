@@ -14,11 +14,13 @@ import {
   type SessionView,
 } from "@/lib/client";
 import { reduced } from "@/lib/feel";
+import { THEME_GLYPH } from "@/lib/labels";
 import { COLORS, SYMBOLS } from "@/lib/palette";
 import { ambient, setAccent } from "./Ambient";
 import { Card } from "./Card";
 import { Criteria } from "./Criteria";
 import { Depth, Hand, type HandHandle } from "./Hand";
+import { Glyph } from "./Glyph";
 import { History } from "./History";
 import { Sheet } from "./Sheet";
 import { SoundToggle } from "./SoundToggle";
@@ -67,33 +69,44 @@ function Recap({ items }: { items: Question[] }) {
 /** phases where a card lies face up on the table */
 const onTable = (p: SessionView["phase"]) => p === "card" || p === "closing";
 
-/** the evening so far: one diamond per question, bigger as it gets deeper, the current one breathing */
-function Path({ view }: { view: SessionView }) {
+/**
+ * The evening as a row of seven small cards: the ones already played lie face up with their
+ * theme's symbol, the one on the table glows, the rest are empty slots. Tap to reread them.
+ */
+function Frise({ view, onOpen }: { view: SessionView; onOpen: () => void }) {
   const asked = [...view.history].reverse();
   if (view.phase === "card" && view.question) asked.push(view.question);
   const start = view.goal - 7;
   return (
-    <div className="flex h-4 items-center justify-center gap-2.5" aria-label={`Question ${view.round} sur ${view.goal}`}>
+    <button
+      onClick={onOpen}
+      disabled={asked.length === 0}
+      aria-label={`Question ${view.round} sur ${view.goal}, revoir les cartes`}
+      className="flex items-end justify-center gap-1.5 rounded-xl px-2 py-1 transition active:scale-95 disabled:cursor-default"
+    >
       {Array.from({ length: 7 }, (_, k) => {
         const q = asked[start + k];
-        const size = q ? 4 + q.depth * 2 : 6;
         const current = view.phase === "card" && start + k === view.round - 1;
         return (
           <span
             key={k}
-            className={`rotate-45 border transition-all duration-700 ${current ? "animate-pulse" : ""}`}
-            style={{
-              width: size,
-              height: size,
-              borderColor: q ? "var(--accent)" : "rgba(244,234,219,.2)",
-              background: q ? "var(--accent)" : "transparent",
-              boxShadow: q ? `0 0 ${4 + (q.depth - 1) * 5}px var(--accent)` : "none",
-              opacity: q ? 0.55 + q.depth * 0.15 : 1,
-            }}
-          />
+            className={`grid aspect-[5/7] w-[22px] place-items-center rounded-[4px] border transition-all duration-700 ${current ? "-translate-y-1" : ""}`}
+            style={
+              q
+                ? {
+                    background: "linear-gradient(165deg, #f8f0e3, #e3d3ba)",
+                    borderColor: current ? "var(--accent)" : "rgba(184,145,77,.5)",
+                    boxShadow: current ? "0 0 12px var(--accent)" : `0 0 ${(q.depth - 1) * 4}px color-mix(in srgb, var(--accent) 60%, transparent)`,
+                    opacity: current ? 1 : 0.55 + q.depth * 0.12,
+                  }
+                : { borderColor: "rgba(244,234,219,.18)", borderStyle: "dashed" }
+            }
+          >
+            {q && <Glyph id={THEME_GLYPH[q.theme] ?? 3} className="w-[70%] text-[#8a6a33]" strokeWidth={1.8} />}
+          </span>
         );
       })}
-    </div>
+    </button>
   );
 }
 
@@ -367,6 +380,13 @@ export function Stage({
     if (data && alive.current) showNext(data, true);
   };
 
+  /** spend a joker: the card goes back unanswered and the asker picks again */
+  const pass = async () => {
+    if (!sessionId || !shownRef.current || busy.current) return;
+    const { data } = await call<SessionView>(`/api/session/${sessionId}/pass`, "POST", { step: shownRef.current.step, role });
+    if (data && alive.current) showNext(data);
+  };
+
   /** a move that only needs the current step: start, finish, continue */
   const act = async (path: "start" | "finish" | "continue") => {
     if (!sessionId || !shownRef.current || busy.current) return;
@@ -417,7 +437,6 @@ export function Stage({
   const setup = phase === "setup";
   const ended = phase === "end";
   const offTable = choosing || setup || ended;
-  const pastCount = shown?.history.length ?? 0;
   const opening = !!shown && shown.round === 1 && shown.history.length === 0;
   const lastOne = !!shown && shown.round >= shown.goal;
 
@@ -461,23 +480,13 @@ export function Stage({
                   <circle cx="9" cy="17" r="2" />
                 </svg>
               </button>
-              {pastCount > 0 && (
-                <button
-                  onClick={() => setHistoryOpen(true)}
-                  className="flex h-10 items-center gap-1.5 rounded-full px-2.5 text-[13px] text-paper/60 transition hover:bg-white/5 hover:text-paper"
-                >
-                  <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                    <rect x="6" y="4" width="12" height="16" rx="2" />
-                    <path d="M3 7v11a2 2 0 0 0 2 2M21 7v11" />
-                  </svg>
-                  {pastCount}
-                </button>
-              )}
             </div>
           ) : null
         }
       />
-      <div className="mt-1 h-4">{shown && (phase === "card" || choosing || phase === "closing") && <Path view={shown} />}</div>
+      <div className="mt-1 h-10">
+        {shown && (phase === "card" || choosing || phase === "closing") && <Frise view={shown} onOpen={() => setHistoryOpen(true)} />}
+      </div>
 
       <div className="flex w-full flex-1 items-center justify-center py-3">
         {choosing && card && shown && (
@@ -563,7 +572,7 @@ export function Stage({
 
             {choosing && (
               <p className="display h-[50px] text-[15px] italic text-paper/45">
-                {mine ? "Thème et profondeur sont visibles, la question reste cachée." : "\u00a0"}
+                {shown.passed ? (mine ? "L'autre a passé cette carte. Repioche." : "Carte passée. L'autre repioche.") : "\u00a0"}
               </p>
             )}
 
@@ -574,9 +583,20 @@ export function Stage({
                   {lastOne ? "Ensuite, la dernière carte." : opening ? "Ensuite, vous choisirez l'ambiance." : "Ensuite, l'autre pioche."}
                 </p>
               ) : (
-                <button onClick={next} className={lastOne ? primary : secondary}>
-                  {lastOne ? "Dernière carte" : opening ? "Choisir l'ambiance" : "À moi de piocher"}
-                </button>
+                <div className="flex flex-col items-center gap-3">
+                  <button onClick={next} className={lastOne ? primary : secondary}>
+                    {lastOne ? "Dernière carte" : opening ? "Choisir l'ambiance" : "À moi de piocher"}
+                  </button>
+                  {shown.jokers[role] > 0 && (
+                    <button
+                      onClick={pass}
+                      className="flex items-center gap-1.5 text-[13px] text-paper/55 transition hover:text-paper active:scale-95"
+                    >
+                      <Glyph id={2} className="size-3.5 text-accent" strokeWidth={1.6} />
+                      Passer cette carte · {shown.jokers[role]} joker{shown.jokers[role] > 1 ? "s" : ""}
+                    </button>
+                  )}
+                </div>
               ))}
 
             {phase === "closing" && (

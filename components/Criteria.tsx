@@ -1,29 +1,18 @@
 "use client";
 
 import type { Criteria as CriteriaValue } from "@/lib/client";
+import { DEPTH_LABELS, THEME_GLYPH } from "@/lib/labels";
 import { Glyph } from "./Glyph";
 import { Depth } from "./Hand";
 
 type DepthKey = 1 | 2 | 3;
 
 /** how far the evening may go; the climb itself is automatic */
-const REACH: { max: DepthKey; name: string; hint: string }[] = [
-  { max: 1, name: "En douceur", hint: "On se découvre" },
-  { max: 2, name: "Plus loin", hint: "On se livre" },
-  { max: 3, name: "Jusqu'au fond", hint: "On ose tout" },
+const REACH: { max: DepthKey; hint: string }[] = [
+  { max: 1, hint: "Faire connaissance" },
+  { max: 2, hint: "Parler de soi" },
+  { max: 3, hint: "Aller à l'essentiel" },
 ];
-
-/** each theme borrows a symbol from the card backs */
-const THEME_GLYPH: Record<string, number> = {
-  Souvenirs: 10,
-  Quotidien: 0,
-  Goûts: 4,
-  Envies: 2,
-  Valeurs: 11,
-  Peurs: 1,
-  Relation: 8,
-  Regard: 6,
-};
 
 /**
  * Two questions, both one tap: how deep may we go tonight, and what about.
@@ -76,7 +65,7 @@ export function Criteria({
                 }`}
               >
                 <Depth depth={r.max} />
-                <span className="display text-[16px] leading-tight">{r.name}</span>
+                <span className="display text-[16px] leading-tight">{DEPTH_LABELS[r.max]}</span>
                 <span className="text-[11px] opacity-70">{r.hint}</span>
               </button>
             );

@@ -43,7 +43,15 @@ type Session = {
   configured: boolean;
   /** questions already put down, oldest first (the one on the table is not in it) */
   history: number[];
+  /** jokers left per player: the one answering may pass a card */
+  jokers?: Record<"a" | "b", number>;
+  /** questions passed tonight, never dealt again */
+  skipped?: number[];
+  /** the last move was a pass, so the picker hears why they pick again */
+  passed?: boolean;
 };
+
+const JOKERS = 2;
 
 const rand = (n: number) => Math.floor(Math.random() * n);
 const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 12);
@@ -168,6 +176,10 @@ export type SessionView = {
   matching: number;
   /** questions already put down, newest first (the one on the table is not in it) */
   history: Question[];
+  /** jokers left per player */
+  jokers: Record<"a" | "b", number>;
+  /** in phase "choose": the hand comes from a passed card */
+  passed: boolean;
   now: number;
 };
 
@@ -187,6 +199,8 @@ function view(s: Session): SessionView {
     themes: THEMES,
     matching: QUESTIONS.filter((q) => matches(q, s.criteria)).length,
     history: s.history.map((id) => QUESTIONS[id]).reverse(),
+    jokers: s.jokers ?? { a: JOKERS, b: JOKERS },
+    passed: s.phase === "choose" && !!s.passed,
     now: Date.now(),
   };
 }
@@ -214,7 +228,8 @@ function targetDepth(s: Session): number {
  * the evening has reached. If nothing fits at all, deals random cards so the game never stalls.
  */
 function deal(s: Session): number[] {
-  const all = QUESTIONS.map((_, i) => i).filter((i) => i !== s.current);
+  const skipped = s.skipped ?? [];
+  const all = QUESTIONS.map((_, i) => i).filter((i) => i !== s.current && !skipped.includes(i));
   const fit = shuffle(all.filter((i) => matches(QUESTIONS[i], s.criteria)));
   const target = targetDepth(s);
   const score = (i: number) => (s.history.includes(i) ? 10 : 0) + Math.abs(QUESTIONS[i].depth - target);
@@ -228,6 +243,7 @@ async function update(id: string, change: (s: Session) => boolean): Promise<Sess
   if (!isSession(s)) return null;
   if (change(s)) {
     s.step += 1;
+    if (s.phase !== "choose") s.passed = false;
     await store.set(`sess:${id}`, s, SESSION_SEC);
   }
   return view(s);
@@ -283,6 +299,7 @@ export const pickQuestion = (id: string, step: number, slot: number) =>
     if (s.step !== step || s.phase !== "choose" || slot < 0 || slot >= s.hand.length) return false;
     s.current = s.hand[slot];
     s.lastPick = slot;
+    s.passed = false;
     s.hand = [];
     s.phase = "card";
     return true;
@@ -308,5 +325,22 @@ export const continueEvening = (id: string, step: number) =>
     s.hand = deal(s);
     s.phase = "choose";
     s.turn = s.turn === "a" ? "b" : "a";
+    return true;
+  });
+
+/**
+ * The one answering spends a joker: the card goes back unanswered, never to be dealt again
+ * tonight, and the same player picks again from a fresh hand. Doesn't count as a question.
+ */
+export const passQuestion = (id: string, step: number, role: "a" | "b") =>
+  update(id, (s) => {
+    s.jokers ??= { a: JOKERS, b: JOKERS };
+    if (s.step !== step || s.phase !== "card" || role === s.turn || s.jokers[role] <= 0) return false;
+    s.jokers[role] -= 1;
+    s.skipped = [...(s.skipped ?? []), s.current];
+    s.lastPick = undefined;
+    s.hand = deal(s);
+    s.phase = "choose";
+    s.passed = true;
     return true;
   });

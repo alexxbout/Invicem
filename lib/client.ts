@@ -21,6 +21,10 @@ export type SessionView = {
   matching: number;
   /** newest first, current question excluded */
   history: Question[];
+  /** jokers left per player */
+  jokers: Record<Role, number>;
+  /** in phase "choose": the hand comes from a passed card */
+  passed: boolean;
   now: number;
 };
 
