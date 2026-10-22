@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   call,
   msUntil,
+  readName,
   usePoll,
   writeSaved,
   type Criteria as CriteriaValue,
@@ -146,19 +147,30 @@ function Frise({ view, onOpen }: { view: SessionView; onOpen: () => void }) {
 function QuestionFace({ question, play }: { question: Question; play: boolean }) {
   const ref = useRef<HTMLParagraphElement>(null);
 
-  // words surface one after another once the card is turned
+  // words surface one after another once the card is turned; a handwritten question
+  // writes itself letter by letter instead, as if the pen were moving in front of you
   useEffect(() => {
-    const words = ref.current?.querySelectorAll("[data-w]");
-    if (!words) return;
+    const parts = ref.current?.querySelectorAll("[data-w]");
+    if (!parts) return;
     if (!play || reduced()) {
-      gsap.set(words, { opacity: play ? 1 : 0, y: 0, filter: "none" });
+      gsap.set(parts, { opacity: play ? 1 : 0, y: 0, filter: "none", scale: 1 });
+      return;
+    }
+    if (question.written) {
+      gsap.fromTo(
+        parts,
+        { opacity: 0, y: 3, scale: 0.6 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.18, ease: "power1.out", stagger: Math.min(0.06, 2.4 / parts.length), delay: 0.7 },
+      );
       return;
     }
     gsap.fromTo(
-      words,
+      parts,
       { opacity: 0, y: 10, filter: "blur(4px)" },
       { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.6, ease: "power2.out", stagger: 0.05, delay: 0.5 },
     );
+    // question is fixed for the life of this face
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [play]);
 
   return (
@@ -171,13 +183,25 @@ function QuestionFace({ question, play }: { question: Question; play: boolean })
       </div>
       <div className="relative flex flex-1 items-center px-[2cqw]">
         <p ref={ref} className={question.written ? "hand text-[9.5cqw] leading-[1.1]" : "display text-[7cqw] leading-[1.2]"}>
-          {question.text.split(" ").map((w, i) => (
-            <span key={i}>
-              <span data-w className="inline-block">
-                {w}
-              </span>{" "}
-            </span>
-          ))}
+          {question.written
+            ? question.text.split(" ").map((w, i) => (
+                // letters animate one by one, but each word stays unbreakable
+                <span key={i} className="inline-block whitespace-nowrap">
+                  {[...w].map((ch, j) => (
+                    <span key={j} data-w className="inline-block">
+                      {ch}
+                    </span>
+                  ))}
+                  &nbsp;
+                </span>
+              ))
+            : question.text.split(" ").map((w, i) => (
+                <span key={i}>
+                  <span data-w className="inline-block">
+                    {w}
+                  </span>{" "}
+                </span>
+              ))}
         </p>
       </div>
       <div className="flex gap-[2cqw] pb-[2cqw] text-[#b8914d]">
@@ -340,7 +364,7 @@ export function Stage({
   };
 
   const draw = async () => {
-    const { data, status } = await call<DrawResponse>("/api/card", "POST");
+    const { data, status } = await call<DrawResponse>("/api/card", "POST", { name: readName() });
     if (!alive.current) return;
     if (status === 503 || !data) return setModeBoth("full");
     const info = { id: data.id, color: data.color, symbol: data.symbol };
@@ -571,6 +595,8 @@ export function Stage({
   const revealing = phase === "reveal";
   const offTable = choosing || setup || ended || writing || sealing || revealing;
   const other: Role = role === "a" ? "b" : "a";
+  /** the other player's first name, if they gave one */
+  const them = shown?.names[other] ?? null;
   const opening = !!shown && shown.round === 1 && shown.history.length === 0;
   /** I answer this card: it stays face down, I only hear it */
   const listening = phase === "card" && !!shown && !faceUpFor(shown, role);
@@ -593,13 +619,17 @@ export function Stage({
       : choosing
         ? mine
           ? "À toi de piocher une carte"
-          : "L'autre pioche une carte…"
+          : them
+            ? `${them} pioche une carte…`
+            : "La pioche est en face…"
         : phase === "closing"
           ? "Chacun votre tour"
           : writing
             ? mine
               ? "Écris la question que tu veux lui poser"
-              : "L'autre écrit une question…"
+              : them
+                ? `${them} t'écrit une question…`
+                : "Une question s'écrit pour toi…"
             : sealing || revealing || ended
             ? ""
             : mine
@@ -675,15 +705,16 @@ export function Stage({
             words={shown.words ? [shown.words[role], shown.words[other]] : null}
           />
         )}
-        {writing && shown && (mine ? <WriteCard value={draft} onChange={setDraft} /> : <QuillWait label="L'autre écrit une question…" />)}
+        {writing && shown && (mine ? <WriteCard value={draft} onChange={setDraft} /> : <QuillWait label={them ? `${them} t'écrit une question…` : "Une question s'écrit pour toi…"} />)}
         {sealing && shown && (
-          <WordSeal value={word} onChange={setWord} sealed={shown.sealed[role]} partnerSealed={shown.sealed[other]} />
+          <WordSeal value={word} onChange={setWord} sealed={shown.sealed[role]} partnerSealed={shown.sealed[other]} them={them} />
         )}
         {revealing && shown?.words && (
           <WordsReveal
             key={shown.step}
             mine={shown.words[role]}
             theirs={shown.words[other]}
+            them={them}
             delayMs={Math.max(0, (shown.revealAt ?? shown.now) - shown.now)}
             onRevealed={() => setRevealed(true)}
           />
@@ -704,6 +735,7 @@ export function Stage({
               burst={firstReveal || !!shown?.question?.rare}
               front={shown ? shown.question && <QuestionFace question={shown.question} play={flipped} /> : null}
               backNote={listening && shown?.question ? <Listening question={shown.question} /> : null}
+              blank={written}
             />
           )}
         </div>
@@ -713,9 +745,9 @@ export function Stage({
         {(mode === "waiting" || mode === "drawing") && (
           <div data-rise className="space-y-2">
             <p className="display text-[22px] font-light leading-snug">
-              Montre cet écran à l&apos;autre.
+              Montre cet écran en face.
               <br />
-              <em className="text-paper/60">Il doit retrouver ta carte.</em>
+              <em className="text-paper/60">Ta carte doit y être retrouvée.</em>
             </p>
             {color && card && mode === "waiting" && (
               <p className="text-[13px] tracking-wide text-paper/45">
@@ -755,7 +787,13 @@ export function Stage({
 
             {choosing && (
               <p className="display h-[50px] text-[15px] italic text-paper/45">
-                {shown.passed ? (mine ? "L'autre a passé cette carte. Repioche." : "Carte passée. L'autre repioche.") : "\u00a0"}
+                {shown.passed
+                  ? mine
+                    ? `${them ?? "Ta carte"} ${them ? "a passé ta carte" : "a été passée"}. Repioche.`
+                    : them
+                      ? `Carte passée. ${them} repioche.`
+                      : "Carte passée. Nouvelle pioche en face."
+                  : "\u00a0"}
               </p>
             )}
 
@@ -763,7 +801,7 @@ export function Stage({
             {phase === "card" &&
               (mine ? (
                 <p className="display flex h-[50px] items-center text-[15px] italic text-paper/45">
-                  {lastOne ? "Ensuite, la dernière carte." : opening ? "Ensuite, vous choisirez l'ambiance." : "Ensuite, l'autre pioche."}
+                  {lastOne ? "Ensuite, la dernière carte." : opening ? "Ensuite, vous choisirez l'ambiance." : them ? `Ensuite, ${them} pioche.` : "Ensuite, la pioche change de main."}
                 </p>
               ) : (
                 <button onClick={next} className={(lastOne ? primary : secondary) + waiting}>
@@ -793,7 +831,7 @@ export function Stage({
               </button>
             )}
             {sealing && shown.sealed[role] && (
-              <p className="display text-[15px] italic text-paper/50">{shown.sealed[other] ? "\u00a0" : "On attend le mot de l'autre…"}</p>
+              <p className="display text-[15px] italic text-paper/50">{shown.sealed[other] ? "\u00a0" : them ? `On attend le mot de ${them}…` : "On attend le second mot…"}</p>
             )}
 
             {revealing && revealed && (

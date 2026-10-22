@@ -85,11 +85,14 @@ export function WordSeal({
   onChange,
   sealed,
   partnerSealed,
+  them,
 }: {
   value: string;
   onChange: (v: string) => void;
   sealed: boolean;
   partnerSealed: boolean;
+  /** the other player's first name, if given */
+  them: string | null;
 }) {
   const sealRef = useRef<HTMLDivElement>(null);
 
@@ -104,7 +107,7 @@ export function WordSeal({
       <h2 className="display text-center text-[26px] font-light leading-snug">
         Un mot pour ce soir
         <br />
-        <em className="text-[18px] text-paper/55">Il restera caché jusqu&apos;à ce que l&apos;autre ait écrit le sien.</em>
+        <em className="text-[18px] text-paper/55">Il restera caché jusqu&apos;à ce que vous ayez écrit tous les deux.</em>
       </h2>
       <PaperCard width="min(70vw, 280px)" ratio="5 / 4">
         <div className="absolute inset-[10%] flex flex-col items-center justify-center gap-[3cqw]">
@@ -128,14 +131,26 @@ export function WordSeal({
       </PaperCard>
       <p className="flex items-center gap-2 text-[13px] text-paper/60">
         <span className={`size-2 rounded-full ${partnerSealed ? "bg-accent shadow-[0_0_10px_var(--accent)]" : "bg-white/20"}`} />
-        {partnerSealed ? "L'autre a scellé son mot" : "L'autre cherche son mot…"}
+        {partnerSealed ? (them ? `${them} a scellé son mot` : "Son mot est scellé") : them ? `${them} cherche son mot…` : "Son mot arrive…"}
       </p>
     </div>
   );
 }
 
 /** both words, sealed, turned over at the same instant on both phones */
-export function WordsReveal({ mine, theirs, delayMs, onRevealed }: { mine: string; theirs: string; delayMs: number; onRevealed: () => void }) {
+export function WordsReveal({
+  mine,
+  theirs,
+  them,
+  delayMs,
+  onRevealed,
+}: {
+  mine: string;
+  theirs: string;
+  them: string | null;
+  delayMs: number;
+  onRevealed: () => void;
+}) {
   const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -168,7 +183,7 @@ export function WordsReveal({ mine, theirs, delayMs, onRevealed }: { mine: strin
       <div className="flex w-full justify-center gap-4">
         {[
           ["Toi", mine],
-          ["L'autre", theirs],
+          [them ?? "En face", theirs],
         ].map(([who, word]) => (
           <div key={who} className="flex flex-col items-center gap-3">
             <div data-word-card className="relative w-[min(40vw,170px)]" style={{ aspectRatio: "5 / 7", perspective: 900 }}>

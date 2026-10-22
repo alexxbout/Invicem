@@ -1,9 +1,9 @@
 "use client";
 
 import gsap from "gsap";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { COLORS } from "@/lib/palette";
-import type { Saved } from "@/lib/client";
+import { readName, subscribeName, writeName, type Saved } from "@/lib/client";
 import { requestTilt } from "@/lib/feel";
 import { setAccent } from "./Ambient";
 import { CardBack } from "./Card";
@@ -28,6 +28,7 @@ export function Home({
   onResume: () => void;
 }) {
   const fanRef = useRef<HTMLDivElement>(null);
+  const name = useSyncExternalStore(subscribeName, readName, () => "");
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -105,6 +106,17 @@ export function Home({
       </div>
 
       <div className="flex w-full flex-col gap-3 pb-2 pt-4">
+        {/* the other player sees this name instead of a faceless "the other" */}
+        <label data-rise className="mb-1 flex items-center justify-center gap-2 text-[13px] text-paper/50">
+          Ton prénom
+          <input
+            value={name}
+            onChange={(e) => writeName(e.target.value.slice(0, 20))}
+            placeholder="facultatif"
+            autoComplete="given-name"
+            className="display w-36 border-b border-white/15 bg-transparent px-1 py-0.5 text-center text-[17px] text-paper outline-none placeholder:text-[14px] placeholder:italic placeholder:text-paper/30 focus:border-gold/60"
+          />
+        </label>
         {saved && (
           <button
             data-rise
@@ -130,7 +142,7 @@ export function Home({
           className="group rounded-[22px] bg-gradient-to-b from-[#ecd09a] to-[#c79a50] px-6 py-3 text-left text-[#2a1d0a] shadow-[0_10px_40px_-8px_rgba(217,183,121,.55)] transition active:scale-[.97]"
         >
           <span className="display block text-[22px] leading-tight">Tirer une carte</span>
-          <span className="text-[13px] opacity-70">Je la montre à l&apos;autre</span>
+          <span className="text-[13px] opacity-70">Je la montre</span>
         </button>
         <button
           data-rise
@@ -141,7 +153,7 @@ export function Home({
           className="rounded-[22px] border border-gold/40 bg-white/[.03] px-6 py-3 text-left transition active:scale-[.97]"
         >
           <span className="display block text-[22px] leading-tight text-paper">Retourner sa carte</span>
-          <span className="text-[13px] text-paper/55">Je cherche celle de l&apos;autre</span>
+          <span className="text-[13px] text-paper/55">Je retrouve celle d&apos;en face</span>
         </button>
       </div>
     </Screen>

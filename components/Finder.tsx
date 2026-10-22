@@ -2,7 +2,7 @@
 
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
-import { call, msUntil, type Match } from "@/lib/client";
+import { call, msUntil, readName, type Match } from "@/lib/client";
 import { requestTilt } from "@/lib/feel";
 import { COLORS, SYMBOLS } from "@/lib/palette";
 import { setAccent } from "./Ambient";
@@ -34,7 +34,7 @@ export function Finder({ onMatch, onBack }: { onMatch: (m: Match) => void; onBac
       { x: 0 },
       { keyframes: { x: [-11, 9, -6, 3, 0] }, duration: 0.5, ease: "power2.out" },
     );
-    setNote("Aucune carte comme celle-là. Regarde bien l'écran de l'autre.");
+    setNote("Aucune carte comme celle-là. Regarde bien l'écran d'en face.");
     window.clearTimeout(noteTimer.current);
     noteTimer.current = window.setTimeout(() => setNote(null), 3500);
   };
@@ -45,7 +45,7 @@ export function Finder({ onMatch, onBack }: { onMatch: (m: Match) => void; onBac
     setBusy(true);
     if (tile) gsap.fromTo(tile, { scale: 0.92 }, { scale: 1, duration: 0.5, ease: "elastic.out(1.2,.4)" });
     try {
-      const { data, rtt } = await call<FindResponse>("/api/find", "POST", { color: c, symbol: s });
+      const { data, rtt } = await call<FindResponse>("/api/find", "POST", { color: c, symbol: s, name: readName() });
       if (!data) return shake();
       if (data.result === "none") return shake();
       if (data.result === "need-symbol") {
@@ -73,7 +73,7 @@ export function Finder({ onMatch, onBack }: { onMatch: (m: Match) => void; onBac
           <h2 className="display text-[26px] font-light leading-snug">
             {color === null ? (
               <>
-                Regarde l&apos;écran de l&apos;autre.
+                Regarde l&apos;écran d&apos;en face.
                 <br />
                 <em className="text-paper/60">Quelle est la couleur de sa carte&nbsp;?</em>
               </>
