@@ -41,7 +41,7 @@ function Phone({ title, children }: { title: string; children: React.ReactNode }
 const btn = "rounded-full border border-white/15 bg-white/[.06] px-4 py-2 text-[11px] text-paper";
 
 /** plays the "joker lands" sequence with a given card design */
-function EffectStage({ Card, onDone }: { Card: Design; onDone: () => void }) {
+function EffectStage({ Card, short = false, onDone }: { Card: Design; short?: boolean; onDone: () => void }) {
   const stage = useRef<HTMLDivElement>(null);
   const [mood, setMood] = useState<JesterMood>("idle");
 
@@ -78,6 +78,27 @@ function EffectStage({ Card, onDone }: { Card: Design; onDone: () => void }) {
           .to(p, { y: "-=60", opacity: 0, duration: 1.4, ease: "sine.in" });
       }
     };
+
+    if (short) {
+      // "coup de théâtre", ~1.4 s: the joker whips in from the side already turning, lands with a
+      // gold shockwave that knocks the question down and away, a quick jig, then it slides off
+      const ring = el.querySelector("[data-ring]");
+      gsap
+        .timeline({ onComplete: onDone })
+        .set(flyer, { x: 230, y: 40, scale: 0.55, rotation: 24 })
+        .set(inner, { rotationY: -180 })
+        .to(flyer, { x: 0, y: 0, scale: 1.06, rotation: -3, duration: 0.34, ease: "power4.out" })
+        .to(inner, { rotationY: 0, duration: 0.34, ease: "power3.out" }, "<")
+        .call(() => setMood("laugh"))
+        .fromTo(ring, { scale: 0.2, opacity: 0.95 }, { scale: 2.4, opacity: 0, duration: 0.55, ease: "power2.out" })
+        .to(flash, { opacity: 0.7, duration: 0.06, yoyo: true, repeat: 1 }, "<")
+        .to(flyer, { scale: 1, rotation: 0, duration: 0.3, ease: "back.out(3)" }, "<")
+        .to(q, { y: 60, rotation: 6, opacity: 0, filter: "blur(6px)", scale: 0.9, duration: 0.4, ease: "power2.in" }, "<")
+        .to({}, { duration: 0.25 })
+        .call(() => setMood("idle"))
+        .to(flyer, { x: -40, y: -24, opacity: 0, rotation: -6, scale: 0.92, duration: 0.3, ease: "power2.in" });
+      return;
+    }
 
     gsap
       .timeline({ onComplete: onDone })
@@ -121,13 +142,18 @@ function EffectStage({ Card, onDone }: { Card: Design; onDone: () => void }) {
           style={{ background: "radial-gradient(circle, rgba(227,194,122,.55), rgba(142,27,48,.25) 30%, transparent 55%)" }}
         />
         <div data-confetti className="pointer-events-none absolute inset-0" />
+        <div
+          data-ring
+          className="pointer-events-none absolute size-[220px] rounded-full opacity-0"
+          style={{ border: "3px solid #e3c27a", boxShadow: "0 0 30px 6px rgba(227,194,122,.6), inset 0 0 24px rgba(227,194,122,.5)" }}
+        />
       </div>
     </div>
   );
 }
 
 export default function Maquettes() {
-  const [playing, setPlaying] = useState<Design | null>(null);
+  const [playing, setPlaying] = useState<{ Card: Design; short: boolean } | null>(null);
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-14 px-5 py-10">
@@ -143,9 +169,14 @@ export default function Maquettes() {
                 </div>
                 <div className="text-[12px] text-paper/55">{note}</div>
               </figcaption>
-              <button className={btn} onClick={() => setPlaying(() => Card)}>
-                Voir l&apos;effet
-              </button>
+              <div className="flex gap-2">
+                <button className={btn} onClick={() => setPlaying({ Card, short: true })}>
+                  Effet court
+                </button>
+                <button className={btn} onClick={() => setPlaying({ Card, short: false })}>
+                  Effet long
+                </button>
+              </div>
             </figure>
           ))}
         </div>
@@ -211,7 +242,7 @@ export default function Maquettes() {
         </div>
       </section>
 
-      {playing && <EffectStage Card={playing} onDone={() => setPlaying(null)} />}
+      {playing && <EffectStage Card={playing.Card} short={playing.short} onDone={() => setPlaying(null)} />}
     </main>
   );
 }
