@@ -31,7 +31,26 @@ function Corners() {
   );
 }
 
-function Shell({ children, background, width }: { children: ReactNode; background: string; width: number }) {
+/** where the light catches the engravings: [left %, top %, delay s] */
+const GLINTS: [number, number, number][] = [
+  [14, 10, 0],
+  [86, 90, 1.1],
+  [50, 15, 2.3],
+  [30, 62, 0.6],
+  [72, 40, 1.8],
+];
+
+function Shell({
+  children,
+  background,
+  width,
+  shimmer = true,
+}: {
+  children: ReactNode;
+  background: string;
+  width: number;
+  shimmer?: boolean;
+}) {
   return (
     <div
       className="relative overflow-hidden rounded-[7%/5%]"
@@ -44,6 +63,14 @@ function Shell({ children, background, width }: { children: ReactNode; backgroun
       }}
     >
       {children}
+      {shimmer && (
+        <>
+          <div className="engrave-sheen" />
+          {GLINTS.map(([x, y, delay], i) => (
+            <span key={i} className="twinkle" style={{ left: `${x}%`, top: `${y}%`, animationDelay: `${delay}s` }} />
+          ))}
+        </>
+      )}
     </div>
   );
 }
@@ -147,6 +174,7 @@ export function JokerBack({ width = 60 }: { width?: number }) {
   return (
     <Shell
       width={width}
+      shimmer={false}
       background={`repeating-linear-gradient(45deg, ${GOLD}33 0 1px, transparent 1px 9px), repeating-linear-gradient(-45deg, ${GOLD}33 0 1px, transparent 1px 9px), #3a1258`}
     >
       <div className="absolute inset-[7%] rounded-[5%/3.6%] border" style={{ borderColor: `${GOLD}aa` }} />

@@ -51,26 +51,28 @@ function EffectStage({ Card, onDone }: { Card: Design; onDone: () => void }) {
     const flash = el.querySelector("[data-flash]");
     const confetti = el.querySelector("[data-confetti]") as HTMLElement;
 
+    // gold dust rather than confetti: fine sparks that rise, drift and fade
     const burst = () => {
-      const colors = ["#e3c27a", "#b3243a", "#7a3bb0", "#f4e6d2"];
-      for (let i = 0; i < 70; i++) {
+      for (let i = 0; i < 60; i++) {
         const p = document.createElement("span");
+        const size = 1.5 + Math.random() * 3;
         Object.assign(p.style, {
           position: "absolute",
           left: "50%",
           top: "45%",
-          width: `${4 + Math.random() * 6}px`,
-          height: `${6 + Math.random() * 10}px`,
-          background: colors[i % colors.length],
-          borderRadius: "1px",
+          width: `${size}px`,
+          height: `${size}px`,
+          borderRadius: "50%",
+          background: i % 6 === 0 ? "#fff3d6" : "#e3c27a",
+          boxShadow: "0 0 8px 2px rgba(227,194,122,.7)",
         });
         confetti.appendChild(p);
         const a = Math.random() * Math.PI * 2;
-        const d = 120 + Math.random() * 220;
+        const d = 60 + Math.random() * 190;
         gsap
           .timeline({ onComplete: () => p.remove() })
-          .to(p, { x: Math.cos(a) * d, y: Math.sin(a) * d - 60, rotation: Math.random() * 720, duration: 0.7, ease: "power3.out" })
-          .to(p, { y: "+=220", opacity: 0, rotation: "+=180", duration: 1.4, ease: "power1.in" });
+          .to(p, { x: Math.cos(a) * d, y: Math.sin(a) * d, duration: 0.9, ease: "power3.out" })
+          .to(p, { y: "-=60", opacity: 0, duration: 1.4, ease: "sine.in" });
       }
     };
 
@@ -87,7 +89,7 @@ function EffectStage({ Card, onDone }: { Card: Design; onDone: () => void }) {
       .call(() => setMood("laugh"))
       .to(flash, { opacity: 0, duration: 0.7 })
       .to(flyer, { scale: 1.08, duration: 0.1, yoyo: true, repeat: 1 }, "<")
-      .to(q, { x: -320, rotation: -35, opacity: 0, duration: 0.6, ease: "power2.in" }, "<0.1")
+      .to(q, { x: -60, rotation: -8, opacity: 0, filter: "blur(8px)", scale: 0.92, duration: 0.8, ease: "power2.inOut" }, "<0.1")
       // the jester laughs, then the joker bows out
       .to({}, { duration: 1.3 })
       .call(() => setMood("idle"))
@@ -113,7 +115,7 @@ function EffectStage({ Card, onDone }: { Card: Design; onDone: () => void }) {
         <div
           data-flash
           className="pointer-events-none absolute inset-[-200px] opacity-0"
-          style={{ background: "radial-gradient(circle, rgba(227,194,122,.85), transparent 55%)" }}
+          style={{ background: "radial-gradient(circle, rgba(227,194,122,.55), rgba(142,27,48,.25) 30%, transparent 55%)" }}
         />
         <div data-confetti className="pointer-events-none absolute inset-0" />
       </div>

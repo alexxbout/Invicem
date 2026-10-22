@@ -1,94 +1,118 @@
 "use client";
 
 import gsap from "gsap";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 
+/** "laugh" is the played state: a slow knowing tilt, a wink and a wider smirk */
 export type JesterMood = "idle" | "laugh";
 
 const GOLD = "#e3c27a";
-const RED = "#b3243a";
-const VIOLET = "#5b2483";
-const INK = "#2a1530";
-const SKIN = "#f4e6d2";
+const RED = "#8e1b30";
+const NIGHT = "#1a0828";
 
 /**
- * A little jester bust that lives on the joker card: bells sway and the eyes blink while idle;
- * when played it laughs, head bobbing, bells jingling, eyes squeezed shut.
+ * The joker as an engraved gold line portrait behind a red domino mask: a narrow face, an
+ * almond gaze, a crooked smile, a diamond under the eye, a cap whose long tails end in bells.
+ * Idle, the tails drift and the eyes glance aside; played, the head tilts and he winks.
  */
 export function JesterHead({ mood = "idle", className }: { mood?: JesterMood; className?: string }) {
   const root = useRef<SVGSVGElement>(null);
+  const shine = `shine${useId().replace(/:/g, "")}`;
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      const lobes = ["[data-lobe=l]", "[data-lobe=c]", "[data-lobe=r]"];
+      const tails = ["[data-tail=l]", "[data-tail=c]", "[data-tail=r]"];
+      // a glint of light running along the gold line work
+      gsap.fromTo(
+        "[data-shine]",
+        { attr: { x1: -60, x2: -20 } },
+        { attr: { x1: 120, x2: 160 }, duration: 2.6, repeat: -1, repeatDelay: 1.6, ease: "sine.inOut" },
+      );
       if (mood === "idle") {
-        lobes.forEach((sel, i) =>
-          gsap.to(sel, { rotation: i === 1 ? 6 : i === 0 ? -7 : 7, duration: 1.6 + i * 0.3, yoyo: true, repeat: -1, ease: "sine.inOut" }),
+        tails.forEach((sel, i) =>
+          gsap.to(sel, { rotation: [-3, 2.5, 3][i], duration: 3 + i * 0.6, yoyo: true, repeat: -1, ease: "sine.inOut" }),
         );
-        gsap.to("[data-head]", { rotation: 3, duration: 2.4, yoyo: true, repeat: -1, ease: "sine.inOut" });
+        // a slow sideways glance now and then
         gsap
-          .timeline({ repeat: -1, repeatDelay: 2.6 })
-          .to("[data-eye]", { scaleY: 0.1, duration: 0.07 })
-          .to("[data-eye]", { scaleY: 1, duration: 0.1 });
+          .timeline({ repeat: -1, repeatDelay: 2.2 })
+          .to("[data-pupil]", { x: 1.4, duration: 0.5, ease: "power2.inOut" })
+          .to("[data-pupil]", { x: 1.4, duration: 1.2 })
+          .to("[data-pupil]", { x: 0, duration: 0.6, ease: "power2.inOut" });
+        gsap.fromTo("[data-glint]", { opacity: 0 }, { opacity: 1, duration: 0.25, yoyo: true, repeat: -1, repeatDelay: 3.4 });
       } else {
-        gsap.set("[data-eye]", { scaleY: 1 });
-        lobes.forEach((sel, i) =>
-          gsap.fromTo(sel, { rotation: i === 1 ? -10 : -14 }, { rotation: i === 1 ? 10 : 14, duration: 0.12, yoyo: true, repeat: 9, ease: "sine.inOut" }),
+        gsap.to("[data-face]", { rotation: -7, duration: 0.6, ease: "power3.out" });
+        gsap.to("[data-wink]", { scaleY: 0.12, duration: 0.12, delay: 0.35, yoyo: true, repeat: 1, repeatDelay: 0.45 });
+        tails.forEach((sel, i) =>
+          gsap.fromTo(sel, { rotation: [-6, 5, 6][i] }, { rotation: [4, -4, -4][i], duration: 0.22, yoyo: true, repeat: 5, ease: "sine.inOut" }),
         );
-        gsap.fromTo("[data-head]", { rotation: -8, y: 0 }, { rotation: 8, y: -3, duration: 0.16, yoyo: true, repeat: 7, ease: "sine.inOut" });
       }
     }, root);
     return () => ctx.revert();
   }, [mood]);
 
-  const laughing = mood === "laugh";
+  const played = mood === "laugh";
+  const line = { stroke: `url(#${shine})`, strokeWidth: 1.1, strokeLinecap: "round", strokeLinejoin: "round" } as const;
 
   return (
     <svg ref={root} viewBox="0 0 100 100" className={className} aria-hidden>
-      <g data-head style={{ transformOrigin: "50px 70px" }}>
-        {/* cap: three floppy points with bells */}
-        <g data-lobe="l" style={{ transformOrigin: "40px 42px" }}>
-          <path d="M44 42 Q26 12 9 36 Q22 30 39 48 Z" fill={RED} stroke={GOLD} strokeWidth="1.2" />
-          <circle cx="9" cy="38" r="4" fill={GOLD} />
+      <defs>
+        <linearGradient data-shine id={shine} gradientUnits="userSpaceOnUse" x1="-60" y1="0" x2="-20" y2="30">
+          <stop offset="0" stopColor={GOLD} />
+          <stop offset=".5" stopColor="#fff4d6" />
+          <stop offset="1" stopColor={GOLD} />
+        </linearGradient>
+      </defs>
+      <g data-face style={{ transformOrigin: "50px 62px" }}>
+        {/* cap: three long tails, each ending in a small bell */}
+        <g data-tail="l" style={{ transformOrigin: "40px 40px" }}>
+          <path d="M41 40C33 26 20 22 12 30c-3 3-4 8-2 13 2-6 6-9 11-8 8 1 13 5 17 8z" fill={RED} {...line} />
+          <path d="M14 31c4-2 10-1 15 3" fill="none" {...line} strokeWidth={0.6} opacity={0.7} />
+          <circle cx="10" cy="45" r="2.2" fill={NIGHT} {...line} />
         </g>
-        <g data-lobe="r" style={{ transformOrigin: "60px 42px" }}>
-          <path d="M56 42 Q74 12 91 36 Q78 30 61 48 Z" fill={RED} stroke={GOLD} strokeWidth="1.2" />
-          <circle cx="91" cy="38" r="4" fill={GOLD} />
+        <g data-tail="r" style={{ transformOrigin: "60px 40px" }}>
+          <path d="M59 40c8-14 21-18 29-10 3 3 4 8 2 13-2-6-6-9-11-8-8 1-13 5-17 8z" fill={RED} {...line} />
+          <path d="M86 31c-4-2-10-1-15 3" fill="none" {...line} strokeWidth={0.6} opacity={0.7} />
+          <circle cx="90" cy="45" r="2.2" fill={NIGHT} {...line} />
         </g>
-        <g data-lobe="c" style={{ transformOrigin: "50px 42px" }}>
-          <path d="M42 43 Q44 8 64 9 Q55 20 58 43 Z" fill={VIOLET} stroke={GOLD} strokeWidth="1.2" />
-          <circle cx="65" cy="9" r="4" fill={GOLD} />
+        <g data-tail="c" style={{ transformOrigin: "50px 38px" }}>
+          <path d="M44 39c-1-14 4-25 14-30 5-2 10 0 12 4-5-2-9 0-11 4-3 6-3 14-3 22z" fill="#3d1660" {...line} />
+          <circle cx="70.5" cy="13" r="2.2" fill={NIGHT} {...line} />
         </g>
-        <rect x="33" y="40" width="34" height="8" rx="3" fill={GOLD} />
-        <path d="M41 44l2-2 2 2-2 2zM48 44l2-2 2 2-2 2zM55 44l2-2 2 2-2 2z" fill={RED} />
+        <path d="M33 42c11-6 23-6 34 0" fill="none" {...line} strokeWidth={2.4} />
+        <path d="M43 39.2l1.4-1.4 1.4 1.4-1.4 1.4zM48.6 38.1l1.4-1.4 1.4 1.4-1.4 1.4zM54.2 39.2l1.4-1.4 1.4 1.4-1.4 1.4z" fill={NIGHT} />
 
-        {/* face */}
-        <ellipse cx="50" cy="61" rx="14" ry="14.5" fill={SKIN} />
-        <circle cx="41" cy="65" r="2.8" fill="#e0566a" opacity=".55" />
-        <circle cx="59" cy="65" r="2.8" fill="#e0566a" opacity=".55" />
-        {laughing ? (
-          <>
-            <path d="M41 58q3-3 6 0M53 58q3-3 6 0" stroke={INK} strokeWidth="1.6" fill="none" strokeLinecap="round" />
-            <path d="M43 65q7 9 14 0z" fill={INK} />
-            <path d="M46 69q4 2 8 0" stroke="#e0566a" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-          </>
-        ) : (
-          <>
-            <ellipse data-eye cx="44" cy="58.5" rx="1.8" ry="2.4" fill={INK} style={{ transformOrigin: "44px 58.5px" }} />
-            <ellipse data-eye cx="56" cy="58.5" rx="1.8" ry="2.4" fill={INK} style={{ transformOrigin: "56px 58.5px" }} />
-            <path d="M44 66q6 5 12 0" stroke={INK} strokeWidth="1.6" fill="none" strokeLinecap="round" />
-          </>
-        )}
-
-        {/* ruff collar */}
+        {/* face: narrow, pointed chin */}
+        <path d="M35.5 44c-.6 15 4 27 14.5 37 10.5-10 15.1-22 14.5-37" fill={NIGHT} {...line} />
+        {/* domino mask */}
         <path
-          d="M30 80l5-6 5 6 5-6 5 6 5-6 5 6 5-6 5 6-2 7H32z"
-          fill={GOLD}
-          stroke={RED}
-          strokeWidth="1"
-          strokeLinejoin="round"
+          d="M35 50.5c4-5 10-5 15-1.4 5-3.6 11-3.6 15 1.4-1 5-4.5 7.2-8.5 7-3 0-5-1.4-6.5-3-1.5 1.6-3.5 3-6.5 3-4 .2-7.5-2-8.5-7z"
+          fill={RED}
+          {...line}
         />
-        <circle cx="50" cy="83" r="2.2" fill={RED} />
+        {/* almond eyes */}
+        <path d="M39 52.4c2.4-2.2 5.6-2.2 8 0-2.4 1.8-5.6 1.8-8 0z" fill="#f2e6cf" />
+        <g data-wink style={{ transformOrigin: "57px 52.4px" }}>
+          <path d="M53 52.4c2.4-2.2 5.6-2.2 8 0-2.4 1.8-5.6 1.8-8 0z" fill="#f2e6cf" />
+          <circle data-pupil cx="57" cy="52.4" r="1.25" fill={NIGHT} />
+        </g>
+        <circle data-pupil cx="43" cy="52.4" r="1.25" fill={NIGHT} />
+        <circle data-glint cx="43.6" cy="51.9" r=".4" fill="#fff" />
+        {/* brows, raised on one side */}
+        <path d="M38.5 47.6c2.6-1.6 5.6-1.8 8.4-.6M53.2 46.4c2.8-1.6 6-1.4 8.6.4" fill="none" {...line} strokeWidth={0.9} />
+        {/* nose, diamond tear, crooked smile */}
+        <path d="M50 55.5l-1.6 7.5c1 .6 2.2.6 3.3.2" fill="none" {...line} strokeWidth={0.8} />
+        <path d="M58 60.5l1.3-1.6 1.3 1.6-1.3 1.6z" fill={RED} stroke={GOLD} strokeWidth={0.5} />
+        <path
+          d={played ? "M42.5 68.5c4 4.2 10.5 4 15.5-1.8" : "M43.5 69.4c3.6 2 8.6 1.6 13-1.6"}
+          fill="none"
+          {...line}
+          strokeWidth={1}
+        />
+        <path d={played ? "M57.6 66.4l1.4-.9" : "M56.2 67.6l1.2-.7"} fill="none" {...line} strokeWidth={0.9} />
+
+        {/* high collar */}
+        <path d="M33 79l9 7 8-6 8 6 9-7" fill="none" {...line} />
+        <path d="M37 83l5 6 8-4 8 4 5-6" fill="none" {...line} strokeWidth={0.7} opacity={0.7} />
       </g>
     </svg>
   );
