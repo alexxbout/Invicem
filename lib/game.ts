@@ -421,7 +421,8 @@ export const continueEvening = (id: string, step: number) =>
  */
 export const passQuestion = (id: string, step: number, role: "a" | "b", kind: JokerKind) =>
   update(id, (s) => {
-    if (s.step !== step || s.phase !== "card" || role === s.turn || !left(s, role).includes(kind)) return false;
+    // a question written by the other player can't be passed
+    if (s.step !== step || s.phase !== "card" || role === s.turn || s.current <= -2 || !left(s, role).includes(kind)) return false;
     s.spent = { a: s.spent?.a ?? [], b: s.spent?.b ?? [] };
     s.spent[role].push(kind);
     s.lastJoker = kind;

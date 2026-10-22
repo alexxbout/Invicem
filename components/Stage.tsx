@@ -574,9 +574,10 @@ export function Stage({
   const opening = !!shown && shown.round === 1 && shown.history.length === 0;
   /** I answer this card: it stays face down, I only hear it */
   const listening = phase === "card" && !!shown && !faceUpFor(shown, role);
-  /** I answer this card (whether I hear it or read it): my joker is at hand */
-  const answering = phase === "card" && !!shown && shown.turn !== role && !(shown.round === 1 && shown.history.length === 0);
   const written = !!shown?.question?.written;
+  /** I answer this card: my joker is at hand, except on a question the other wrote for me */
+  const answering =
+    phase === "card" && !!shown && shown.turn !== role && !(shown.round === 1 && shown.history.length === 0) && !written;
   const lastOne = !!shown && shown.round >= shown.goal;
 
   const waiting = pending ? " pointer-events-none btn-pending" : "";
