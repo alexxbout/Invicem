@@ -80,23 +80,23 @@ function EffectStage({ Card, short = false, onDone }: { Card: Design; short?: bo
     };
 
     if (short) {
-      // "coup de théâtre", ~1.4 s: the joker whips in from the side already turning, lands with a
+      // "coup de théâtre", ~2.1 s: the joker whips in from the side already turning, lands with a
       // gold shockwave that knocks the question down and away, a quick jig, then it slides off
       const ring = el.querySelector("[data-ring]");
       gsap
         .timeline({ onComplete: onDone })
         .set(flyer, { x: 230, y: 40, scale: 0.55, rotation: 24 })
         .set(inner, { rotationY: -180 })
-        .to(flyer, { x: 0, y: 0, scale: 1.06, rotation: -3, duration: 0.34, ease: "power4.out" })
-        .to(inner, { rotationY: 0, duration: 0.34, ease: "power3.out" }, "<")
+        .to(flyer, { x: 0, y: 0, scale: 1.06, rotation: -3, duration: 0.48, ease: "power4.out" })
+        .to(inner, { rotationY: 0, duration: 0.48, ease: "power3.out" }, "<")
         .call(() => setMood("laugh"))
-        .fromTo(ring, { scale: 0.2, opacity: 0.95 }, { scale: 2.4, opacity: 0, duration: 0.55, ease: "power2.out" })
+        .fromTo(ring, { scale: 0.2, opacity: 0.95 }, { scale: 2.4, opacity: 0, duration: 0.75, ease: "power2.out" })
         .to(flash, { opacity: 0.7, duration: 0.06, yoyo: true, repeat: 1 }, "<")
-        .to(flyer, { scale: 1, rotation: 0, duration: 0.3, ease: "back.out(3)" }, "<")
-        .to(q, { y: 60, rotation: 6, opacity: 0, filter: "blur(6px)", scale: 0.9, duration: 0.4, ease: "power2.in" }, "<")
-        .to({}, { duration: 0.25 })
+        .to(flyer, { scale: 1, rotation: 0, duration: 0.4, ease: "back.out(3)" }, "<")
+        .to(q, { y: 60, rotation: 6, opacity: 0, filter: "blur(6px)", scale: 0.9, duration: 0.5, ease: "power2.in" }, "<")
+        .to({}, { duration: 0.5 })
         .call(() => setMood("idle"))
-        .to(flyer, { x: -40, y: -24, opacity: 0, rotation: -6, scale: 0.92, duration: 0.3, ease: "power2.in" });
+        .to(flyer, { x: -40, y: -24, opacity: 0, rotation: -6, scale: 0.92, duration: 0.42, ease: "power2.in" });
       return;
     }
 
