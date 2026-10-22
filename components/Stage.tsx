@@ -259,6 +259,15 @@ export function Stage({
 
   /** every step: flip face down, apply the new state, then flip up again if a question is on the table */
   /**
+   * Bring the card back upright and visible. Any put-back still running is stopped first,
+   * or it would finish after this and hide the next card.
+   */
+  const standUp = () => {
+    gsap.killTweensOf(wrapRef.current, "y,rotation,scale,opacity,filter");
+    gsap.set(wrapRef.current, { y: 0, rotation: 0, scale: 1, opacity: 1, filter: "none" });
+  };
+
+  /**
    * `head` is how long the card has already been turning before the server answered
    * (the move started on tap), so that much is taken off the wait.
    */
@@ -280,8 +289,7 @@ export function Stage({
     const swap = () => {
       const target = latest.current!;
       commitView(target);
-      // a card put back on the deck comes back upright for the next one (hidden meanwhile)
-      if (!onTable(target.phase)) gsap.set(wrapRef.current, { y: 0, rotation: 0, scale: 1, opacity: 1, filter: "none" });
+      standUp();
       // the card remounts face down when coming back from the hand, give it a beat before flipping
       later(() => {
         if (faceUpFor(target, role)) setFlipped(true);
@@ -301,8 +309,6 @@ export function Stage({
         setFlying(null);
         setFlipped(false);
         swap();
-        // the question card was knocked away by the effect: stand it back up for the next one
-        gsap.set(wrapRef.current, { y: 0, rotation: 0, scale: 1, opacity: 1, filter: "none" });
       };
       const from = jokerFrom.current;
       jokerFrom.current = null;
@@ -430,7 +436,7 @@ export function Stage({
     else {
       // nothing came back: put the card as it was
       setFlipped(faceUpFor(cur, role));
-      gsap.to(wrapRef.current, { y: 0, rotation: 0, scale: 1, opacity: 1, duration: 0.3 });
+      standUp();
     }
   };
 
