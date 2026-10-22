@@ -196,6 +196,8 @@ export function Stage({
   const [note, setNote] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [moodOpen, setMoodOpen] = useState(false);
+  /** a move was sent and its answer is on its way: buttons show it at once */
+  const [pending, setPending] = useState(false);
   /** bumped to replay the joker flash on both phones */
   /** a joker being played on the table (both phones), and the one that just left my hand */
   const [jokerRun, setJokerRun] = useState<{ kind: JokerKind; from: DOMRect | null; n: number } | null>(null);
@@ -256,7 +258,11 @@ export function Stage({
   };
 
   /** every step: flip face down, apply the new state, then flip up again if a question is on the table */
-  const showNext = (v: SessionView, played = false) => {
+  /**
+   * `head` is how long the card has already been turning before the server answered
+   * (the move started on tap), so that much is taken off the wait.
+   */
+  const showNext = (v: SessionView, played = false, head = 0) => {
     latest.current = v;
     if (busy.current) return;
     if (shownRef.current && v.step === shownRef.current.step) {
@@ -274,6 +280,8 @@ export function Stage({
     const swap = () => {
       const target = latest.current!;
       commitView(target);
+      // a card put back on the deck comes back upright for the next one (hidden meanwhile)
+      if (!onTable(target.phase)) gsap.set(wrapRef.current, { y: 0, rotation: 0, scale: 1, opacity: 1, filter: "none" });
       // the card remounts face down when coming back from the hand, give it a beat before flipping
       later(() => {
         if (faceUpFor(target, role)) setFlipped(true);
@@ -300,7 +308,7 @@ export function Stage({
       jokerFrom.current = null;
       setJokerRun({ kind: v.lastJoker ?? "paper", from, n: v.step });
     } else {
-      later(swap, fromHand ? 0 : 1300);
+      later(swap, fromHand ? 0 : Math.max(0, 1300 - head));
     }
   };
 
@@ -404,10 +412,26 @@ export function Stage({
     mode === "open" && shown !== null,
   );
 
+  /** the card starts turning on tap; the server's answer arrives during the turn */
   const next = async () => {
-    if (!sessionId || !shownRef.current || busy.current) return;
-    const { data } = await call<SessionView>(`/api/session/${sessionId}/next`, "POST", { step: shownRef.current.step });
-    if (data && alive.current) showNext(data);
+    const cur = shownRef.current;
+    if (!sessionId || !cur || busy.current || pending) return;
+    setPending(true);
+    // a face-up card turns over; a face-down one (the listener's) is put back on the deck
+    const faceDown = !faceUpFor(cur, role);
+    if (faceDown) gsap.to(wrapRef.current, { y: 34, rotation: -5, scale: 0.9, opacity: 0, duration: 0.55, ease: "power2.in" });
+    else setFlipped(false);
+    const t0 = performance.now();
+    const { data } = await call<SessionView>(`/api/session/${sessionId}/next`, "POST", { step: cur.step });
+    setPending(false);
+    if (!alive.current) return;
+    // the put-back is shorter than a flip, so count it as further along
+    if (data) showNext(data, false, performance.now() - t0 + (faceDown ? 750 : 0));
+    else {
+      // nothing came back: put the card as it was
+      setFlipped(faceUpFor(cur, role));
+      gsap.to(wrapRef.current, { y: 0, rotation: 0, scale: 1, opacity: 1, duration: 0.3 });
+    }
   };
 
   /** the hand plays its lift-to-centre motion while the request runs; the swap waits for both */
@@ -439,8 +463,10 @@ export function Stage({
 
   /** a move that only needs the current step: start, finish, continue */
   const act = async (path: "start" | "finish" | "continue") => {
-    if (!sessionId || !shownRef.current || busy.current) return;
+    if (!sessionId || !shownRef.current || busy.current || pending) return;
+    setPending(true);
     const { data } = await call<SessionView>(`/api/session/${sessionId}/${path}`, "POST", { step: shownRef.current.step });
+    setPending(false);
     if (data && alive.current) showNext(data);
   };
 
@@ -492,6 +518,7 @@ export function Stage({
   const listening = phase === "card" && !!shown && !faceUpFor(shown, role);
   const lastOne = !!shown && shown.round >= shown.goal;
 
+  const waiting = pending ? " pointer-events-none btn-pending" : "";
   const primary =
     "rounded-full bg-gradient-to-b from-[#ecd09a] to-[#c79a50] px-9 py-3.5 text-[15px] font-medium text-[#2a1d0a] shadow-[0_10px_36px_-8px_rgba(217,183,121,.55)] transition active:scale-95";
   const secondary =
@@ -632,7 +659,7 @@ export function Stage({
             )}
 
             {setup && (
-              <button onClick={() => void act("start")} className={primary}>
+              <button onClick={() => void act("start")} className={(primary) + waiting}>
                 Commencer
               </button>
             )}
@@ -650,20 +677,20 @@ export function Stage({
                   {lastOne ? "Ensuite, la dernière carte." : opening ? "Ensuite, vous choisirez l'ambiance." : "Ensuite, l'autre pioche."}
                 </p>
               ) : (
-                <button onClick={next} className={lastOne ? primary : secondary}>
+                <button onClick={next} className={(lastOne ? primary : secondary) + waiting}>
                   {lastOne ? "Dernière carte" : opening ? "Choisir l'ambiance" : "À moi de piocher"}
                 </button>
               ))}
 
             {phase === "closing" && (
-              <button onClick={next} className={primary}>
+              <button onClick={next} className={(primary) + waiting}>
                 Voir notre soirée
               </button>
             )}
 
             {ended && (
               <div className="flex w-full flex-col items-center gap-3">
-                <button onClick={() => void act("continue")} className={secondary}>
+                <button onClick={() => void act("continue")} className={(secondary) + waiting}>
                   Continuer à jouer
                 </button>
                 <button onClick={() => leave(true)} className="text-[13px] text-paper/50 underline-offset-4 hover:underline">
