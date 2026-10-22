@@ -2,9 +2,9 @@
 
 import gsap from "gsap";
 import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
-import type { Question } from "@/lib/client";
+import type { HandCard } from "@/lib/client";
 import { buzz, reduced, tick } from "@/lib/feel";
-import { CardBack } from "./Card";
+import { BlankBack, CardBack, RareBack } from "./Card";
 
 export function Depth({ depth }: { depth: number }) {
   return (
@@ -42,7 +42,7 @@ export function Hand({
   handle,
 }: {
   color: number;
-  hand: Pick<Question, "theme" | "depth">[];
+  hand: HandCard[];
   canPick: boolean;
   onPick: (slot: number, settled: Promise<unknown>) => void;
   handle?: Ref<HandHandle>;
@@ -157,7 +157,7 @@ export function Hand({
           onPointerDown={(e) => press(e.currentTarget.querySelector("[data-inner]"), true)}
           onPointerUp={(e) => press(e.currentTarget.querySelector("[data-inner]"), false)}
           onPointerLeave={(e) => press(e.currentTarget.querySelector("[data-inner]"), false)}
-          aria-label={`${h.theme}, profondeur ${h.depth}`}
+          aria-label={h.blank ? "Carte blanche : écrire sa propre question" : `${h.rare ? "Carte rare, " : ""}${h.theme}, profondeur ${h.depth}`}
           className="relative flex w-[var(--w)] flex-none flex-col items-center gap-6 disabled:cursor-default"
           style={
             {
@@ -173,11 +173,15 @@ export function Hand({
             className="relative aspect-[5/7] w-full rounded-[7%/5%] opacity-0"
             style={{ filter: "drop-shadow(0 16px 20px rgba(0,0,0,.5))" }}
           >
-            <CardBack color={color} />
+            {h.rare ? <RareBack /> : h.blank ? <BlankBack /> : <CardBack color={color} />}
           </div>
           <div data-label className="flex flex-col items-center gap-2">
-            <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-paper/75">{h.theme}</span>
-            <Depth depth={h.depth} />
+            <span
+              className={`text-[10px] font-medium uppercase tracking-[0.18em] ${h.rare ? "text-gold" : "text-paper/75"}`}
+            >
+              {h.rare ? `✦ ${h.theme}` : h.theme}
+            </span>
+            {h.blank ? <span className="text-[10px] text-paper/50">à toi d&apos;écrire</span> : <Depth depth={h.depth} />}
           </div>
         </button>
       ))}

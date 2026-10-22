@@ -130,7 +130,7 @@ export function Home({
           className="group rounded-[22px] bg-gradient-to-b from-[#ecd09a] to-[#c79a50] px-6 py-3 text-left text-[#2a1d0a] shadow-[0_10px_40px_-8px_rgba(217,183,121,.55)] transition active:scale-[.97]"
         >
           <span className="display block text-[22px] leading-tight">Tirer une carte</span>
-          <span className="text-[13px] opacity-70">Je la montre à l&apos;autre</span>
+          <span className="text-[13px] opacity-70">Je la montre</span>
         </button>
         <button
           data-rise
@@ -141,7 +141,7 @@ export function Home({
           className="rounded-[22px] border border-gold/40 bg-white/[.03] px-6 py-3 text-left transition active:scale-[.97]"
         >
           <span className="display block text-[22px] leading-tight text-paper">Retourner sa carte</span>
-          <span className="text-[13px] text-paper/55">Je cherche celle de l&apos;autre</span>
+          <span className="text-[13px] text-paper/55">Je retrouve celle d&apos;en face</span>
         </button>
       </div>
     </Screen>

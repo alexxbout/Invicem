@@ -1,5 +1,5 @@
 import { COLOR_COUNT, SYMBOL_COUNT } from "./palette";
-import { CLOSING, DEFAULT_CRITERIA, matches, QUESTIONS, THEMES, type Criteria, type Question } from "./questions";
+import { CLOSING, DEFAULT_CRITERIA, matches, QUESTIONS, RARE_QUESTIONS, THEMES, type Criteria, type Question } from "./questions";
 import { store } from "./store";
 
 /** how long a drawn card keeps its back reserved */
@@ -19,7 +19,24 @@ type Card = {
   flipAt?: number;
 };
 
-type Phase = "card" | "choose" | "setup" | "closing" | "end";
+/**
+ * "write": the picker of a blank card writes their own question.
+ * "words": after the closing card, each writes one word; "reveal": both words turn at once.
+ */
+type Phase = "card" | "choose" | "setup" | "closing" | "write" | "words" | "reveal" | "end";
+
+/** every card id: >= 0 is in DECK (regular then rare), BLANK is the blank card, <= -2 a written one */
+const DECK: Question[] = [...QUESTIONS, ...RARE_QUESTIONS.map((q) => ({ ...q, rare: true }))];
+const BLANK = -1;
+const RARE_FROM = QUESTIONS.length;
+/**
+ * Each player is offered the blank card at their first pick from this question of the evening,
+ * and once more from BLANK_AGAIN if they let it go; never again once they have written one.
+ */
+const BLANK_AT = 3;
+const BLANK_AGAIN = 6;
+/** chance that a hand holds a rare card */
+const RARE_ODDS = 1 / 8;
 
 type Session = {
   /** monotonic counter, bumped by every change; lets both phones detect and dedupe moves */
@@ -51,6 +68,16 @@ type Session = {
   skipped?: number[];
   /** the last move was a pass, so the picker hears why they pick again */
   passed?: boolean;
+  /** questions the players wrote on blank cards */
+  custom?: string[];
+  /** how many times each player was offered the blank card this evening */
+  blankOffers?: Partial<Record<"a" | "b", number>>;
+  /** players who already wrote a question this evening */
+  blankUsed?: Partial<Record<"a" | "b", boolean>>;
+  /** last words, one per player, hidden until both are in */
+  words?: Partial<Record<"a" | "b", string>>;
+  /** server time at which both phones turn the words over together */
+  revealAt?: number;
 };
 
 /** every player holds a single joker for the evening */
@@ -168,7 +195,7 @@ export type SessionView = {
   /** set in phase "card", and the shared last card in phase "closing" */
   question: Question | null;
   /** set in phase "choose": theme and depth only, the text stays hidden until picked */
-  hand: Pick<Question, "theme" | "depth">[];
+  hand: HandCard[];
   /** in phase "card": which of the three cards was turned, if the question came from a hand */
   pickedSlot: number | null;
   /** questions asked so far tonight, the one on the table included */
@@ -188,8 +215,25 @@ export type SessionView = {
   passed: boolean;
   /** the joker that was just played, when `passed` */
   lastJoker: JokerKind | null;
+  /** who has already sealed a last word */
+  sealed: Record<"a" | "b", boolean>;
+  /** both last words, once both are in */
+  words: Record<"a" | "b", string> | null;
+  /** server time of the shared reveal of the words */
+  revealAt: number | null;
   now: number;
 };
+
+export type HandCard = Pick<Question, "theme" | "depth"> & { rare?: boolean; blank?: boolean };
+
+const BLANK_CARD: Question = { theme: "Carte blanche", depth: 2, text: "" };
+
+/** any card id to its question, including blank and written ones */
+function qOf(s: Session, id: number): Question {
+  if (id === BLANK) return BLANK_CARD;
+  if (id <= -2) return { theme: "Carte blanche", depth: 2, text: s.custom?.[-id - 2] ?? "", written: true };
+  return DECK[id];
+}
 
 const roundOf = (s: Session) => s.history.length + (s.phase === "card" ? 1 : 0);
 
@@ -198,18 +242,26 @@ function view(s: Session): SessionView {
     step: s.step,
     turn: s.turn,
     phase: s.phase,
-    question: s.phase === "card" ? QUESTIONS[s.current] : s.phase === "closing" ? CLOSING : null,
-    hand: s.phase === "choose" ? s.hand.map((id) => ({ theme: QUESTIONS[id].theme, depth: QUESTIONS[id].depth })) : [],
+    question: s.phase === "card" ? qOf(s, s.current) : s.phase === "closing" ? CLOSING : null,
+    hand:
+      s.phase === "choose"
+        ? s.hand.map((id) =>
+            id === BLANK ? { theme: "Carte blanche", depth: 2, blank: true } : { theme: DECK[id].theme, depth: DECK[id].depth, rare: !!DECK[id].rare },
+          )
+        : [],
     pickedSlot: s.phase === "card" && s.lastPick !== undefined ? s.lastPick : null,
     round: roundOf(s),
     goal: s.goal,
     criteria: s.criteria,
     themes: THEMES,
     matching: QUESTIONS.filter((q) => matches(q, s.criteria)).length,
-    history: s.history.map((id) => QUESTIONS[id]).reverse(),
+    history: s.history.map((id) => qOf(s, id)).reverse(),
     jokers: { a: left(s, "a"), b: left(s, "b") },
     passed: s.phase === "choose" && !!s.passed,
     lastJoker: s.phase === "choose" && s.passed ? (s.lastJoker ?? null) : null,
+    sealed: { a: !!s.words?.a, b: !!s.words?.b },
+    words: (s.phase === "reveal" || s.phase === "end") && s.words?.a && s.words?.b ? { a: s.words.a, b: s.words.b } : null,
+    revealAt: s.phase === "reveal" ? (s.revealAt ?? null) : null,
     now: Date.now(),
   };
 }
@@ -244,7 +296,22 @@ function deal(s: Session): number[] {
   const score = (i: number) => (s.history.includes(i) ? 10 : 0) + Math.abs(QUESTIONS[i].depth - target);
   // a narrow filter gives a smaller hand rather than off-criteria cards; only an empty match relaxes
   const hand = [...fit].sort((x, y) => score(x) - score(y)).slice(0, 3);
-  return hand.length ? hand : shuffle(all).slice(0, 3);
+  const dealt = hand.length ? hand : shuffle(all).slice(0, 3);
+
+  // the picker (whose turn it is) may get the blank card to write their own question
+  const upcoming = s.history.length + 1 - (s.goal - EVENING);
+  const picker = s.turn;
+  const offers = s.blankOffers?.[picker] ?? 0;
+  const due = (offers === 0 && upcoming >= BLANK_AT) || (offers === 1 && upcoming >= BLANK_AGAIN);
+  if (!s.blankUsed?.[picker] && due && dealt.length) {
+    s.blankOffers = { ...s.blankOffers, [picker]: offers + 1 };
+    dealt[rand(dealt.length)] = BLANK;
+    return dealt;
+  }
+  // now and then a golden card slips in
+  const rares = DECK.map((_, i) => i).filter((i) => i >= RARE_FROM && !s.history.includes(i) && !skipped.includes(i));
+  if (rares.length && dealt.length && Math.random() < RARE_ODDS) dealt[rand(dealt.length)] = rares[rand(rares.length)];
+  return dealt;
 }
 
 async function update(id: string, change: (s: Session) => boolean): Promise<SessionView | null> {
@@ -267,19 +334,26 @@ export const nextQuestion = (id: string, step: number) =>
   update(id, (s) => {
     if (s.step !== step) return false;
     if (s.phase === "closing") {
+      s.words = {};
+      s.revealAt = undefined;
+      s.phase = "words";
+      return true;
+    }
+    if (s.phase === "reveal") {
       s.phase = "end";
       return true;
     }
     if (s.phase !== "card") return false;
     s.history.push(s.current);
     s.lastPick = undefined;
+    // the one who answered picks next; flip first so the deal knows who is picking
+    s.turn = s.turn === "a" ? "b" : "a";
     if (!s.configured) s.phase = "setup";
     else if (s.history.length >= s.goal) s.phase = "closing";
     else {
       s.hand = deal(s);
       s.phase = "choose";
     }
-    s.turn = s.turn === "a" ? "b" : "a";
     return true;
   });
 
@@ -310,14 +384,14 @@ export const pickQuestion = (id: string, step: number, slot: number) =>
     s.lastPick = slot;
     s.passed = false;
     s.hand = [];
-    s.phase = "card";
+    s.phase = s.current === BLANK ? "write" : "card";
     return true;
   });
 
 /** End the evening early: straight to the closing card. */
 export const finishEvening = (id: string, step: number) =>
   update(id, (s) => {
-    if (s.step !== step || s.phase === "closing" || s.phase === "end") return false;
+    if (s.step !== step || !["card", "choose", "setup", "write"].includes(s.phase)) return false;
     if (s.phase === "card") s.history.push(s.current);
     s.lastPick = undefined;
     s.hand = [];
@@ -330,10 +404,14 @@ export const continueEvening = (id: string, step: number) =>
   update(id, (s) => {
     if (s.step !== step || s.phase !== "end") return false;
     s.goal = s.history.length + EVENING;
+    s.blankOffers = undefined;
+    s.blankUsed = undefined;
+    s.words = undefined;
+    s.revealAt = undefined;
     s.configured = true;
+    s.turn = s.turn === "a" ? "b" : "a";
     s.hand = deal(s);
     s.phase = "choose";
-    s.turn = s.turn === "a" ? "b" : "a";
     return true;
   });
 
@@ -343,7 +421,8 @@ export const continueEvening = (id: string, step: number) =>
  */
 export const passQuestion = (id: string, step: number, role: "a" | "b", kind: JokerKind) =>
   update(id, (s) => {
-    if (s.step !== step || s.phase !== "card" || role === s.turn || !left(s, role).includes(kind)) return false;
+    // a question written by the other player can't be passed
+    if (s.step !== step || s.phase !== "card" || role === s.turn || s.current <= -2 || !left(s, role).includes(kind)) return false;
     s.spent = { a: s.spent?.a ?? [], b: s.spent?.b ?? [] };
     s.spent[role].push(kind);
     s.lastJoker = kind;
@@ -352,5 +431,33 @@ export const passQuestion = (id: string, step: number, role: "a" | "b", kind: Jo
     s.hand = deal(s);
     s.phase = "choose";
     s.passed = true;
+    return true;
+  });
+
+const clean = (text: unknown, max: number) =>
+  typeof text === "string" ? text.replace(/\s+/g, " ").trim().slice(0, max) : "";
+
+/** The picker of the blank card writes their question; it goes on the table like any other. */
+export const writeQuestion = (id: string, step: number, role: "a" | "b", text: unknown) =>
+  update(id, (s) => {
+    const q = clean(text, 140);
+    if (s.step !== step || s.phase !== "write" || role !== s.turn || q.length < 4) return false;
+    s.custom = [...(s.custom ?? []), q];
+    s.blankUsed = { ...s.blankUsed, [role]: true };
+    s.current = -2 - (s.custom.length - 1);
+    s.phase = "card";
+    return true;
+  });
+
+/** Each seals one last word; when both are in, the pair turns them over together. */
+export const sealWord = (id: string, role: "a" | "b", word: unknown) =>
+  update(id, (s) => {
+    const w = clean(word, 28);
+    if (s.phase !== "words" || !w || s.words?.[role]) return false;
+    s.words = { ...s.words, [role]: w };
+    if (s.words.a && s.words.b) {
+      s.phase = "reveal";
+      s.revealAt = Date.now() + FLIP_DELAY_MS;
+    }
     return true;
   });
