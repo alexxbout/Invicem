@@ -43,15 +43,21 @@ type Session = {
   configured: boolean;
   /** questions already put down, oldest first (the one on the table is not in it) */
   history: number[];
-  /** jokers left per player: the one answering may pass a card */
-  jokers?: Record<"a" | "b", number>;
+  /** jokers each player has already played: the one answering may pass a card */
+  spent?: Record<"a" | "b", JokerKind[]>;
+  /** which joker the last pass used, so both phones show the same card */
+  lastJoker?: JokerKind;
   /** questions passed tonight, never dealt again */
   skipped?: number[];
   /** the last move was a pass, so the picker hears why they pick again */
   passed?: boolean;
 };
 
-const JOKERS = 2;
+/** every player holds one of each */
+export const JOKER_KINDS = ["paper", "night"] as const;
+export type JokerKind = (typeof JOKER_KINDS)[number];
+
+const left = (s: Session, role: "a" | "b") => JOKER_KINDS.filter((k) => !(s.spent?.[role] ?? []).includes(k));
 
 const rand = (n: number) => Math.floor(Math.random() * n);
 const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 12);
@@ -176,10 +182,12 @@ export type SessionView = {
   matching: number;
   /** questions already put down, newest first (the one on the table is not in it) */
   history: Question[];
-  /** jokers left per player */
-  jokers: Record<"a" | "b", number>;
+  /** jokers each player still holds */
+  jokers: Record<"a" | "b", JokerKind[]>;
   /** in phase "choose": the hand comes from a passed card */
   passed: boolean;
+  /** the joker that was just played, when `passed` */
+  lastJoker: JokerKind | null;
   now: number;
 };
 
@@ -199,8 +207,9 @@ function view(s: Session): SessionView {
     themes: THEMES,
     matching: QUESTIONS.filter((q) => matches(q, s.criteria)).length,
     history: s.history.map((id) => QUESTIONS[id]).reverse(),
-    jokers: s.jokers ?? { a: JOKERS, b: JOKERS },
+    jokers: { a: left(s, "a"), b: left(s, "b") },
     passed: s.phase === "choose" && !!s.passed,
+    lastJoker: s.phase === "choose" && s.passed ? (s.lastJoker ?? null) : null,
     now: Date.now(),
   };
 }
@@ -332,11 +341,12 @@ export const continueEvening = (id: string, step: number) =>
  * The one answering spends a joker: the card goes back unanswered, never to be dealt again
  * tonight, and the same player picks again from a fresh hand. Doesn't count as a question.
  */
-export const passQuestion = (id: string, step: number, role: "a" | "b") =>
+export const passQuestion = (id: string, step: number, role: "a" | "b", kind: JokerKind) =>
   update(id, (s) => {
-    s.jokers ??= { a: JOKERS, b: JOKERS };
-    if (s.step !== step || s.phase !== "card" || role === s.turn || s.jokers[role] <= 0) return false;
-    s.jokers[role] -= 1;
+    if (s.step !== step || s.phase !== "card" || role === s.turn || !left(s, role).includes(kind)) return false;
+    s.spent = { a: s.spent?.a ?? [], b: s.spent?.b ?? [] };
+    s.spent[role].push(kind);
+    s.lastJoker = kind;
     s.skipped = [...(s.skipped ?? []), s.current];
     s.lastPick = undefined;
     s.hand = deal(s);

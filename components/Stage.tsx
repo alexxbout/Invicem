@@ -8,6 +8,7 @@ import {
   usePoll,
   writeSaved,
   type Criteria as CriteriaValue,
+  type JokerKind,
   type Match,
   type Question,
   type Role,
@@ -21,7 +22,8 @@ import { Card } from "./Card";
 import { Criteria } from "./Criteria";
 import { Depth, Hand, type HandHandle } from "./Hand";
 import { Glyph } from "./Glyph";
-import { JokerFlash, JokerToken } from "./Joker";
+import { JokerFan } from "./joker/JokerFan";
+import { JokerPlay } from "./joker/JokerPlay";
 import { History } from "./History";
 import { Sheet } from "./Sheet";
 import { SoundToggle } from "./SoundToggle";
@@ -195,7 +197,11 @@ export function Stage({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [moodOpen, setMoodOpen] = useState(false);
   /** bumped to replay the joker flash on both phones */
-  const [jokerFx, setJokerFx] = useState(0);
+  /** a joker being played on the table (both phones), and the one that just left my hand */
+  const [jokerRun, setJokerRun] = useState<{ kind: JokerKind; from: DOMRect | null; n: number } | null>(null);
+  const [flying, setFlying] = useState<JokerKind | null>(null);
+  const jokerFrom = useRef<DOMRect | null>(null);
+  const jokerDone = useRef<(() => void) | null>(null);
   const editedAt = useRef(0);
   const editSeq = useRef(0);
   const handRef = useRef<HandHandle>(null);
@@ -263,12 +269,7 @@ export function Stage({
     const fromHand = shownRef.current !== null && !onTable(shownRef.current.phase);
     // a joker was just played: both phones see it land on the card before the card goes back
     const joker = !fromHand && v.phase === "choose" && v.passed;
-    if (joker) {
-      setJokerFx((k) => k + 1);
-      gsap.fromTo(wrapRef.current, { x: 0 }, { keyframes: { x: [-8, 7, -5, 3, 0] }, duration: 0.45, delay: 0.35 });
-    } else {
-      setFlipped(false);
-    }
+    if (!joker) setFlipped(false);
 
     const swap = () => {
       const target = latest.current!;
@@ -285,10 +286,19 @@ export function Stage({
       // the other player chose: replay their card rising to the table before it turns
       void handRef.current.playPick(v.pickedSlot).then(() => alive.current && swap());
     } else if (joker) {
-      later(() => {
+      // the joker lands on the card and knocks it away; once it has slid off, the hand comes
+      jokerDone.current = () => {
+        jokerDone.current = null;
+        setJokerRun(null);
+        setFlying(null);
         setFlipped(false);
-        later(swap, 1300);
-      }, 1150);
+        swap();
+        // the question card was knocked away by the effect: stand it back up for the next one
+        gsap.set(wrapRef.current, { y: 0, rotation: 0, scale: 1, opacity: 1, filter: "none" });
+      };
+      const from = jokerFrom.current;
+      jokerFrom.current = null;
+      setJokerRun({ kind: v.lastJoker ?? "paper", from, n: v.step });
     } else {
       later(swap, fromHand ? 0 : 1300);
     }
@@ -413,10 +423,18 @@ export function Stage({
   };
 
   /** spend a joker: the card goes back unanswered and the asker picks again */
-  const pass = async () => {
+  const pass = async (kind: JokerKind, el: HTMLElement) => {
     if (!sessionId || !shownRef.current || busy.current) return;
-    const { data } = await call<SessionView>(`/api/session/${sessionId}/pass`, "POST", { step: shownRef.current.step, role });
+    // the played joker leaves the fan at once and flies from where it was
+    jokerFrom.current = el.getBoundingClientRect();
+    setFlying(kind);
+    const { data } = await call<SessionView>(`/api/session/${sessionId}/pass`, "POST", {
+      step: shownRef.current.step,
+      role,
+      kind,
+    });
     if (data && alive.current) showNext(data);
+    else setFlying(null);
   };
 
   /** a move that only needs the current step: start, finish, continue */
@@ -525,7 +543,15 @@ export function Stage({
       </div>
 
       <div className="relative flex w-full flex-1 items-center justify-center py-3">
-        {jokerFx > 0 && <JokerFlash key={jokerFx} />}
+        {jokerRun && (
+          <JokerPlay
+            key={jokerRun.n}
+            kind={jokerRun.kind}
+            from={jokerRun.from}
+            question={() => wrapRef.current}
+            onDone={() => jokerDone.current?.()}
+          />
+        )}
         {choosing && card && shown && (
           <Hand
             key={shown.step}
@@ -547,7 +573,11 @@ export function Stage({
           </div>
         )}
         {ended && shown && <Recap key={shown.step} items={[...shown.history].reverse()} />}
-        <div ref={wrapRef} style={{ opacity: seed ? 1 : 0, display: offTable ? "none" : undefined }}>
+        <div ref={wrapRef} className="relative" style={{ opacity: seed ? 1 : 0, display: offTable ? "none" : undefined }}>
+          {/* my jokers, tucked behind the bottom-right corner while I answer */}
+          {listening && shown && !jokerRun && (
+            <JokerFan kinds={shown.jokers[role].filter((k) => k !== flying)} onPlay={(k, el) => void pass(k, el)} />
+          )}
           {card && !offTable && (
             <Card
               key={card.id ?? "seed"}
@@ -621,14 +651,9 @@ export function Stage({
                   {lastOne ? "Ensuite, la dernière carte." : opening ? "Ensuite, vous choisirez l'ambiance." : "Ensuite, l'autre pioche."}
                 </p>
               ) : (
-                // a joker on each side of the main move, spent from the left: tap one to pass this card
-                <div className="flex items-center gap-4">
-                  <JokerToken available={shown.jokers[role] >= 2} onUse={() => void pass()} />
-                  <button onClick={next} className={lastOne ? primary : secondary}>
-                    {lastOne ? "Dernière carte" : opening ? "Choisir l'ambiance" : "À moi de piocher"}
-                  </button>
-                  <JokerToken available={shown.jokers[role] >= 1} onUse={() => void pass()} />
-                </div>
+                <button onClick={next} className={lastOne ? primary : secondary}>
+                  {lastOne ? "Dernière carte" : opening ? "Choisir l'ambiance" : "À moi de piocher"}
+                </button>
               ))}
 
             {phase === "closing" && (

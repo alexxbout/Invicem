@@ -120,7 +120,8 @@ export function JokerClassic({
   intro = false,
   handle,
 }: {
-  width?: number;
+  /** px, or any CSS width */
+  width?: number | string;
   mood?: DanceMood;
   variant?: "paper" | "night";
   /** play the assembly animation when mounted */

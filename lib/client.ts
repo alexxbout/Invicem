@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 export type Role = "a" | "b";
+export type JokerKind = "paper" | "night";
 
 export type Question = { text: string; theme: string; depth: 1 | 2 | 3 };
 export type Criteria = { depths: (1 | 2 | 3)[]; themes: string[] };
@@ -21,10 +22,12 @@ export type SessionView = {
   matching: number;
   /** newest first, current question excluded */
   history: Question[];
-  /** jokers left per player */
-  jokers: Record<Role, number>;
+  /** jokers each player still holds */
+  jokers: Record<Role, JokerKind[]>;
   /** in phase "choose": the hand comes from a passed card */
   passed: boolean;
+  /** the joker that was just played, when `passed` */
+  lastJoker: JokerKind | null;
   now: number;
 };
 

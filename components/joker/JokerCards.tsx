@@ -48,7 +48,7 @@ function Shell({
 }: {
   children: ReactNode;
   background: string;
-  width: number;
+  width: number | string;
   shimmer?: boolean;
 }) {
   return (
@@ -170,7 +170,7 @@ export function JokerDeco({ width = 200, mood = "idle" }: { width?: number; mood
 }
 
 /** the back every joker shares while held: violet, gold lattice, a red seal */
-export function JokerBack({ width = 60 }: { width?: number }) {
+export function JokerBack({ width = 60 }: { width?: number | string }) {
   return (
     <Shell
       width={width}
