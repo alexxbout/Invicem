@@ -23,6 +23,20 @@ export function Game() {
 
   useEffect(() => {
     armSound();
+    // iOS Safari ignores the viewport's no-zoom: stop pinches (and two-finger moves) by hand;
+    // double-tap zoom is already off through touch-action: manipulation
+    const stop = (e: Event) => e.preventDefault();
+    const twoFingers = (e: TouchEvent) => {
+      if (e.touches.length > 1) e.preventDefault();
+    };
+    document.addEventListener("gesturestart", stop, { passive: false });
+    document.addEventListener("gesturechange", stop, { passive: false });
+    document.addEventListener("touchmove", twoFingers, { passive: false });
+    return () => {
+      document.removeEventListener("gesturestart", stop);
+      document.removeEventListener("gesturechange", stop);
+      document.removeEventListener("touchmove", twoFingers);
+    };
   }, []);
 
   return (

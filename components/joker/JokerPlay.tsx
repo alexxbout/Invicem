@@ -9,9 +9,9 @@ import { JokerClassic, type DanceMood } from "./JokerClassic";
 const CARD_W = "min(76vw, 330px)";
 
 /**
- * The joker played onto the table, ~3.2 s, seen on both phones: it whips in already turning
+ * The joker played onto the table, ~4 s, seen on both phones: it whips in already turning
  * (from the tapped card on the player's phone, from the side on the other), lands with a gold
- * shockwave that knocks the question card down and away, jigs, then slides off.
+ * shockwave that knocks the question card down and away, jigs, then glides off to the side leaving gold dust.
  */
 export function JokerPlay({
   from,
@@ -47,6 +47,36 @@ export function JokerPlay({
       : { x: box.width * 0.75, y: 40, scale: 0.55, rotation: 24 };
 
     const calm = reduced();
+    const sparks = el.querySelector<HTMLElement>("[data-dust]")!;
+    /** fine gold motes left behind by the card as it goes */
+    const dust = (r: DOMRect) => {
+      if (calm) return;
+      for (let i = 0; i < 46; i++) {
+        const p = document.createElement("span");
+        const size = 1.5 + Math.random() * 3.5;
+        Object.assign(p.style, {
+          position: "absolute",
+          left: `${r.left - box.left + Math.random() * r.width}px`,
+          top: `${r.top - box.top + Math.random() * r.height}px`,
+          width: `${size}px`,
+          height: `${size}px`,
+          borderRadius: "50%",
+          background: i % 5 === 0 ? "#fff3d6" : "#e3c27a",
+          boxShadow: "0 0 8px 2px rgba(227,194,122,.6)",
+        });
+        sparks.appendChild(p);
+        gsap.to(p, {
+          x: -40 - Math.random() * 90,
+          y: -20 - Math.random() * 70,
+          opacity: 0,
+          scale: 0.3,
+          duration: 1.2 + Math.random() * 1.2,
+          delay: Math.random() * 0.9,
+          ease: "sine.out",
+          onComplete: () => p.remove(),
+        });
+      }
+    };
     const tl = gsap.timeline({ onComplete: onDone });
     tl.set(flyer, { ...start, opacity: 1 })
       .set(inner, { rotationY: from ? 0 : -180 })
@@ -64,9 +94,9 @@ export function JokerPlay({
     if (q) tl.to(q, { y: 70, rotation: 6, opacity: 0, filter: "blur(6px)", scale: 0.9, duration: 0.6, ease: "power2.in" }, "<");
     tl.to({}, { duration: 0.8 })
       .call(() => setMood("idle"))
-      // leave by turning edge-on: transforms only, no fading of a deep 3D card, so it stays smooth
-      .to(flyer, { y: -18, scale: 0.94, duration: 0.6, ease: "power2.in" })
-      .to(inner, { rotationY: (from ? 360 : 0) + 90, duration: 0.6, ease: "power2.in" }, "<")
+      // leave by gliding softly off to the side, shedding gold dust behind it
+      .call(() => dust(flyer.getBoundingClientRect()))
+      .to(flyer, { x: box.width * 1.15, y: -36, rotation: 16, duration: 1.4, ease: "power1.inOut" })
       .set(flyer, { opacity: 0 });
     return () => {
       tl.kill();
@@ -82,6 +112,7 @@ export function JokerPlay({
         className="absolute -inset-[30%] opacity-0"
         style={{ background: "radial-gradient(circle, rgba(227,194,122,.55), rgba(142,27,48,.25) 30%, transparent 55%)" }}
       />
+      <div data-dust className="absolute inset-0" />
       <div
         data-ring
         className="absolute aspect-square w-[min(60vw,240px)] rounded-full opacity-0"
