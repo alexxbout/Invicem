@@ -138,3 +138,22 @@ button {
     animation: none;
   }
 }
+
+/* a held joker sways a little, so it reads as playable */
+@keyframes joker-sway {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+.joker-idle {
+  animation: joker-sway 3.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .joker-idle {
+    animation: none;
+  }
+}

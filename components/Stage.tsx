@@ -21,6 +21,7 @@ import { Card } from "./Card";
 import { Criteria } from "./Criteria";
 import { Depth, Hand, type HandHandle } from "./Hand";
 import { Glyph } from "./Glyph";
+import { JokerFlash, JokerToken } from "./Joker";
 import { History } from "./History";
 import { Sheet } from "./Sheet";
 import { SoundToggle } from "./SoundToggle";
@@ -194,6 +195,8 @@ export function Stage({
   const [note, setNote] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [moodOpen, setMoodOpen] = useState(false);
+  /** bumped to replay the joker flash on both phones */
+  const [jokerFx, setJokerFx] = useState(0);
   const editedAt = useRef(0);
   const editSeq = useRef(0);
   const handRef = useRef<HandHandle>(null);
@@ -259,7 +262,14 @@ export function Stage({
     setFirstReveal(false);
     // coming from the hand there is no card to turn face down first, so go straight to the new one
     const fromHand = shownRef.current !== null && !onTable(shownRef.current.phase);
-    setFlipped(false);
+    // a joker was just played: both phones see it land on the card before the card goes back
+    const joker = !fromHand && v.phase === "choose" && v.passed;
+    if (joker) {
+      setJokerFx((k) => k + 1);
+      gsap.fromTo(wrapRef.current, { x: 0 }, { keyframes: { x: [-8, 7, -5, 3, 0] }, duration: 0.45, delay: 0.35 });
+    } else {
+      setFlipped(false);
+    }
 
     const swap = () => {
       const target = latest.current!;
@@ -275,6 +285,11 @@ export function Stage({
     if (fromHand && !played && v.phase === "card" && v.pickedSlot !== null && handRef.current) {
       // the other player chose: replay their card rising to the table before it turns
       void handRef.current.playPick(v.pickedSlot).then(() => alive.current && swap());
+    } else if (joker) {
+      later(() => {
+        setFlipped(false);
+        later(swap, 1300);
+      }, 1150);
     } else {
       later(swap, fromHand ? 0 : 1300);
     }
@@ -510,7 +525,8 @@ export function Stage({
         {shown && (phase === "card" || choosing || phase === "closing") && <Frise view={shown} onOpen={() => setHistoryOpen(true)} />}
       </div>
 
-      <div className="flex w-full flex-1 items-center justify-center py-3">
+      <div className="relative flex w-full flex-1 items-center justify-center py-3">
+        {jokerFx > 0 && <JokerFlash key={jokerFx} />}
         {choosing && card && shown && (
           <Hand
             key={shown.step}
@@ -611,19 +627,13 @@ export function Stage({
                   {lastOne ? "Ensuite, la dernière carte." : opening ? "Ensuite, vous choisirez l'ambiance." : "Ensuite, l'autre pioche."}
                 </p>
               ) : (
-                <div className="flex flex-col items-center gap-3">
+                // a joker on each side of the main move, spent from the left: tap one to pass this card
+                <div className="flex items-center gap-4">
+                  <JokerToken available={shown.jokers[role] >= 2} onUse={() => void pass()} />
                   <button onClick={next} className={lastOne ? primary : secondary}>
                     {lastOne ? "Dernière carte" : opening ? "Choisir l'ambiance" : "À moi de piocher"}
                   </button>
-                  {shown.jokers[role] > 0 && (
-                    <button
-                      onClick={pass}
-                      className="flex items-center gap-1.5 text-[13px] text-paper/55 transition hover:text-paper active:scale-95"
-                    >
-                      <Glyph id={2} className="size-3.5 text-accent" strokeWidth={1.6} />
-                      Passer cette carte · {shown.jokers[role]} joker{shown.jokers[role] > 1 ? "s" : ""}
-                    </button>
-                  )}
+                  <JokerToken available={shown.jokers[role] >= 1} onUse={() => void pass()} />
                 </div>
               ))}
 
