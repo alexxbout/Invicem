@@ -2,7 +2,6 @@
 
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
-import type { JokerKind } from "@/lib/client";
 import { buzz, chime, reduced, tick } from "@/lib/feel";
 import { JokerBack } from "./JokerCards";
 import { JokerClassic, type DanceMood } from "./JokerClassic";
@@ -10,17 +9,15 @@ import { JokerClassic, type DanceMood } from "./JokerClassic";
 const CARD_W = "min(76vw, 330px)";
 
 /**
- * The joker played onto the table, ~2.1 s, seen on both phones: it whips in already turning
+ * The joker played onto the table, ~3.2 s, seen on both phones: it whips in already turning
  * (from the tapped card on the player's phone, from the side on the other), lands with a gold
  * shockwave that knocks the question card down and away, jigs, then slides off.
  */
 export function JokerPlay({
-  kind,
   from,
   question,
   onDone,
 }: {
-  kind: JokerKind;
   /** where the tapped joker was, to start from it; null on the partner's phone */
   from: DOMRect | null;
   /** the question card to knock off the table */
@@ -53,21 +50,21 @@ export function JokerPlay({
     const tl = gsap.timeline({ onComplete: onDone });
     tl.set(flyer, { ...start, opacity: 1 })
       .set(inner, { rotationY: from ? 0 : -180 })
-      .to(flyer, { x: 0, y: 0, scale: 1.06, rotation: -3, duration: 0.48, ease: "power4.out" })
-      .to(inner, { rotationY: from ? 360 : 0, duration: 0.48, ease: "power3.out" }, "<")
+      .to(flyer, { x: 0, y: 0, scale: 1.06, rotation: -3, duration: 1, ease: "power3.inOut" })
+      .to(inner, { rotationY: from ? 360 : 0, duration: 1, ease: "power2.inOut" }, "<")
       .call(() => {
         setMood("play");
         chime();
         tick();
         buzz([24, 30, 60]);
       })
-      .fromTo(ring, { scale: 0.2, opacity: calm ? 0 : 0.95 }, { scale: 2.4, opacity: 0, duration: 0.75, ease: "power2.out" })
+      .fromTo(ring, { scale: 0.2, opacity: calm ? 0 : 0.95 }, { scale: 2.4, opacity: 0, duration: 0.9, ease: "power2.out" })
       .to(flash, { opacity: calm ? 0 : 0.7, duration: 0.06, yoyo: true, repeat: 1 }, "<")
-      .to(flyer, { scale: 1, rotation: 0, duration: 0.4, ease: "back.out(3)" }, "<");
-    if (q) tl.to(q, { y: 70, rotation: 6, opacity: 0, filter: "blur(6px)", scale: 0.9, duration: 0.5, ease: "power2.in" }, "<");
-    tl.to({}, { duration: 0.5 })
+      .to(flyer, { scale: 1, rotation: 0, duration: 0.5, ease: "back.out(3)" }, "<");
+    if (q) tl.to(q, { y: 70, rotation: 6, opacity: 0, filter: "blur(6px)", scale: 0.9, duration: 0.6, ease: "power2.in" }, "<");
+    tl.to({}, { duration: 0.8 })
       .call(() => setMood("idle"))
-      .to(flyer, { x: -40, y: -24, opacity: 0, rotation: -6, scale: 0.92, duration: 0.42, ease: "power2.in" });
+      .to(flyer, { x: -40, y: -24, opacity: 0, rotation: -6, scale: 0.92, duration: 0.55, ease: "power2.in" });
     return () => {
       tl.kill();
     };
@@ -90,7 +87,7 @@ export function JokerPlay({
       <div data-flyer className="absolute opacity-0" style={{ width: CARD_W, perspective: 900 }}>
         <div data-inner className="relative" style={{ transformStyle: "preserve-3d" }}>
           <div style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}>
-            <JokerClassic width="100%" variant={kind} mood={mood} />
+            <JokerClassic width="100%" variant="paper" mood={mood} />
           </div>
           <div
             className="absolute inset-0"

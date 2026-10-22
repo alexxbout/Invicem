@@ -546,7 +546,6 @@ export function Stage({
         {jokerRun && (
           <JokerPlay
             key={jokerRun.n}
-            kind={jokerRun.kind}
             from={jokerRun.from}
             question={() => wrapRef.current}
             onDone={() => jokerDone.current?.()}
