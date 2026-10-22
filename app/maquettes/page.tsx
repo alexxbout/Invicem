@@ -3,14 +3,17 @@
 import gsap from "gsap";
 import { useRef, useState, type ComponentType } from "react";
 import type { JesterMood } from "@/components/joker/JesterHead";
-import { JokerBack, JokerDeco, JokerHarlequin, JokerRoyal } from "@/components/joker/JokerCards";
+import { JokerClassic } from "@/components/joker/JokerClassic";
+import { JokerBack } from "@/components/joker/JokerCards";
 
 type Design = ComponentType<{ width?: number; mood?: JesterMood }>;
 
+const Paper: Design = ({ width, mood }) => <JokerClassic width={width} mood={mood === "laugh" ? "play" : "idle"} variant="paper" />;
+const Night: Design = ({ width, mood }) => <JokerClassic width={width} mood={mood === "laugh" ? "play" : "idle"} variant="night" />;
+
 const DESIGNS: { key: string; name: string; note: string; Card: Design }[] = [
-  { key: "A", name: "Tarot royal", note: "Velours violet, double cadre or, médaillon rouge, ruban", Card: JokerRoyal },
-  { key: "B", name: "Arlequin", note: "Losanges rouges et violets, cartouche or, lettres en colonne", Card: JokerHarlequin },
-  { key: "C", name: "Art déco", note: "Soleil d'or, arche rouge, cadre à pans coupés", Card: JokerDeco },
+  { key: "A", name: "Papier ancien", note: "Le joker des vieux jeux : encre et aplats sur papier vieilli", Card: Paper },
+  { key: "B", name: "Nuit", note: "Le même bouffon sur velours violet, cadre or", Card: Night },
 ];
 
 function MiniQuestion({ w = 120 }: { w?: number }) {
