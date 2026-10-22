@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
 export type Role = "a" | "b";
-export type JokerKind = "paper" | "night";
+export type JokerKind = "paper";
 
 export type Question = { text: string; theme: string; depth: 1 | 2 | 3 };
 export type Criteria = { depths: (1 | 2 | 3)[]; themes: string[] };

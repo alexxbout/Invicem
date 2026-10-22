@@ -64,7 +64,10 @@ export function JokerPlay({
     if (q) tl.to(q, { y: 70, rotation: 6, opacity: 0, filter: "blur(6px)", scale: 0.9, duration: 0.6, ease: "power2.in" }, "<");
     tl.to({}, { duration: 0.8 })
       .call(() => setMood("idle"))
-      .to(flyer, { x: -40, y: -24, opacity: 0, rotation: -6, scale: 0.92, duration: 0.55, ease: "power2.in" });
+      // leave by turning edge-on: transforms only, no fading of a deep 3D card, so it stays smooth
+      .to(flyer, { y: -18, scale: 0.94, duration: 0.6, ease: "power2.in" })
+      .to(inner, { rotationY: (from ? 360 : 0) + 90, duration: 0.6, ease: "power2.in" }, "<")
+      .set(flyer, { opacity: 0 });
     return () => {
       tl.kill();
     };
@@ -84,8 +87,8 @@ export function JokerPlay({
         className="absolute aspect-square w-[min(60vw,240px)] rounded-full opacity-0"
         style={{ border: "3px solid #e3c27a", boxShadow: "0 0 30px 6px rgba(227,194,122,.6), inset 0 0 24px rgba(227,194,122,.5)" }}
       />
-      <div data-flyer className="absolute opacity-0" style={{ width: CARD_W, perspective: 900 }}>
-        <div data-inner className="relative" style={{ transformStyle: "preserve-3d" }}>
+      <div data-flyer className="absolute opacity-0" style={{ width: CARD_W, perspective: 900, willChange: "transform" }}>
+        <div data-inner className="relative" style={{ transformStyle: "preserve-3d", willChange: "transform" }}>
           <div style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}>
             <JokerClassic width="100%" variant="paper" mood={mood} />
           </div>

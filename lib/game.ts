@@ -53,8 +53,8 @@ type Session = {
   passed?: boolean;
 };
 
-/** every player holds one of each */
-export const JOKER_KINDS = ["paper", "night"] as const;
+/** every player holds a single joker for the evening */
+export const JOKER_KINDS = ["paper"] as const;
 export type JokerKind = (typeof JOKER_KINDS)[number];
 
 const left = (s: Session, role: "a" | "b") => JOKER_KINDS.filter((k) => !(s.spent?.[role] ?? []).includes(k));
