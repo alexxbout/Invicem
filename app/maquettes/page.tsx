@@ -8,8 +8,8 @@ import { JokerBack } from "@/components/joker/JokerCards";
 
 type Design = ComponentType<{ width?: number; mood?: JesterMood }>;
 
-const Paper: Design = ({ width, mood }) => <JokerClassic width={width} mood={mood === "laugh" ? "play" : "idle"} variant="paper" />;
-const Night: Design = ({ width, mood }) => <JokerClassic width={width} mood={mood === "laugh" ? "play" : "idle"} variant="night" />;
+const Paper: Design = ({ width, mood }) => <JokerClassic width={width} mood={mood === "laugh" ? "play" : "idle"} variant="paper" intro />;
+const Night: Design = ({ width, mood }) => <JokerClassic width={width} mood={mood === "laugh" ? "play" : "idle"} variant="night" intro />;
 
 const DESIGNS: { key: string; name: string; note: string; Card: Design }[] = [
   { key: "A", name: "Papier ancien", note: "Le joker des vieux jeux : encre et aplats sur papier vieilli", Card: Paper },
@@ -135,8 +135,8 @@ export default function Maquettes() {
         <h1 className="display text-[30px] font-light">Cartes joker</h1>
         <div className="flex flex-wrap justify-center gap-8">
           {DESIGNS.map(({ key, name, note, Card }) => (
-            <figure key={key} className="flex w-[220px] flex-col items-center gap-3">
-              <Card width={200} />
+            <figure key={key} className="flex w-[280px] flex-col items-center gap-3">
+              <Card width={260} />
               <figcaption className="text-center">
                 <div className="display text-[18px]">
                   {key} · {name}

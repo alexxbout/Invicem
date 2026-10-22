@@ -207,3 +207,18 @@ button {
     opacity: 0;
   }
 }
+
+/* the rosette behind the joker turns very slowly */
+@keyframes rosette-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.joker-rosette {
+  animation: rosette-turn 90s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .joker-rosette {
+    animation: none;
+  }
+}
