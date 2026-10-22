@@ -19,7 +19,22 @@ export const QUESTIONS: Question[] = [
   { theme: "Valeurs", depth: 3, text: "Qu'as-tu appris de plus difficile sur toi-même ces dernières années ?" },
   { theme: "Relation", depth: 3, text: "Dans quelle situation as-tu le plus besoin de moi sans oser le demander ?" },
   { theme: "Peurs", depth: 3, text: "Quelle blessure t'a le plus façonné(e) ?" },
+  // Regard: how others see you. Works on a first evening, no need to know each other yet.
+  { theme: "Regard", depth: 1, text: "Quelle première impression penses-tu laisser aux gens ? Est-elle juste ?" },
+  { theme: "Regard", depth: 1, text: "Pour quoi tes amis t'appellent-ils en premier ?" },
+  { theme: "Regard", depth: 2, text: "Si tes amis devaient te décrire avec une qualité et un défaut, que diraient-ils ?" },
+  { theme: "Regard", depth: 2, text: "Comment ta famille te décrirait-elle en trois mots ? Serais-tu d'accord ?" },
+  { theme: "Regard", depth: 2, text: "Quel malentendu à ton sujet revient souvent ?" },
+  { theme: "Regard", depth: 3, text: "Qu'est-ce que l'enfant que tu étais penserait de la personne que tu es devenue ?" },
+  { theme: "Regard", depth: 3, text: "Qu'est-ce qu'on te reproche parfois et qui, au fond, est vrai ?" },
 ];
+
+/** The shared last card of an evening; both answer it. */
+export const CLOSING: Question = {
+  theme: "Pour finir",
+  depth: 3,
+  text: "Qu'as-tu découvert de l'autre ce soir ?",
+};
 
 export type Depth = Question["depth"];
 

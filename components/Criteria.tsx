@@ -1,17 +1,34 @@
 "use client";
 
-import { DEPTH_LABELS } from "@/lib/labels";
 import type { Criteria as CriteriaValue } from "@/lib/client";
+import { Glyph } from "./Glyph";
 import { Depth } from "./Hand";
 
 type DepthKey = 1 | 2 | 3;
 
-const chip = (on: boolean) =>
-  `rounded-full border px-4 py-2 text-[14px] transition active:scale-95 ${
-    on ? "border-accent/70 bg-accent/15 text-paper" : "border-white/12 bg-white/[.03] text-paper/55"
-  }`;
+/** how far the evening may go; the climb itself is automatic */
+const REACH: { max: DepthKey; name: string; hint: string }[] = [
+  { max: 1, name: "En douceur", hint: "On se découvre" },
+  { max: 2, name: "Plus loin", hint: "On se livre" },
+  { max: 3, name: "Jusqu'au fond", hint: "On ose tout" },
+];
 
-/** Depth + themes picker. Empty themes means "everything". */
+/** each theme borrows a symbol from the card backs */
+const THEME_GLYPH: Record<string, number> = {
+  Souvenirs: 10,
+  Quotidien: 0,
+  Goûts: 4,
+  Envies: 2,
+  Valeurs: 11,
+  Peurs: 1,
+  Relation: 8,
+  Regard: 6,
+};
+
+/**
+ * Two questions, both one tap: how deep may we go tonight, and what about.
+ * Reach maps to depths 1..max; every theme on is stored as an empty list ("all").
+ */
 export function Criteria({
   value,
   themes,
@@ -24,39 +41,43 @@ export function Criteria({
   /** receives an updater so rapid taps always build on the latest value */
   onChange: (update: (prev: CriteriaValue) => CriteriaValue) => void;
 }) {
-  const toggleDepth = (d: DepthKey) =>
-    onChange((v) => {
-      const on = v.depths.includes(d);
-      // keep at least one depth selected
-      if (on && v.depths.length === 1) return v;
-      return { ...v, depths: on ? v.depths.filter((x) => x !== d) : [...v.depths, d].sort() };
-    });
+  const reach = Math.max(...value.depths) as DepthKey;
+  const isOn = (t: string) => value.themes.length === 0 || value.themes.includes(t);
+
+  const setReach = (max: DepthKey) =>
+    onChange((v) => ({ ...v, depths: ([1, 2, 3] as DepthKey[]).filter((d) => d <= max) }));
 
   const toggleTheme = (t: string) =>
     onChange((v) => {
-      const next = v.themes.includes(t) ? v.themes.filter((x) => x !== t) : [...v.themes, t];
-      // picking every theme is the same as picking none
+      const current = v.themes.length === 0 ? themes : v.themes;
+      const next = current.includes(t) ? current.filter((x) => x !== t) : [...current, t];
+      // keep at least one theme; every theme on is the same as "all"
+      if (next.length === 0) return v;
       return { ...v, themes: next.length === themes.length ? [] : next };
     });
 
   return (
     <div className="flex w-full flex-col gap-7">
       <section>
-        <h3 className="mb-3 text-[11px] font-medium uppercase tracking-[0.24em] text-paper/45">Profondeur</h3>
+        <h2 className="display mb-1 text-center text-[24px] font-light leading-snug">Jusqu&apos;où aller ce soir&nbsp;?</h2>
+        <p className="mb-4 text-center text-[13px] text-paper/45">On commence léger, la profondeur vient d&apos;elle-même.</p>
         <div className="grid grid-cols-3 gap-2">
-          {([1, 2, 3] as DepthKey[]).map((d) => {
-            const on = value.depths.includes(d);
+          {REACH.map((r) => {
+            const on = reach === r.max;
             return (
               <button
-                key={d}
-                onClick={() => toggleDepth(d)}
+                key={r.max}
+                onClick={() => setReach(r.max)}
                 aria-pressed={on}
-                className={`flex flex-col items-center gap-2 rounded-2xl border px-2 py-3.5 transition active:scale-95 ${
-                  on ? "border-accent/70 bg-accent/15 text-paper" : "border-white/12 bg-white/[.03] text-paper/50"
+                className={`flex flex-col items-center gap-2 rounded-2xl border px-2 pb-3 pt-3.5 transition active:scale-95 ${
+                  on
+                    ? "border-accent/70 bg-accent/15 text-paper shadow-[0_0_28px_-6px_var(--accent)]"
+                    : "border-white/10 bg-white/[.03] text-paper/45"
                 }`}
               >
-                <Depth depth={d} />
-                <span className="text-[13px]">{DEPTH_LABELS[d]}</span>
+                <Depth depth={r.max} />
+                <span className="display text-[16px] leading-tight">{r.name}</span>
+                <span className="text-[11px] opacity-70">{r.hint}</span>
               </button>
             );
           })}
@@ -64,21 +85,33 @@ export function Criteria({
       </section>
 
       <section>
-        <h3 className="mb-3 text-[11px] font-medium uppercase tracking-[0.24em] text-paper/45">Thèmes</h3>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => onChange((v) => ({ ...v, themes: [] }))} aria-pressed={value.themes.length === 0} className={chip(value.themes.length === 0)}>
-            Tous
-          </button>
-          {themes.map((t) => (
-            <button key={t} onClick={() => toggleTheme(t)} aria-pressed={value.themes.includes(t)} className={chip(value.themes.includes(t))}>
-              {t}
-            </button>
-          ))}
+        <h2 className="display mb-4 text-center text-[24px] font-light leading-snug">De quoi parler&nbsp;?</h2>
+        <div className="grid grid-cols-4 gap-2">
+          {themes.map((t) => {
+            const on = isOn(t);
+            return (
+              <button
+                key={t}
+                onClick={() => toggleTheme(t)}
+                aria-pressed={on}
+                className={`flex aspect-[5/6] flex-col items-center justify-center gap-2 rounded-2xl border transition active:scale-95 ${
+                  on ? "border-accent/60 bg-accent/12 text-paper" : "border-white/8 bg-white/[.02] text-paper/30"
+                }`}
+              >
+                <Glyph
+                  id={THEME_GLYPH[t] ?? 3}
+                  className={`w-[38%] transition ${on ? "text-accent drop-shadow-[0_0_8px_var(--accent)]" : ""}`}
+                  strokeWidth={1.4}
+                />
+                <span className="text-[11px] leading-none">{t}</span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
-      <p className="display text-center text-[15px] italic text-paper/50" aria-live="polite">
-        {matching} {matching > 1 ? "questions" : "question"} dans cette ambiance
+      <p className="display text-center text-[14px] italic text-paper/45" aria-live="polite">
+        {matching} {matching > 1 ? "questions possibles" : "question possible"}
       </p>
     </div>
   );

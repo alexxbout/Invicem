@@ -18,7 +18,7 @@ import { COLORS, SYMBOLS } from "@/lib/palette";
 import { ambient, setAccent } from "./Ambient";
 import { Card } from "./Card";
 import { Criteria } from "./Criteria";
-import { Hand, type HandHandle } from "./Hand";
+import { Depth, Hand, type HandHandle } from "./Hand";
 import { History } from "./History";
 import { Sheet } from "./Sheet";
 import { SoundToggle } from "./SoundToggle";
@@ -33,6 +33,69 @@ type StatusResponse =
   | { state: "waiting" }
   | { state: "expired" }
   | { state: "matched"; sessionId: string; flipAt: number; now: number };
+
+/** the evening laid out once the closing card is answered */
+function Recap({ items }: { items: Question[] }) {
+  return (
+    <div data-rise className="flex max-h-[62dvh] w-full flex-col gap-5">
+      <h2 className="display text-center text-[28px] font-light leading-snug">
+        Votre soirée
+        <br />
+        <em className="text-[20px] text-paper/55">
+          {items.length} {items.length > 1 ? "questions partagées" : "question partagée"}
+        </em>
+      </h2>
+      <ol className="-mx-1 space-y-2.5 overflow-y-auto px-1">
+        {items.map((q, i) => (
+          <li
+            key={i}
+            className="rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3"
+            style={{ animation: `rise .6s cubic-bezier(.2,.7,.2,1) ${0.15 + i * 0.07}s both` }}
+          >
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-paper/50">{q.theme}</span>
+              <Depth depth={q.depth} />
+            </div>
+            <p className="display text-[16px] leading-snug text-paper/90">{q.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+/** phases where a card lies face up on the table */
+const onTable = (p: SessionView["phase"]) => p === "card" || p === "closing";
+
+/** the evening so far: one diamond per question, bigger as it gets deeper, the current one breathing */
+function Path({ view }: { view: SessionView }) {
+  const asked = [...view.history].reverse();
+  if (view.phase === "card" && view.question) asked.push(view.question);
+  const start = view.goal - 7;
+  return (
+    <div className="flex h-4 items-center justify-center gap-2.5" aria-label={`Question ${view.round} sur ${view.goal}`}>
+      {Array.from({ length: 7 }, (_, k) => {
+        const q = asked[start + k];
+        const size = q ? 4 + q.depth * 2 : 6;
+        const current = view.phase === "card" && start + k === view.round - 1;
+        return (
+          <span
+            key={k}
+            className={`rotate-45 border transition-all duration-700 ${current ? "animate-pulse" : ""}`}
+            style={{
+              width: size,
+              height: size,
+              borderColor: q ? "var(--accent)" : "rgba(244,234,219,.2)",
+              background: q ? "var(--accent)" : "transparent",
+              boxShadow: q ? `0 0 ${4 + (q.depth - 1) * 5}px var(--accent)` : "none",
+              opacity: q ? 0.55 + q.depth * 0.15 : 1,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 function QuestionFace({ question, play }: { question: Question; play: boolean }) {
   const ref = useRef<HTMLParagraphElement>(null);
@@ -164,7 +227,7 @@ export function Stage({
     busy.current = true;
     setFirstReveal(false);
     // coming from the hand there is no card to turn face down first, so go straight to the new one
-    const fromHand = shownRef.current !== null && shownRef.current.phase !== "card";
+    const fromHand = shownRef.current !== null && !onTable(shownRef.current.phase);
     setFlipped(false);
 
     const swap = () => {
@@ -172,7 +235,7 @@ export function Stage({
       commitView(target);
       // the card remounts face down when coming back from the hand, give it a beat before flipping
       later(() => {
-        if (target.phase === "card") setFlipped(true);
+        if (onTable(target.phase)) setFlipped(true);
         busy.current = false;
         if (latest.current && latest.current.step !== shownRef.current?.step) showNext(latest.current);
       }, fromHand ? 250 : 450);
@@ -304,9 +367,10 @@ export function Stage({
     if (data && alive.current) showNext(data, true);
   };
 
-  const start = async () => {
+  /** a move that only needs the current step: start, finish, continue */
+  const act = async (path: "start" | "finish" | "continue") => {
     if (!sessionId || !shownRef.current || busy.current) return;
-    const { data } = await call<SessionView>(`/api/session/${sessionId}/start`, "POST", { step: shownRef.current.step });
+    const { data } = await call<SessionView>(`/api/session/${sessionId}/${path}`, "POST", { step: shownRef.current.step });
     if (data && alive.current) showNext(data);
   };
 
@@ -332,19 +396,51 @@ export function Stage({
     onExit();
   };
 
-  // the room gets deeper and darker as the chosen depth does
-  const depths = shown?.criteria.depths;
+  // the room follows the depth of what is on the table, so the climb is felt rather than shown
+  const roomDepth = !shown
+    ? 2
+    : onTable(shown.phase) && shown.question
+      ? shown.question.depth
+      : shown.phase === "choose" && shown.hand.length
+        ? shown.hand.reduce((a, h) => a + h.depth, 0) / shown.hand.length
+        : shown.criteria.depths.reduce((a, b) => a + b, 0) / shown.criteria.depths.length;
   useEffect(() => {
-    if (depths?.length) ambient.depth(depths.reduce((a, b) => a + b, 0) / depths.length);
-  }, [depths]);
+    ambient.depth(roomDepth);
+  }, [roomDepth]);
   useEffect(() => () => ambient.depth(2), []);
 
   const color = card ? COLORS[card.color] : null;
+  const phase = mode === "open" ? shown?.phase : undefined;
+  /** "mine" = I picked this card (or pick the next one in a hand); the other answers */
   const mine = shown ? shown.turn === role : false;
-  const choosing = mode === "open" && shown?.phase === "choose";
-  const setup = mode === "open" && shown?.phase === "setup";
-  const offTable = choosing || setup;
+  const choosing = phase === "choose";
+  const setup = phase === "setup";
+  const ended = phase === "end";
+  const offTable = choosing || setup || ended;
   const pastCount = shown?.history.length ?? 0;
+  const opening = !!shown && shown.round === 1 && shown.history.length === 0;
+  const lastOne = !!shown && shown.round >= shown.goal;
+
+  const primary =
+    "rounded-full bg-gradient-to-b from-[#ecd09a] to-[#c79a50] px-9 py-3.5 text-[15px] font-medium text-[#2a1d0a] shadow-[0_10px_36px_-8px_rgba(217,183,121,.55)] transition active:scale-95";
+  const secondary =
+    "rounded-full border border-white/15 bg-white/[.06] px-8 py-3.5 text-[15px] text-paper backdrop-blur transition active:scale-95";
+
+  const status = !shown
+    ? ""
+    : setup
+      ? "Choisissez ensemble"
+      : choosing
+        ? mine
+          ? "À toi de piocher une carte"
+          : "L'autre pioche une carte…"
+        : phase === "closing"
+          ? "Chacun votre tour"
+          : ended
+            ? ""
+            : mine
+              ? "Pose-lui la question"
+              : "C'est à toi de répondre";
 
   return (
     <Screen>
@@ -381,6 +477,7 @@ export function Stage({
           ) : null
         }
       />
+      <div className="mt-1 h-4">{shown && (phase === "card" || choosing || phase === "closing") && <Path view={shown} />}</div>
 
       <div className="flex w-full flex-1 items-center justify-center py-3">
         {choosing && card && shown && (
@@ -395,11 +492,6 @@ export function Stage({
         )}
         {setup && shown && (
           <div key={shown.step} data-rise className="flex w-full flex-col gap-6">
-            <h2 className="display text-center text-[26px] font-light leading-snug">
-              Quelle ambiance
-              <br />
-              <em className="text-paper/60">pour ce soir&nbsp;?</em>
-            </h2>
             <Criteria
               value={shown.criteria}
               themes={shown.themes}
@@ -408,6 +500,7 @@ export function Stage({
             />
           </div>
         )}
+        {ended && shown && <Recap key={shown.step} items={[...shown.history].reverse()} />}
         <div ref={wrapRef} style={{ opacity: seed ? 1 : 0, display: offTable ? "none" : undefined }}>
           {card && !offTable && (
             <Card
@@ -441,7 +534,7 @@ export function Stage({
               className="display text-[14px] italic text-paper/50 transition-opacity duration-700"
               style={{ opacity: note ? 1 : 0 }}
             >
-              {note ?? " "}
+              {note ?? "\u00a0"}
             </p>
           </div>
         )}
@@ -452,43 +545,62 @@ export function Stage({
 
         {mode === "open" && shown && (
           <>
-            <p className="flex items-center gap-2.5 text-[14px] text-paper/70" aria-live="polite">
-              <span
-                className="size-2 rounded-full bg-accent"
-                style={{ boxShadow: "0 0 12px var(--accent)", opacity: mine ? 1 : 0.35 }}
-              />
-              {setup
-                ? "Choisissez ensemble"
-                : choosing
-                ? mine
-                  ? "À toi de choisir une carte"
-                  : "L'autre choisit une carte…"
-                : mine
-                  ? "Tu réponds en premier"
-                  : "L'autre répond en premier"}
-            </p>
-            {setup ? (
-              <button
-                onClick={start}
-                className="rounded-full bg-gradient-to-b from-[#ecd09a] to-[#c79a50] px-9 py-3.5 text-[15px] font-medium text-[#2a1d0a] shadow-[0_10px_36px_-8px_rgba(217,183,121,.55)] transition active:scale-95"
-              >
+            {status && (
+              <p className="flex items-center gap-2.5 text-[14px] text-paper/70" aria-live="polite">
+                <span
+                  className="size-2 rounded-full bg-accent"
+                  style={{ boxShadow: "0 0 12px var(--accent)", opacity: mine || setup || phase === "closing" ? 1 : 0.35 }}
+                />
+                {status}
+              </p>
+            )}
+
+            {setup && (
+              <button onClick={() => void act("start")} className={primary}>
                 Commencer
               </button>
-            ) : choosing ? (
+            )}
+
+            {choosing && (
               <p className="display h-[50px] text-[15px] italic text-paper/45">
                 {mine ? "Thème et profondeur sont visibles, la question reste cachée." : "\u00a0"}
               </p>
-            ) : (
-              <button
-                onClick={next}
-                className="rounded-full border border-white/15 bg-white/[.06] px-8 py-3.5 text-[15px] text-paper backdrop-blur transition active:scale-95"
-              >
-                Question suivante
+            )}
+
+            {/* only the one who answered moves on: the deck passes to them */}
+            {phase === "card" &&
+              (mine ? (
+                <p className="display flex h-[50px] items-center text-[15px] italic text-paper/45">
+                  {lastOne ? "Ensuite, la dernière carte." : opening ? "Ensuite, vous choisirez l'ambiance." : "Ensuite, l'autre pioche."}
+                </p>
+              ) : (
+                <button onClick={next} className={lastOne ? primary : secondary}>
+                  {lastOne ? "Dernière carte" : opening ? "Choisir l'ambiance" : "À moi de piocher"}
+                </button>
+              ))}
+
+            {phase === "closing" && (
+              <button onClick={next} className={primary}>
+                Voir notre soirée
               </button>
             )}
-            <button onClick={() => leave(true)} className="text-[12px] text-paper/35 underline-offset-4 hover:underline">
-              Terminer la partie
-            </button>
+
+            {ended && (
+              <div className="flex w-full flex-col items-center gap-3">
+                <button onClick={() => void act("continue")} className={secondary}>
+                  Continuer à jouer
+                </button>
+                <button onClick={() => leave(true)} className="text-[13px] text-paper/50 underline-offset-4 hover:underline">
+                  Terminer et quitter
+                </button>
+              </div>
+            )}
+
+            {(phase === "card" || choosing) && !lastOne && (
+              <button onClick={() => void act("finish")} className="text-[12px] text-paper/35 underline-offset-4 hover:underline">
+                Terminer la soirée
+              </button>
+            )}
           </>
         )}
 

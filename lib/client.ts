@@ -7,11 +7,15 @@ export type Criteria = { depths: (1 | 2 | 3)[]; themes: string[] };
 export type SessionView = {
   step: number;
   turn: Role;
-  phase: "card" | "choose" | "setup";
+  phase: "card" | "choose" | "setup" | "closing" | "end";
   question: Question | null;
   hand: Pick<Question, "theme" | "depth">[];
   /** slot the question was picked from, for replaying the gesture on the other phone */
   pickedSlot: number | null;
+  /** questions asked so far tonight, the one on the table included */
+  round: number;
+  /** the closing card is offered once `round` reaches this */
+  goal: number;
   criteria: Criteria;
   themes: string[];
   matching: number;
