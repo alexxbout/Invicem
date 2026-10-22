@@ -29,8 +29,12 @@ type Phase = "card" | "choose" | "setup" | "closing" | "write" | "words" | "reve
 const DECK: Question[] = [...QUESTIONS, ...RARE_QUESTIONS.map((q) => ({ ...q, rare: true }))];
 const BLANK = -1;
 const RARE_FROM = QUESTIONS.length;
-/** the blank card is offered once per evening, at this question of the stretch */
-const BLANK_AT = 4;
+/**
+ * Each player is offered the blank card at their first pick from this question of the evening,
+ * and once more from BLANK_AGAIN if they let it go; never again once they have written one.
+ */
+const BLANK_AT = 3;
+const BLANK_AGAIN = 6;
 /** chance that a hand holds a rare card */
 const RARE_ODDS = 1 / 8;
 
@@ -66,8 +70,10 @@ type Session = {
   passed?: boolean;
   /** questions the players wrote on blank cards */
   custom?: string[];
-  /** the blank card was already offered this evening */
-  blankDealt?: boolean;
+  /** how many times each player was offered the blank card this evening */
+  blankOffers?: Partial<Record<"a" | "b", number>>;
+  /** players who already wrote a question this evening */
+  blankUsed?: Partial<Record<"a" | "b", boolean>>;
   /** last words, one per player, hidden until both are in */
   words?: Partial<Record<"a" | "b", string>>;
   /** server time at which both phones turn the words over together */
@@ -292,10 +298,13 @@ function deal(s: Session): number[] {
   const hand = [...fit].sort((x, y) => score(x) - score(y)).slice(0, 3);
   const dealt = hand.length ? hand : shuffle(all).slice(0, 3);
 
-  // once an evening, around the middle, one card is blank: the picker writes the question
+  // the picker (whose turn it is) may get the blank card to write their own question
   const upcoming = s.history.length + 1 - (s.goal - EVENING);
-  if (!s.blankDealt && upcoming >= BLANK_AT && dealt.length) {
-    s.blankDealt = true;
+  const picker = s.turn;
+  const offers = s.blankOffers?.[picker] ?? 0;
+  const due = (offers === 0 && upcoming >= BLANK_AT) || (offers === 1 && upcoming >= BLANK_AGAIN);
+  if (!s.blankUsed?.[picker] && due && dealt.length) {
+    s.blankOffers = { ...s.blankOffers, [picker]: offers + 1 };
     dealt[rand(dealt.length)] = BLANK;
     return dealt;
   }
@@ -337,13 +346,14 @@ export const nextQuestion = (id: string, step: number) =>
     if (s.phase !== "card") return false;
     s.history.push(s.current);
     s.lastPick = undefined;
+    // the one who answered picks next; flip first so the deal knows who is picking
+    s.turn = s.turn === "a" ? "b" : "a";
     if (!s.configured) s.phase = "setup";
     else if (s.history.length >= s.goal) s.phase = "closing";
     else {
       s.hand = deal(s);
       s.phase = "choose";
     }
-    s.turn = s.turn === "a" ? "b" : "a";
     return true;
   });
 
@@ -394,13 +404,14 @@ export const continueEvening = (id: string, step: number) =>
   update(id, (s) => {
     if (s.step !== step || s.phase !== "end") return false;
     s.goal = s.history.length + EVENING;
-    s.blankDealt = false;
+    s.blankOffers = undefined;
+    s.blankUsed = undefined;
     s.words = undefined;
     s.revealAt = undefined;
     s.configured = true;
+    s.turn = s.turn === "a" ? "b" : "a";
     s.hand = deal(s);
     s.phase = "choose";
-    s.turn = s.turn === "a" ? "b" : "a";
     return true;
   });
 
@@ -431,6 +442,7 @@ export const writeQuestion = (id: string, step: number, role: "a" | "b", text: u
     const q = clean(text, 140);
     if (s.step !== step || s.phase !== "write" || role !== s.turn || q.length < 4) return false;
     s.custom = [...(s.custom ?? []), q];
+    s.blankUsed = { ...s.blankUsed, [role]: true };
     s.current = -2 - (s.custom.length - 1);
     s.phase = "card";
     return true;
