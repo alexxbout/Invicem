@@ -68,8 +68,8 @@ function Recap({ items }: { items: Question[] }) {
 }
 
 /**
- * Whether this phone shows the question face. The one answering hears it read aloud and keeps
- * the card face down (tap to reread). The opening card is the shared reveal, so both see it.
+ * Whether this phone shows the question face. The one answering only hears it read aloud: their
+ * card stays face down. The opening card is the shared reveal, so both see it.
  */
 const faceUpFor = (v: SessionView, role: Role) =>
   onTable(v.phase) && !(v.phase === "card" && v.turn !== role && !(v.round === 1 && v.history.length === 0));
@@ -80,7 +80,6 @@ function Listening({ question }: { question: Question }) {
     <div className="pointer-events-none absolute inset-x-[9%] bottom-[9%] flex flex-col items-center gap-1.5 rounded-xl bg-black/35 px-3 py-2.5 text-center backdrop-blur-[2px]">
       <span className="text-[11px] font-medium uppercase tracking-[0.24em] text-white/90">{question.theme}</span>
       <Depth depth={question.depth} />
-      <span className="text-[11px] text-white/70">Touche pour relire</span>
     </div>
   );
 }
@@ -471,7 +470,7 @@ export function Stage({
   const ended = phase === "end";
   const offTable = choosing || setup || ended;
   const opening = !!shown && shown.round === 1 && shown.history.length === 0;
-  /** I answer this card: it stays face down until I tap it */
+  /** I answer this card: it stays face down, I only hear it */
   const listening = phase === "card" && !!shown && !faceUpFor(shown, role);
   const lastOne = !!shown && shown.round >= shown.goal;
 
@@ -548,12 +547,7 @@ export function Stage({
           </div>
         )}
         {ended && shown && <Recap key={shown.step} items={[...shown.history].reverse()} />}
-        <div
-          ref={wrapRef}
-          onClick={() => listening && !busy.current && setFlipped((f) => !f)}
-          className={listening ? "cursor-pointer" : undefined}
-          style={{ opacity: seed ? 1 : 0, display: offTable ? "none" : undefined }}
-        >
+        <div ref={wrapRef} style={{ opacity: seed ? 1 : 0, display: offTable ? "none" : undefined }}>
           {card && !offTable && (
             <Card
               key={card.id ?? "seed"}
