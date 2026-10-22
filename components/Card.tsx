@@ -14,6 +14,8 @@ type Props = {
   flipped?: boolean;
   /** content of the paper face */
   front?: ReactNode;
+  /** laid over the back, e.g. what the hidden question is about */
+  backNote?: ReactNode;
   /** both phones are waiting for the shared flip: light chases the edges and builds up */
   charging?: boolean;
   /** flip duration in seconds */
@@ -195,6 +197,7 @@ export function Card({
   symbol,
   flipped = false,
   front,
+  backNote,
   charging = false,
   duration = 1.6,
   burst = false,
@@ -392,6 +395,7 @@ export function Card({
             <div ref={flipRef} className="absolute inset-0" style={{ transformStyle: "preserve-3d" }}>
               <div className="absolute inset-0" style={face}>
                 <CardBack color={color} symbol={symbol} />
+                {backNote}
               </div>
               <div className="absolute inset-0" style={{ ...face, transform: "rotateY(180deg)" }}>
                 <Paper>{front}</Paper>
