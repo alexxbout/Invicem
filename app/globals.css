@@ -295,3 +295,27 @@ button {
     animation: none;
   }
 }
+
+/* the title, engraved in gold with light running across the letters */
+@keyframes gold-run {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+.gold-engrave > span {
+  background: linear-gradient(100deg, #a77a22 0%, #e0b54a 30%, #fff1c2 45%, #e0b54a 60%, #a77a22 100%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.6)) drop-shadow(0 0 18px rgba(224, 181, 74, 0.25));
+  animation: gold-run 6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gold-engrave > span {
+    animation: none;
+  }
+}

@@ -23,7 +23,7 @@ type LayerKey = keyof typeof DEPTH;
 const fit = (z: number) => (PERSPECTIVE - z) / PERSPECTIVE;
 
 /** filigree for one corner (top-left), engraved: thick gold under fine ink, acanthus leaves, a gem */
-function Corner({ c, gold }: { c: string; gold: string }) {
+export function Corner({ c, gold }: { c: string; gold: string }) {
   return (
     <g fill="none" strokeLinecap="round" strokeLinejoin="round">
       <path data-draw pathLength={1} d="M0 58C0 25 25 0 58 0" stroke={gold} strokeWidth="3.6" />
@@ -64,7 +64,7 @@ function Corner({ c, gold }: { c: string; gold: string }) {
 }
 
 /** a vine running along a side: thick gilded stem, swaying leaves, red berries */
-function Vine({ c, gold }: { c: string; gold: string }) {
+export function Vine({ c, gold }: { c: string; gold: string }) {
   return (
     <g fill="none" strokeLinecap="round">
       <path data-draw pathLength={1} d="M0 0C10 14 -8 28 0 42S10 70 0 84" stroke={gold} strokeWidth="2.4" />
