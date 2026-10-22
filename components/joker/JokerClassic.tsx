@@ -9,6 +9,8 @@ export type { DanceMood };
 
 const GOLD = "#e0b54a";
 const RED = "#b3243a";
+const RED_DARK = "#7a1426";
+const VIOLET = "#4b1f73";
 const PERSPECTIVE = 900;
 
 /**
@@ -20,36 +22,66 @@ type LayerKey = keyof typeof DEPTH;
 
 const fit = (z: number) => (PERSPECTIVE - z) / PERSPECTIVE;
 
-/** filigree for one corner (top-left); other corners mirror it */
-function Corner({ c }: { c: string }) {
+/** filigree for one corner (top-left), engraved: thick gold under fine ink, acanthus leaves, a gem */
+function Corner({ c, gold }: { c: string; gold: string }) {
   return (
-    <g fill="none" stroke={c} strokeLinecap="round" strokeLinejoin="round">
-      <path data-draw pathLength={1} d="M0 52C0 22 22 0 52 0" strokeWidth="1.4" />
-      <path data-draw pathLength={1} d="M7 46C9 24 24 9 46 7" strokeWidth=".8" />
-      <path data-draw pathLength={1} d="M52 0c9 0 14 7 9 14s-14 5-13-2 6-9 10-5" strokeWidth="1.2" />
-      <path data-draw pathLength={1} d="M0 52c0 9 7 14 14 9s5-14-2-13-9 6-5 10" strokeWidth="1.2" />
-      <path data-draw pathLength={1} d="M18 18c6-3 12-2 15 3-6 2-11 2-15-3zM18 18c-3 6-2 12 3 15 2-6 2-11-3-15z" strokeWidth=".9" />
-      <path data-draw pathLength={1} d="M30 30c8 2 14 8 16 16M30 30c2 8 8 14 16 16" strokeWidth=".7" />
-      <circle cx="18" cy="18" r="2.4" fill={c} stroke="none" />
-      <circle cx="61" cy="12" r="1.4" fill={c} stroke="none" />
-      <circle cx="12" cy="61" r="1.4" fill={c} stroke="none" />
+    <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <path data-draw pathLength={1} d="M0 58C0 25 25 0 58 0" stroke={gold} strokeWidth="3.6" />
+      <path d="M0 58C0 25 25 0 58 0" stroke={c} strokeWidth=".7" />
+      <path data-draw pathLength={1} d="M8 50C10 26 26 10 50 8" stroke={c} strokeWidth="1" />
+      <path data-draw pathLength={1} d="M13 46C16 29 29 16 46 13" stroke={RED} strokeWidth=".7" strokeDasharray="0.1 3.2" />
+      {/* curls at both ends */}
+      <path data-draw pathLength={1} d="M58 0c11 0 17 8 11 16s-16 5-15-2 7-10 12-6" stroke={gold} strokeWidth="2.6" />
+      <path d="M58 0c11 0 17 8 11 16s-16 5-15-2 7-10 12-6" stroke={c} strokeWidth=".5" />
+      <path data-draw pathLength={1} d="M0 58c0 11 8 17 16 11s5-16-2-15-10 7-6 12" stroke={gold} strokeWidth="2.6" />
+      <path d="M0 58c0 11 8 17 16 11s5-16-2-15-10 7-6 12" stroke={c} strokeWidth=".5" />
+      {/* acanthus leaves, filled so their width swells and tapers */}
+      <g className="leaf-sway">
+        <path d="M21 21c9-7 20-7 25 2-9 3-17 3-25-2z" fill={gold} stroke={c} strokeWidth=".6" />
+        <path d="M23 22c7-2 14-1 19 2" stroke={c} strokeWidth=".45" />
+        <path d="M21 21c-7 9-7 20 2 25 3-9 3-17-2-25z" fill={gold} stroke={c} strokeWidth=".6" />
+        <path d="M22 23c-2 7-1 14 2 19" stroke={c} strokeWidth=".45" />
+        <path d="M30 14c5-4 11-3 13 1-5 2-9 1-13-1zM14 30c-4 5-3 11 1 13 2-5 1-9-1-13z" fill={VIOLET} stroke={c} strokeWidth=".5" />
+      </g>
+      <path d="M36 36c10 2 16 10 18 20M36 36c2 10 10 16 20 18" stroke={RED} strokeWidth="1.2" />
+      <path d="M36 36c10 2 16 10 18 20M36 36c2 10 10 16 20 18" stroke={gold} strokeWidth=".4" />
+      {/* gem with a moving glint */}
+      <circle cx="19" cy="19" r="4.6" fill={RED} stroke={gold} strokeWidth="1.8" />
+      <circle cx="19" cy="19" r="2.4" fill="#d9475f" />
+      <circle className="gem-glint" cx="17.4" cy="17.4" r="1.2" fill="#fff" />
+      {[
+        [30, 5.6],
+        [5.6, 30],
+        [44, 3],
+        [3, 44],
+      ].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={i < 2 ? 1.5 : 1} fill={gold} stroke={c} strokeWidth=".3" />
+      ))}
+      <circle cx="67" cy="14" r="2" fill={VIOLET} stroke={gold} strokeWidth=".8" />
+      <circle cx="14" cy="67" r="2" fill={VIOLET} stroke={gold} strokeWidth=".8" />
     </g>
   );
 }
 
-/** a vine running along a side, leaves alternating */
-function Vine({ c }: { c: string }) {
+/** a vine running along a side: thick gilded stem, swaying leaves, red berries */
+function Vine({ c, gold }: { c: string; gold: string }) {
   return (
-    <g fill="none" stroke={c} strokeLinecap="round">
-      <path data-draw pathLength={1} d="M0 0C10 14 -8 28 0 42S10 70 0 84" strokeWidth="1" />
+    <g fill="none" strokeLinecap="round">
+      <path data-draw pathLength={1} d="M0 0C10 14 -8 28 0 42S10 70 0 84" stroke={gold} strokeWidth="2.4" />
+      <path d="M0 0C10 14 -8 28 0 42S10 70 0 84" stroke={c} strokeWidth=".5" />
       {[10, 30, 52, 72].map((y, i) => (
-        <path
-          key={y}
-          d={i % 2 ? `M1 ${y}c6-4 11-2 12 3-6 2-10 1-12-3z` : `M-1 ${y}c-6-4-11-2-12 3 6 2 10 1 12-3z`}
-          strokeWidth=".8"
-          fill={c}
-          fillOpacity=".25"
-        />
+        <g key={y} className="leaf-sway" style={{ animationDelay: `${i * 0.6}s` }}>
+          <path
+            d={i % 2 ? `M1 ${y}c7-5 13-3 14 3-7 3-12 1-14-3z` : `M-1 ${y}c-7-5-13-3-14 3 7 3 12 1 14-3z`}
+            fill={gold}
+            stroke={c}
+            strokeWidth=".6"
+          />
+          <path d={i % 2 ? `M2 ${y + 0.4}c4-1.6 8-1 11 1.4` : `M-2 ${y + 0.4}c-4-1.6-8-1-11 1.4`} stroke={c} strokeWidth=".4" />
+        </g>
+      ))}
+      {[20, 41, 62].map((y, i) => (
+        <circle key={y} cx={i % 2 ? -4 : 4} cy={y} r="1.6" fill={RED} stroke={c} strokeWidth=".4" />
       ))}
     </g>
   );
@@ -96,6 +128,7 @@ export function JokerClassic({
   handle?: Ref<JokerHandle>;
 }) {
   const uid = useId().replace(/:/g, "");
+  const gold = `gold${uid}`;
   const swayRef = useRef<HTMLDivElement>(null);
   const tiltRef = useRef<HTMLDivElement>(null);
   const quick = useRef<{ x: (v: number) => void; y: (v: number) => void } | null>(null);
@@ -146,6 +179,8 @@ export function JokerClassic({
       y: gsap.quickTo(tiltRef.current, "rotationY", { duration: 0.8, ease: "power3" }),
     };
     if (reduced()) return;
+    // light running round the gilding
+    const shimmer = gsap.fromTo(`#${gold}`, { attr: { x1: 0, x2: 250 } }, { attr: { x1: 250, x2: 500 }, duration: 5, repeat: -1, ease: "none" });
     // a slow figure-of-eight so the layers part even when nobody touches the card
     const sway = gsap.timeline({ repeat: -1, yoyo: true });
     sway
@@ -160,6 +195,7 @@ export function JokerClassic({
     window.addEventListener("deviceorientation", onTilt);
     return () => {
       sway.kill();
+      shimmer.kill();
       opening?.kill();
       window.removeEventListener("deviceorientation", onTilt);
     };
@@ -249,32 +285,50 @@ export function JokerClassic({
           {/* 3 · ornate frame */}
           <div data-layer="frame" className={layer}>
             <svg viewBox="0 0 250 350" className="h-full w-full" aria-hidden>
-              <rect data-draw pathLength={1} x="9" y="9" width="232" height="332" rx="12" fill="none" stroke={line} strokeWidth="2" />
-              <rect data-draw pathLength={1} x="15" y="15" width="220" height="320" rx="9" fill="none" stroke={GOLD} strokeWidth="2.2" />
-              <rect x="20" y="20" width="210" height="310" rx="7" fill="none" stroke={line} strokeWidth=".7" strokeDasharray="1 3" />
+              <defs>
+                <linearGradient id={gold} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="250" y2="120" spreadMethod="repeat">
+                  <stop offset="0" stopColor="#8a6418" />
+                  <stop offset=".3" stopColor="#e0b54a" />
+                  <stop offset=".5" stopColor="#fff1c2" />
+                  <stop offset=".7" stopColor="#e0b54a" />
+                  <stop offset="1" stopColor="#8a6418" />
+                </linearGradient>
+              </defs>
+              <rect data-draw pathLength={1} x="8" y="8" width="234" height="334" rx="13" fill="none" stroke={line} strokeWidth="2.4" />
+              <rect data-draw pathLength={1} x="13" y="13" width="224" height="324" rx="10" fill="none" stroke={`url(#${gold})`} strokeWidth="3.4" />
+              <rect x="13" y="13" width="224" height="324" rx="10" fill="none" stroke={line} strokeWidth=".5" />
+              <rect x="17.5" y="17.5" width="215" height="315" rx="8" fill="none" stroke={RED} strokeWidth=".9" />
+              <rect x="20.5" y="20.5" width="209" height="309" rx="7" fill="none" stroke={line} strokeWidth=".8" strokeDasharray="0.1 3.4" strokeLinecap="round" />
               <g transform="translate(20 20)">
-                <Corner c={line} />
+                <Corner c={line} gold={`url(#${gold})`} />
               </g>
               <g transform="translate(230 20) scale(-1 1)">
-                <Corner c={line} />
+                <Corner c={line} gold={`url(#${gold})`} />
               </g>
               <g transform="translate(20 330) scale(1 -1)">
-                <Corner c={line} />
+                <Corner c={line} gold={`url(#${gold})`} />
               </g>
               <g transform="translate(230 330) scale(-1 -1)">
-                <Corner c={line} />
+                <Corner c={line} gold={`url(#${gold})`} />
               </g>
               <g transform="translate(24 133)">
-                <Vine c={line} />
+                <Vine c={line} gold={`url(#${gold})`} />
               </g>
               <g transform="translate(226 133) scale(-1 1)">
-                <Vine c={line} />
+                <Vine c={line} gold={`url(#${gold})`} />
               </g>
-              {/* top crest */}
-              <g transform="translate(125 20)">
-                <path d="M-26 0c8 0 12-6 18-6 4 0 6 3 8 6 2-3 4-6 8-6 6 0 10 6 18 6" fill="none" stroke={line} strokeWidth="1.1" />
-                <path d="M0-10l5 7-5 7-5-7z" fill={RED} stroke={line} strokeWidth=".8" />
-                <circle cx="0" cy="-3" r="1.4" fill={GOLD} />
+              {/* top crest: gilded scrolls, a red fleuron, violet petals, a gem */}
+              <g transform="translate(125 21)">
+                {[1, -1].map((k) => (
+                  <g key={k} transform={`scale(${k} 1)`}>
+                    <path d="M4 2c8 0 12-7 20-7 7 0 10 5 7 9-2 3-7 2-6-1" fill="none" stroke={`url(#${gold})`} strokeWidth="2.2" />
+                    <path d="M4 2c8 0 12-7 20-7 7 0 10 5 7 9-2 3-7 2-6-1" fill="none" stroke={line} strokeWidth=".5" />
+                    <path d="M2-3c5-4 11-2 12 3-5 2-9 1-12-3z" fill={VIOLET} stroke={line} strokeWidth=".6" />
+                  </g>
+                ))}
+                <path d="M0-16c5 5 5 11 0 16-5-5-5-11 0-16z" fill={RED} stroke={`url(#${gold})`} strokeWidth="1.2" />
+                <circle cx="0" cy="3" r="3" fill={RED} stroke={`url(#${gold})`} strokeWidth="1.2" />
+                <circle className="gem-glint" cx="-1" cy="2" r=".8" fill="#fff" />
               </g>
               <g transform="translate(42 54)">
                 <Index c={line} />
@@ -295,14 +349,15 @@ export function JokerClassic({
           {/* 5 · ribbon */}
           <div data-layer="ribbon" className={layer}>
             <svg viewBox="0 0 250 350" className="h-full w-full" style={{ transformOrigin: "50% 89%" }} aria-hidden>
-              <g transform="translate(25 296)">
-                <path d="M2 14l22 5v20L2 34l9-10z" fill="#7a1426" stroke={line} strokeWidth="1.3" />
-                <path d="M198 14l-22 5v20l22-5-9-10z" fill="#7a1426" stroke={line} strokeWidth="1.3" />
-                <path d="M24 19l8 6v14l-8 0zM176 19l-8 6v14l8 0z" fill="#5e0f1e" />
-                <path d="M20 8Q100 0 180 8V34Q100 26 20 34Z" fill={RED} stroke={line} strokeWidth="1.5" />
-                <path d="M24 11.5Q100 4 176 11.5M24 30.5Q100 23 176 30.5" fill="none" stroke={GOLD} strokeWidth="1" />
-                <path d="M30 13Q100 6 170 13" fill="none" stroke="#fff" strokeWidth=".6" opacity=".35" />
-                <text x="100" y="26" textAnchor="middle" fill={GOLD} stroke="#3a1008" strokeWidth=".6" fontSize="16" letterSpacing="7" fontFamily="Georgia, serif" fontWeight="bold">
+              <g transform="translate(25 291)">
+                <path d="M0 16l24 4v22L0 38l10-11z" fill={RED} stroke={line} strokeWidth="1.3" />
+                <path d="M200 16l-24 4v22l24-4-10-11z" fill={RED} stroke={line} strokeWidth="1.3" />
+                <path d="M3 18.6l18 3M3 35.4l18-3M197 18.6l-18 3M197 35.4l-18-3" stroke={GOLD} strokeWidth=".8" />
+                <path d="M24 20l9 6v16l-9 0zM176 20l-9 6v16l9 0z" fill={RED_DARK} />
+                <path d="M18 6Q100 -3 182 6V40Q100 31 18 40Z" fill="#f6ead0" stroke={line} strokeWidth="1.6" />
+                <path d="M22 9.6Q100 1 178 9.6M22 36.4Q100 27.8 178 36.4" fill="none" stroke={GOLD} strokeWidth="1.8" />
+                <path d="M22 9.6Q100 1 178 9.6M22 36.4Q100 27.8 178 36.4" fill="none" stroke={RED} strokeWidth=".5" />
+                <text x="100" y="29.5" textAnchor="middle" fill={RED_DARK} fontSize="21" letterSpacing="5" fontFamily="Georgia, serif" fontWeight="bold">
                   JOKER
                 </text>
               </g>
