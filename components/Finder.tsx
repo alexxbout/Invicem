@@ -2,7 +2,7 @@
 
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
-import { call, msUntil, readName, type Match } from "@/lib/client";
+import { call, msUntil, type Match } from "@/lib/client";
 import { requestTilt } from "@/lib/feel";
 import { COLORS, SYMBOLS } from "@/lib/palette";
 import { setAccent } from "./Ambient";
@@ -45,7 +45,7 @@ export function Finder({ onMatch, onBack }: { onMatch: (m: Match) => void; onBac
     setBusy(true);
     if (tile) gsap.fromTo(tile, { scale: 0.92 }, { scale: 1, duration: 0.5, ease: "elastic.out(1.2,.4)" });
     try {
-      const { data, rtt } = await call<FindResponse>("/api/find", "POST", { color: c, symbol: s, name: readName() });
+      const { data, rtt } = await call<FindResponse>("/api/find", "POST", { color: c, symbol: s });
       if (!data) return shake();
       if (data.result === "none") return shake();
       if (data.result === "need-symbol") {

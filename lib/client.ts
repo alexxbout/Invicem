@@ -35,8 +35,6 @@ export type SessionView = {
   words: Record<Role, string> | null;
   /** server time of the shared reveal of the words */
   revealAt: number | null;
-  /** first names, when given */
-  names: Record<Role, string | null>;
   now: number;
 };
 
@@ -121,25 +119,3 @@ export function usePoll(fn: () => Promise<void> | void, ms: number, on: boolean)
   }, [ms, on]);
 }
 
-const NAME_KEY = "invicem:name";
-
-/** my first name, remembered on this phone */
-export const readName = (): string => {
-  try {
-    return localStorage.getItem(NAME_KEY) ?? "";
-  } catch {
-    return "";
-  }
-};
-
-export function writeName(name: string) {
-  try {
-    localStorage.setItem(NAME_KEY, name);
-  } catch {}
-  window.dispatchEvent(new Event("invicem-name"));
-}
-
-export function subscribeName(cb: () => void) {
-  window.addEventListener("invicem-name", cb);
-  return () => window.removeEventListener("invicem-name", cb);
-}

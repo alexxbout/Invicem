@@ -17,8 +17,6 @@ type Card = {
   state: "waiting" | "matched";
   expiresAt: number;
   flipAt?: number;
-  /** first name of whoever drew it, if given */
-  name?: string;
 };
 
 /**
@@ -80,8 +78,6 @@ type Session = {
   words?: Partial<Record<"a" | "b", string>>;
   /** server time at which both phones turn the words over together */
   revealAt?: number;
-  /** first names, if the players gave them: a drew the card, b found it */
-  names?: Partial<Record<"a" | "b", string>>;
 };
 
 /** every player holds a single joker for the evening */
@@ -107,11 +103,7 @@ function shuffle<T>(items: T[]): T[] {
 export class GameFullError extends Error {}
 
 /** Reserve a unique back. Prefers a colour nobody holds, so the partner needs one tap. */
-/** a first name as typed, tidied; empty when none */
-export const cleanName = (name: unknown) =>
-  typeof name === "string" ? name.replace(/\s+/g, " ").trim().slice(0, 20) : "";
-
-export async function drawCard(name?: string) {
+export async function drawCard() {
   const all: [number, number][] = [];
   for (let c = 0; c < COLOR_COUNT; c++) for (let s = 0; s < SYMBOL_COUNT; s++) all.push([c, s]);
 
@@ -131,7 +123,7 @@ export async function drawCard(name?: string) {
     const id = newId();
     if (!(await store.setNX(backKey(color, symbol), id, HOLD_SEC))) continue;
 
-    const card: Card = { id, color, symbol, state: "waiting", expiresAt: Date.now() + HOLD_SEC * 1000, name: name || undefined };
+    const card: Card = { id, color, symbol, state: "waiting", expiresAt: Date.now() + HOLD_SEC * 1000 };
     await store.set(`card:${id}`, card, HOLD_SEC + 30);
     return { id, color, symbol, expiresAt: card.expiresAt, now: Date.now() };
   }
@@ -161,7 +153,7 @@ export type FindResult =
   | { result: "matched"; sessionId: string; color: number; symbol: number; flipAt: number; now: number };
 
 /** The partner points at a colour (and a symbol when the colour is shared). */
-export async function findCard(color: number, symbol?: number, name?: string): Promise<FindResult> {
+export async function findCard(color: number, symbol?: number): Promise<FindResult> {
   const symbols = symbol === undefined ? Array.from({ length: SYMBOL_COUNT }, (_, s) => s) : [symbol];
   const held = await store.mget<string>(symbols.map((s) => backKey(color, s)));
   const hits = held.filter((id): id is string => !!id);
@@ -180,7 +172,6 @@ export async function findCard(color: number, symbol?: number, name?: string): P
   // the opening question is always a light one, whatever the criteria will be
   const openers = QUESTIONS.map((q, i) => (q.depth === 1 ? i : -1)).filter((i) => i >= 0);
   const session: Session = {
-    names: { a: card.name, b: name || undefined },
     step: 0,
     turn: Math.random() < 0.5 ? "a" : "b",
     phase: "card",
@@ -230,8 +221,6 @@ export type SessionView = {
   words: Record<"a" | "b", string> | null;
   /** server time of the shared reveal of the words */
   revealAt: number | null;
-  /** first names, when given */
-  names: Record<"a" | "b", string | null>;
   now: number;
 };
 
@@ -273,7 +262,6 @@ function view(s: Session): SessionView {
     sealed: { a: !!s.words?.a, b: !!s.words?.b },
     words: (s.phase === "reveal" || s.phase === "end") && s.words?.a && s.words?.b ? { a: s.words.a, b: s.words.b } : null,
     revealAt: s.phase === "reveal" ? (s.revealAt ?? null) : null,
-    names: { a: s.names?.a ?? null, b: s.names?.b ?? null },
     now: Date.now(),
   };
 }

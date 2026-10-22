@@ -85,14 +85,11 @@ export function WordSeal({
   onChange,
   sealed,
   partnerSealed,
-  them,
 }: {
   value: string;
   onChange: (v: string) => void;
   sealed: boolean;
   partnerSealed: boolean;
-  /** the other player's first name, if given */
-  them: string | null;
 }) {
   const sealRef = useRef<HTMLDivElement>(null);
 
@@ -131,7 +128,7 @@ export function WordSeal({
       </PaperCard>
       <p className="flex items-center gap-2 text-[13px] text-paper/60">
         <span className={`size-2 rounded-full ${partnerSealed ? "bg-accent shadow-[0_0_10px_var(--accent)]" : "bg-white/20"}`} />
-        {partnerSealed ? (them ? `${them} a scellé son mot` : "Son mot est scellé") : them ? `${them} cherche son mot…` : "Son mot arrive…"}
+        {partnerSealed ? "Son mot est scellé" : "Son mot arrive…"}
       </p>
     </div>
   );
@@ -141,13 +138,11 @@ export function WordSeal({
 export function WordsReveal({
   mine,
   theirs,
-  them,
   delayMs,
   onRevealed,
 }: {
   mine: string;
   theirs: string;
-  them: string | null;
   delayMs: number;
   onRevealed: () => void;
 }) {
@@ -183,7 +178,7 @@ export function WordsReveal({
       <div className="flex w-full justify-center gap-4">
         {[
           ["Toi", mine],
-          [them ?? "En face", theirs],
+          ["En face", theirs],
         ].map(([who, word]) => (
           <div key={who} className="flex flex-col items-center gap-3">
             <div data-word-card className="relative w-[min(40vw,170px)]" style={{ aspectRatio: "5 / 7", perspective: 900 }}>

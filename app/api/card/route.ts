@@ -1,9 +1,8 @@
-import { cleanName, drawCard, GameFullError } from "@/lib/game";
+import { drawCard, GameFullError } from "@/lib/game";
 
-export async function POST(req: Request) {
-  const body = await req.json().catch(() => null);
+export async function POST() {
   try {
-    return Response.json(await drawCard(cleanName(body?.name)));
+    return Response.json(await drawCard());
   } catch (e) {
     if (e instanceof GameFullError) return Response.json({ error: "full" }, { status: 503 });
     throw e;

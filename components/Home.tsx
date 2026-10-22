@@ -1,9 +1,9 @@
 "use client";
 
 import gsap from "gsap";
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef } from "react";
 import { COLORS } from "@/lib/palette";
-import { readName, subscribeName, writeName, type Saved } from "@/lib/client";
+import type { Saved } from "@/lib/client";
 import { requestTilt } from "@/lib/feel";
 import { setAccent } from "./Ambient";
 import { CardBack } from "./Card";
@@ -28,7 +28,6 @@ export function Home({
   onResume: () => void;
 }) {
   const fanRef = useRef<HTMLDivElement>(null);
-  const name = useSyncExternalStore(subscribeName, readName, () => "");
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -106,17 +105,6 @@ export function Home({
       </div>
 
       <div className="flex w-full flex-col gap-3 pb-2 pt-4">
-        {/* the other player sees this name instead of a faceless "the other" */}
-        <label data-rise className="mb-1 flex items-center justify-center gap-2 text-[13px] text-paper/50">
-          Ton prénom
-          <input
-            value={name}
-            onChange={(e) => writeName(e.target.value.slice(0, 20))}
-            placeholder="facultatif"
-            autoComplete="given-name"
-            className="display w-36 border-b border-white/15 bg-transparent px-1 py-0.5 text-center text-[17px] text-paper outline-none placeholder:text-[14px] placeholder:italic placeholder:text-paper/30 focus:border-gold/60"
-          />
-        </label>
         {saved && (
           <button
             data-rise
