@@ -7,6 +7,7 @@ import type { Saved } from "@/lib/client";
 import { buzz, reduced, requestTilt, tick } from "@/lib/feel";
 import { setAccent } from "./Ambient";
 import { CardBack } from "./Card";
+import { FrameSpark } from "./FrameSpark";
 import { HowTo, howToSeen, subscribeHowTo } from "./HowTo";
 import { Corner, Vine } from "./joker/JokerClassic";
 import { SoundToggle } from "./SoundToggle";
@@ -133,6 +134,7 @@ export function Home({
         aria-hidden
       >
         <div data-frame-line className="absolute inset-0 rounded-[22px] border-2" style={{ borderColor: `${GOLD}66` }} />
+        <FrameSpark radius={22} />
         <div data-frame-line className="absolute inset-[7px] rounded-[17px] border" style={{ borderColor: `${GOLD}33` }} />
         <div data-frame-line className="absolute inset-[11px] rounded-[14px] border border-dashed" style={{ borderColor: "#b3243a55" }} />
         {["left-0 top-0", "right-0 top-0 -scale-x-100", "bottom-0 left-0 -scale-y-100", "bottom-0 right-0 -scale-100"].map((pos) => (
@@ -141,6 +143,22 @@ export function Home({
               <Corner c={GOLD_DEEP} gold={GOLD} />
             </g>
           </svg>
+        ))}
+        {[
+          ["left-[25px] top-[25px]", 0],
+          ["right-[25px] top-[25px]", 1.3],
+          ["bottom-[25px] right-[25px]", 2.6],
+          ["bottom-[25px] left-[25px]", 3.9],
+          ["left-[2px] top-[46%]", 0.7],
+          ["right-[2px] top-[54%]", 2],
+          ["left-1/2 top-[1px]", 3.2],
+          ["bottom-[1px] left-[38%]", 4.4],
+        ].map(([pos, delay]) => (
+          <span
+            key={pos as string}
+            className={`twinkle ${pos}`}
+            style={{ width: 22, animationDuration: "5.2s", animationDelay: `${delay}s` }}
+          />
         ))}
         <svg viewBox="-20 -4 40 96" className="absolute -left-[6px] top-1/2 h-[96px] -translate-y-1/2 overflow-visible">
           <g transform="translate(8 0)">
