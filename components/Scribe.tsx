@@ -2,7 +2,7 @@
 
 import gsap from "gsap";
 import { useEffect, useRef } from "react";
-import { buzz, chime, reduced } from "@/lib/feel";
+import { buzz, reduced, reveal, rustle, scratch, wax } from "@/lib/feel";
 import { ambient } from "./Ambient";
 import { Quill } from "./Card";
 
@@ -24,6 +24,9 @@ function PaperCard({ children, width = "min(76vw, 330px)", ratio = "5 / 7" }: { 
 
 /** the blank card, turned over: the picker writes their question right on it */
 export function WriteCard({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  // the blank card is taken up like a sheet of paper
+  useEffect(() => rustle(), []);
+
   return (
     <div data-rise>
       <PaperCard>
@@ -35,7 +38,11 @@ export function WriteCard({ value, onChange }: { value: string; onChange: (v: st
             autoFocus
             value={value}
             maxLength={140}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => {
+              // the quill scratches as you write, never as you erase
+              if (e.target.value.length > value.length) scratch(0.08);
+              onChange(e.target.value);
+            }}
             placeholder="Écris ta question…"
             aria-label="Ta question"
             className="hand mt-[4cqw] w-full flex-1 resize-none bg-transparent text-center text-[9cqw] leading-[1.15] text-[#2a2132] outline-none placeholder:text-[#2a2132]/30"
@@ -94,7 +101,9 @@ export function WordSeal({
   const sealRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!sealed || reduced()) return;
+    if (!sealed) return;
+    wax();
+    if (reduced()) return;
     gsap.fromTo(sealRef.current, { scale: 2.2, opacity: 0, rotation: -30 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.6, ease: "back.out(2)" });
     buzz(30);
   }, [sealed]);
@@ -155,7 +164,7 @@ export function WordsReveal({
         .to("[data-word-inner]", { rotationY: 180, duration: 1.1, ease: "power3.inOut" }, "<")
         .call(
           () => {
-            chime();
+            reveal();
             buzz([30, 40, 120]);
             ambient.burst();
           },

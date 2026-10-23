@@ -76,49 +76,85 @@ function out(): AudioNode {
   return room;
 }
 
-/** a bell-like note: a sine with a soft inharmonic overtone that dies sooner */
-function bell(freq: number, start: number, dur: number, peak: number) {
-  if (!ctx) return;
+/* ---- sound sources ---- */
+
+const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+
+/** two seconds of white noise, made once; every paper sound reads a random slice of it */
+let noiseBuf: AudioBuffer | null = null;
+function noise(): AudioBuffer {
+  if (noiseBuf) return noiseBuf;
+  const len = ctx!.sampleRate * 2;
+  noiseBuf = ctx!.createBuffer(1, len, ctx!.sampleRate);
+  const data = noiseBuf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  return noiseBuf;
+}
+
+type Burst = {
+  start: number;
+  dur: number;
+  peak: number;
+  type: BiquadFilterType;
+  freq: number;
+  /** where the filter glides to by the end */
+  to?: number;
+  q?: number;
+  /** share of the duration spent rising */
+  attack?: number;
+};
+
+/** filtered noise with a shaped envelope: the raw material of paper, felt and wax */
+function burst({ start, dur, peak, type, freq, to, q = 0.8, attack = 0.15 }: Burst) {
+  const src = ctx!.createBufferSource();
+  src.buffer = noise();
+  src.playbackRate.value = rnd(0.85, 1.15);
+  const f = ctx!.createBiquadFilter();
+  f.type = type;
+  f.Q.value = q;
+  f.frequency.setValueAtTime(freq, start);
+  if (to) f.frequency.exponentialRampToValueAtTime(to, start + dur);
+  const g = ctx!.createGain();
+  g.gain.setValueAtTime(0.0001, start);
+  g.gain.exponentialRampToValueAtTime(peak, start + Math.max(0.002, dur * attack));
+  g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+  src.connect(f).connect(g).connect(out());
+  src.start(start, rnd(0, 1.5), dur + 0.05);
+}
+
+/** a pitched note with its own partials; higher partials die sooner */
+function note(freq: number, start: number, dur: number, peak: number, partials: [number, number][] = [[1, 1]], type: OscillatorType = "sine") {
   const dest = out();
-  [
-    [1, peak, dur],
-    [2.76, peak * 0.22, dur * 0.45],
-    [5.4, peak * 0.06, dur * 0.2],
-  ].forEach(([k, p, d]) => {
+  partials.forEach(([k, share]) => {
     const osc = ctx!.createOscillator();
-    const gain = ctx!.createGain();
-    osc.type = "sine";
+    const g = ctx!.createGain();
+    osc.type = type;
     osc.frequency.value = freq * k;
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(p, start + 0.012);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + d);
-    osc.connect(gain).connect(dest);
+    const d = dur / Math.sqrt(k);
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(peak * share, start + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + d);
+    osc.connect(g).connect(dest);
     osc.start(start);
     osc.stop(start + d + 0.05);
   });
 }
 
-/** a short breath of filtered noise: the sound of a card sliding or turning */
-function swish(start: number, dur: number, peak: number, from: number, to: number) {
-  if (!ctx) return;
-  const len = Math.ceil(ctx.sampleRate * dur);
-  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-  const data = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
-  const src = ctx.createBufferSource();
-  src.buffer = buf;
-  const band = ctx.createBiquadFilter();
-  band.type = "bandpass";
-  band.Q.value = 1.2;
-  band.frequency.setValueAtTime(from, start);
-  band.frequency.exponentialRampToValueAtTime(to, start + dur);
-  const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0.0001, start);
-  gain.gain.exponentialRampToValueAtTime(peak, start + dur * 0.3);
-  gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
-  src.connect(band).connect(gain).connect(out());
-  src.start(start);
+/** a low, dull knock: a card landing on felt, a seal pressed on paper */
+function thump(start: number, freq: number, peak: number, dur = 0.12) {
+  const osc = ctx!.createOscillator();
+  const g = ctx!.createGain();
+  osc.frequency.setValueAtTime(freq * 1.6, start);
+  osc.frequency.exponentialRampToValueAtTime(freq, start + dur * 0.4);
+  g.gain.setValueAtTime(0.0001, start);
+  g.gain.exponentialRampToValueAtTime(peak, start + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+  osc.connect(g).connect(out());
+  osc.start(start);
+  osc.stop(start + dur + 0.05);
 }
+
+const live = () => soundOn() && !!ctx;
 
 export function setSound(on: boolean) {
   try {
@@ -126,26 +162,95 @@ export function setSound(on: boolean) {
   } catch {}
   if (on) {
     unlock();
-    chime();
+    reveal();
   }
   window.dispatchEvent(new Event("invicem-sound"));
 }
 
-/** the shared moment: a card swish, then four soft bells rising (E major), the last one held */
-export function chime() {
-  if (!soundOn() || !ctx) return;
-  const t = ctx.currentTime;
-  swish(t, 0.35, 0.05, 900, 3200);
-  [329.63, 415.3, 493.88, 659.25].forEach((f, i) => bell(f, t + 0.08 + i * 0.11, i === 3 ? 2.8 : 1.6, 0.05));
-  bell(164.81, t + 0.08, 2.4, 0.02);
+/* ---- the game's sounds: quiet, papery, and never twice exactly the same ---- */
+
+/** a card dealt onto the cloth: a short slide of card on felt, then a soft landing */
+export function slide() {
+  if (!live()) return;
+  const t = ctx!.currentTime;
+  burst({ start: t, dur: rnd(0.14, 0.2), peak: rnd(0.025, 0.035), type: "bandpass", freq: rnd(1800, 2600), to: rnd(700, 1000), q: 0.7, attack: 0.5 });
+  thump(t + rnd(0.13, 0.17), rnd(110, 140), 0.035, 0.08);
 }
 
-/** a card turning: a quick paper swish with a faint wooden knock */
-export function tick() {
-  if (!soundOn() || !ctx) return;
-  const t = ctx.currentTime;
-  swish(t, 0.16, 0.035, 2400, 900);
-  bell(220, t + 0.05, 0.18, 0.012);
+/** a card lifted between the fingers: a dry little tap with a whisper of paper */
+export function pick() {
+  if (!live()) return;
+  const t = ctx!.currentTime;
+  burst({ start: t, dur: 0.035, peak: 0.05, type: "highpass", freq: rnd(2500, 3500), attack: 0.05 });
+  burst({ start: t + 0.02, dur: 0.12, peak: 0.012, type: "bandpass", freq: rnd(3500, 5000), q: 1.4, attack: 0.3 });
+}
+
+/** a card turning over: air under the card, then the crisp snap of it landing face up */
+export function flip() {
+  if (!live()) return;
+  const t = ctx!.currentTime;
+  burst({ start: t, dur: 0.22, peak: 0.018, type: "bandpass", freq: 600, to: rnd(2400, 3200), q: 0.6, attack: 0.6 });
+  burst({ start: t + 0.2, dur: 0.03, peak: rnd(0.05, 0.07), type: "highpass", freq: rnd(1800, 2600), attack: 0.04 });
+  thump(t + 0.2, rnd(160, 200), 0.025, 0.06);
+}
+
+/** the voicings the shared moment picks from: all soft, all open */
+const CHORDS = [
+  [293.66, 440, 554.37, 659.25],
+  [261.63, 392, 493.88, 587.33],
+  [329.63, 493.88, 622.25, 739.99],
+  [246.94, 369.99, 466.16, 554.37],
+];
+
+/** both cards turning together: the flip, then a few soft music-box notes */
+export function reveal() {
+  if (!live()) return;
+  flip();
+  const t = ctx!.currentTime + 0.24;
+  const chord = CHORDS[Math.floor(Math.random() * CHORDS.length)];
+  const box: [number, number][] = [[1, 1], [3, 0.08], [4.2, 0.04]];
+  chord.forEach((f, i) => note(f * 2, t + i * rnd(0.09, 0.13), 1.6, 0.022, box));
+  note(chord[0] / 2, t, 2.2, 0.018, [[1, 1], [2, 0.2]]);
+}
+
+/** the jester: little bells on his hat shaking, then three playful plucked notes */
+export function jester() {
+  if (!live()) return;
+  const t = ctx!.currentTime;
+  const bells: [number, number][] = [[1, 1], [2.32, 0.5], [4.25, 0.3], [6.8, 0.15]];
+  for (let i = 0; i < 9; i++) note(rnd(2600, 3400), t + i * rnd(0.035, 0.06), 0.25, 0.012 * (1 - i / 12), bells);
+  const run = Math.random() < 0.5 ? [523.25, 659.25, 783.99] : [587.33, 739.99, 880];
+  run.forEach((f, i) => note(f, t + 0.35 + i * 0.12, 0.3, 0.03, [[1, 1], [2, 0.3]], "triangle"));
+  burst({ start: t + 0.7, dur: 0.5, peak: 0.01, type: "bandpass", freq: 1200, to: 4000, q: 0.5, attack: 0.3 });
+}
+
+/** a quill on paper: short scratches in an uneven rhythm, for the given seconds */
+export function scratch(seconds: number, delay = 0) {
+  if (!live()) return;
+  let t = ctx!.currentTime + delay;
+  const end = t + seconds;
+  while (t < end) {
+    const d = rnd(0.04, 0.11);
+    burst({ start: t, dur: d, peak: rnd(0.006, 0.014), type: "bandpass", freq: rnd(3500, 6500), q: rnd(2, 4), attack: 0.4 });
+    t += d + rnd(0.01, 0.07);
+  }
+}
+
+/** a sheet of paper taken up: a soft rustle */
+export function rustle() {
+  if (!live()) return;
+  const t = ctx!.currentTime;
+  for (let i = 0; i < 3; i++) {
+    burst({ start: t + i * rnd(0.05, 0.09), dur: rnd(0.1, 0.18), peak: rnd(0.008, 0.016), type: "bandpass", freq: rnd(2000, 4000), q: 0.9, attack: 0.3 });
+  }
+}
+
+/** warm wax pressed by a seal: a dull thud with a short squish */
+export function wax() {
+  if (!live()) return;
+  const t = ctx!.currentTime;
+  thump(t, rnd(70, 85), 0.08, 0.22);
+  burst({ start: t + 0.01, dur: 0.18, peak: 0.02, type: "lowpass", freq: 900, to: 300, attack: 0.1 });
 }
 
 /* ---- device tilt ---- */

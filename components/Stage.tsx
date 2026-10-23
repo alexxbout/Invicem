@@ -14,7 +14,7 @@ import {
   type Role,
   type SessionView,
 } from "@/lib/client";
-import { reduced } from "@/lib/feel";
+import { reduced, scratch } from "@/lib/feel";
 import { THEME_GLYPH } from "@/lib/labels";
 import { COLORS, SYMBOLS } from "@/lib/palette";
 import { ambient, setAccent } from "./Ambient";
@@ -156,10 +156,12 @@ function QuestionFace({ question, play }: { question: Question; play: boolean })
       return;
     }
     if (question.written) {
+      const stagger = Math.min(0.06, 2.4 / parts.length);
+      scratch(stagger * parts.length, 0.7);
       gsap.fromTo(
         parts,
         { opacity: 0, y: 3, scale: 0.6 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.18, ease: "power1.out", stagger: Math.min(0.06, 2.4 / parts.length), delay: 0.7 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.18, ease: "power1.out", stagger, delay: 0.7 },
       );
       return;
     }

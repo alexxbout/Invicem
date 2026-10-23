@@ -2,7 +2,7 @@
 
 import gsap from "gsap";
 import { useEffect, useRef, type ReactNode } from "react";
-import { buzz, chime, reduced, tick } from "@/lib/feel";
+import { buzz, flip as flipSound, reduced, reveal } from "@/lib/feel";
 import { ambient } from "./Ambient";
 import { COLORS } from "@/lib/palette";
 import { Glyph } from "./Glyph";
@@ -368,11 +368,11 @@ export function Card({
             flash();
             if (burstRef.current) sparks(burstRef.current);
           }
-          chime();
+          reveal();
           ambient.burst();
           buzz([30, 40, 30, 40, 160]);
         } else {
-          tick();
+          flipSound();
           buzz(12);
         }
       },

@@ -3,7 +3,7 @@
 import gsap from "gsap";
 import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
 import type { HandCard } from "@/lib/client";
-import { buzz, reduced, tick } from "@/lib/feel";
+import { buzz, pick as pickSound, reduced, slide } from "@/lib/feel";
 import { BlankBack, CardBack, RareBack } from "./Card";
 
 export function Depth({ depth }: { depth: number }) {
@@ -79,7 +79,7 @@ export function Hand({
             duration: 0.75,
             ease: "back.out(1.35)",
             delay: 0.12 + i * 0.14,
-            onStart: () => tick(),
+            onStart: () => slide(),
             onComplete: float,
           },
         );
@@ -129,7 +129,7 @@ export function Hand({
       .to(chosen, { rotation: 0, duration: 0.66, ease: "power3.inOut" }, 0.1)
       .to(chosen, { x: `+=${dx}`, y: `+=${dy + 18}`, scale, duration: 0.66, ease: "power3.inOut" }, 0.1)
       .to(chosen, { boxShadow: "0 0 70px 14px var(--accent)", duration: 0.35, yoyo: true, repeat: 1 }, 0.2);
-    tick();
+    pickSound();
     return tl.then();
   };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import type { JokerKind } from "@/lib/client";
-import { buzz } from "@/lib/feel";
+import { buzz, pick } from "@/lib/feel";
 import { JokerClassic } from "./JokerClassic";
 
 /**
@@ -16,6 +16,7 @@ export function JokerFan({ kinds, onPlay }: { kinds: JokerKind[]; onPlay: (kind:
       <button
         onClick={(e) => {
           buzz(14);
+          pick();
           onPlay(joker, e.currentTarget);
         }}
         aria-label="Jouer ton joker pour passer cette carte"

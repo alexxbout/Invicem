@@ -4,7 +4,7 @@ import gsap from "gsap";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { COLORS } from "@/lib/palette";
 import type { Saved } from "@/lib/client";
-import { buzz, reduced, requestTilt, tick } from "@/lib/feel";
+import { buzz, pick, reduced, requestTilt, slide } from "@/lib/feel";
 import { setAccent } from "./Ambient";
 import { CardBack } from "./Card";
 import { HowTo, howToSeen, subscribeHowTo } from "./HowTo";
@@ -62,7 +62,7 @@ export function Home({
             duration: 0.9,
             ease: "back.out(1.3)",
             stagger: 0.16,
-            onStart: () => tick(),
+            onStart: () => slide(),
           },
           0.9,
         )
@@ -107,7 +107,7 @@ export function Home({
     leaving.current = true;
     void requestTilt();
     buzz(14);
-    tick();
+    pick();
     if (reduced()) return go();
     const card = e.currentTarget.querySelector<HTMLElement>("[data-card]") ?? e.currentTarget;
     const box = card.getBoundingClientRect();
