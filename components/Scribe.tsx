@@ -65,7 +65,7 @@ export function QuillWait({ label }: { label: string }) {
 }
 
 /** a wax seal, red with a gold star */
-function Seal({ className }: { className?: string }) {
+export function Seal({ className }: { className?: string }) {
   return (
     <div
       className={`grid aspect-square place-items-center rounded-full text-[#f3d27a] ${className ?? ""}`}

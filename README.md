@@ -1,15 +1,19 @@
 <div align="center">
 
-# Invicem
+<img src="docs/banner.jpg" alt="Invicem : un jeu de cartes pour deux" width="100%">
+
+<br><br>
+
+### ▶ Jouer maintenant : **[invicem.vercel.app](https://invicem.vercel.app)**
 
 *invicem* — latin : « l'un l'autre, à tour de rôle »
 
 **Un jeu de cartes pour deux, pour se découvrir une question après l'autre.**
-Assis côte à côte, un téléphone chacun.
+Assis côte à côte, un téléphone chacun. Rien à installer : ouvrez le lien sur les deux téléphones.
 
 <br>
 
-<img src="docs/screens/home.jpg" alt="Accueil : la table de jeu" width="260"> &nbsp; <img src="docs/screens/joker.jpg" alt="Le joker" width="260">
+<img src="docs/screens/home.jpg" alt="Accueil : la table de jeu" width="240"> &nbsp; <img src="docs/screens/question.jpg" alt="Une question" width="240"> &nbsp; <img src="docs/screens/joker.jpg" alt="Le joker" width="240">
 
 </div>
 
@@ -104,7 +108,7 @@ Sans variables d'environnement, l'état vit en mémoire : parfait pour tester, e
    ```
 
    (ou les variables `KV_REST_API_URL` / `KV_REST_API_TOKEN` fournies par l'intégration Vercel).
-3. Sur iPhone, ouvrir le site dans Safari puis **Partager → Sur l'écran d'accueil** : l'app s'ouvre en plein écran.
+3. Sur iPhone, ouvrir le site (par exemple https://invicem.vercel.app) dans Safari puis **Partager → Sur l'écran d'accueil** : l'app s'ouvre en plein écran.
 
 ## Les questions
 
