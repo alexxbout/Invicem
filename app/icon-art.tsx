@@ -48,8 +48,12 @@ export function IconArt({ size, variant = "pair" }: { size: number; variant?: Ic
     return (
       <Frame size={size}>
         <div style={{ width: 70 * u, height: 70 * u, borderRadius: 70 * u, border: `${1.6 * u}px solid #e0b54a`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ width: 61 * u, height: 61 * u, borderRadius: 61 * u, border: `${0.8 * u}px solid rgba(224,181,74,.5)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#e9c46a", fontSize: 44 * u, fontFamily: "Georgia, serif", lineHeight: 1 }}>
-            I
+          <div style={{ width: 61 * u, height: 61 * u, borderRadius: 61 * u, border: `${0.8 * u}px solid rgba(224,181,74,.5)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {/* a serif capital I, drawn rather than typed so it looks the same when exported */}
+            <svg width={30 * u} height={40 * u} viewBox="0 0 30 40">
+              <path d="M5 3h20v2.2q-5 .4-6 1.8v26q1 1.4 6 1.8V37H5v-2.2q5-.4 6-1.8V7q-1-1.4-6-1.8z" fill="#e9c46a" />
+              <path d="M13.2 8v24" stroke="#fff1c2" strokeWidth="1" opacity=".55" />
+            </svg>
           </div>
         </div>
       </Frame>
