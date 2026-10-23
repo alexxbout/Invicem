@@ -29,6 +29,7 @@ import { History } from "./History";
 import { Sheet } from "./Sheet";
 import { SoundToggle } from "./SoundToggle";
 import { Screen, Wordmark } from "./Screen";
+import { Tap } from "./Tap";
 
 type Mode = "drawing" | "waiting" | "charging" | "open" | "full";
 
@@ -111,11 +112,11 @@ function Frise({ view, onOpen }: { view: SessionView; onOpen: () => void }) {
   if (view.phase === "card" && view.question) asked.push(view.question);
   const start = view.goal - 7;
   return (
-    <button
+    <Tap
       onClick={onOpen}
       disabled={asked.length === 0}
       aria-label={`Question ${view.round} sur ${view.goal}, revoir les cartes`}
-      className="flex items-end justify-center gap-1.5 rounded-xl px-2 py-1 transition active:scale-95 disabled:cursor-default"
+      className="flex items-end justify-center gap-1.5 rounded-xl px-2 py-1 transition active:scale-95 aria-disabled:cursor-default"
     >
       {Array.from({ length: 7 }, (_, k) => {
         const q = asked[start + k];
@@ -139,7 +140,7 @@ function Frise({ view, onOpen }: { view: SessionView; onOpen: () => void }) {
           </span>
         );
       })}
-    </button>
+    </Tap>
   );
 }
 
@@ -645,7 +646,7 @@ export function Stage({
           mode === "open" && !setup ? (
             <div className="flex items-center">
               <SoundToggle />
-              <button
+              <Tap
                 onClick={() => setMoodOpen(true)}
                 aria-label="Ambiance"
                 className="grid size-10 place-items-center rounded-full text-paper/60 transition hover:bg-white/5 hover:text-paper"
@@ -655,7 +656,7 @@ export function Stage({
                   <circle cx="15" cy="7" r="2" />
                   <circle cx="9" cy="17" r="2" />
                 </svg>
-              </button>
+              </Tap>
             </div>
           ) : null
         }
@@ -774,9 +775,9 @@ export function Stage({
             )}
 
             {setup && (
-              <button onClick={() => void act("start")} className={(primary) + waiting}>
+              <Tap onClick={() => void act("start")} className={(primary) + waiting}>
                 Commencer
-              </button>
+              </Tap>
             )}
 
             {choosing && (
@@ -792,57 +793,57 @@ export function Stage({
                   {lastOne ? "Ensuite, la dernière carte." : opening ? "Ensuite, vous choisirez l'ambiance." : "Ensuite, la pioche change de main."}
                 </p>
               ) : (
-                <button onClick={next} className={(lastOne ? primary : secondary) + waiting}>
+                <Tap onClick={next} className={(lastOne ? primary : secondary) + waiting}>
                   {lastOne ? "Dernière carte" : opening ? "Choisir l'ambiance" : "À moi de piocher"}
-                </button>
+                </Tap>
               ))}
 
             {phase === "closing" && (
-              <button onClick={next} className={(primary) + waiting}>
+              <Tap onClick={next} className={(primary) + waiting}>
                 Un dernier mot
-              </button>
+              </Tap>
             )}
 
             {writing && mine && (
-              <button
+              <Tap
                 onClick={() => void writeQuestion()}
                 disabled={draft.trim().length < 4}
-                className={(primary) + waiting + " disabled:opacity-40"}
+                className={(primary) + waiting + " aria-disabled:opacity-40"}
               >
                 Poser la question
-              </button>
+              </Tap>
             )}
 
             {sealing && !shown.sealed[role] && (
-              <button onClick={() => void seal()} disabled={!word.trim()} className={(primary) + waiting + " disabled:opacity-40"}>
+              <Tap onClick={() => void seal()} disabled={!word.trim()} className={(primary) + waiting + " aria-disabled:opacity-40"}>
                 Sceller mon mot
-              </button>
+              </Tap>
             )}
             {sealing && shown.sealed[role] && (
               <p className="display text-[15px] italic text-paper/50">{shown.sealed[other] ? "\u00a0" : "On attend le second mot…"}</p>
             )}
 
             {revealing && revealed && (
-              <button data-rise onClick={next} className={(primary) + waiting}>
+              <Tap data-rise onClick={next} className={(primary) + waiting}>
                 Voir notre soirée
-              </button>
+              </Tap>
             )}
 
             {ended && (
               <div className="flex w-full flex-col items-center gap-3">
-                <button onClick={() => void act("continue")} className={(secondary) + waiting}>
+                <Tap onClick={() => void act("continue")} className={(secondary) + waiting}>
                   Continuer à jouer
-                </button>
-                <button onClick={() => leave(true)} className="text-[13px] text-paper/50 underline-offset-4 hover:underline">
+                </Tap>
+                <Tap onClick={() => leave(true)} className="text-[13px] text-paper/50 underline-offset-4 hover:underline">
                   Terminer et quitter
-                </button>
+                </Tap>
               </div>
             )}
 
             {(phase === "card" || choosing) && !lastOne && (
-              <button onClick={() => void act("finish")} className="text-[12px] text-paper/35 underline-offset-4 hover:underline">
+              <Tap onClick={() => void act("finish")} className="text-[12px] text-paper/35 underline-offset-4 hover:underline">
                 Terminer la soirée
-              </button>
+              </Tap>
             )}
           </>
         )}
@@ -850,9 +851,9 @@ export function Stage({
         {mode === "full" && (
           <div data-rise className="space-y-4">
             <p className="display text-[20px] italic text-paper/70">Beaucoup de monde ce soir. Réessayez dans un instant.</p>
-            <button onClick={() => leave(false)} className="rounded-full border border-white/15 px-6 py-3 text-[14px]">
+            <Tap onClick={() => leave(false)} className="rounded-full border border-white/15 px-6 py-3 text-[14px]">
               Retour
-            </button>
+            </Tap>
           </div>
         )}
       </div>

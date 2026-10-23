@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { COLORS } from "@/lib/palette";
 import { reduced } from "@/lib/feel";
 import { CardBack } from "./Card";
+import { Tap } from "./Tap";
 
 const KEY = "invicem:howto";
 /** the colour the demo plays with */
@@ -149,12 +150,12 @@ export function HowTo({ onClose }: { onClose: () => void }) {
           ))}
         </ol>
 
-        <button
+        <Tap
           onClick={close}
           className="w-full rounded-full bg-gradient-to-b from-[#ecd09a] to-[#c79a50] py-3.5 text-[15px] font-medium text-[#2a1d0a] transition active:scale-95"
         >
           C&apos;est parti
-        </button>
+        </Tap>
       </div>
     </div>
   );

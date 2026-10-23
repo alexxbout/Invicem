@@ -9,6 +9,7 @@ import { setAccent } from "./Ambient";
 import { CardBack } from "./Card";
 import { Glyph } from "./Glyph";
 import { Screen, Wordmark } from "./Screen";
+import { Tap } from "./Tap";
 
 type FindResponse =
   | { result: "none" }
@@ -90,7 +91,7 @@ export function Finder({ onMatch, onBack }: { onMatch: (m: Match) => void; onBac
         {color === null ? (
           <div ref={gridRef} key="colors" className="grid grid-cols-4 gap-x-3 gap-y-5">
             {COLORS.map((c, i) => (
-              <button
+              <Tap
                 key={c.name}
                 data-tile
                 style={{ "--i": i } as React.CSSProperties}
@@ -106,13 +107,13 @@ export function Finder({ onMatch, onBack }: { onMatch: (m: Match) => void; onBac
                   <CardBack color={i} />
                 </div>
                 <span className="text-[11px] tracking-wide text-paper/60">{c.name}</span>
-              </button>
+              </Tap>
             ))}
           </div>
         ) : (
           <div ref={gridRef} key="symbols" className="grid grid-cols-4 gap-3">
             {SYMBOLS.map((s, i) => (
-              <button
+              <Tap
                 key={s.name}
                 data-tile
                 disabled={busy}
@@ -128,7 +129,7 @@ export function Finder({ onMatch, onBack }: { onMatch: (m: Match) => void; onBac
               >
                 <Glyph id={i} className="w-[46%]" strokeWidth={1.3} />
                 <span className="text-[10px] tracking-wide text-paper/60">{s.name}</span>
-              </button>
+              </Tap>
             ))}
           </div>
         )}

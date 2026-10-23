@@ -11,6 +11,7 @@ import { HowTo, howToSeen, subscribeHowTo } from "./HowTo";
 import { InstallInvite } from "./InstallInvite";
 import { Corner, Vine } from "./joker/JokerClassic";
 import { SoundToggle } from "./SoundToggle";
+import { Tap } from "./Tap";
 
 const GOLD = "#e0b54a";
 const GOLD_DEEP = "#a77a22";
@@ -156,7 +157,7 @@ export function Home({
       </div>
 
       <div className="relative z-10 flex w-full items-center justify-between px-[84px] pt-[max(1.4rem,env(safe-area-inset-top))]">
-        <button
+        <Tap
           onClick={() => setHowTo(true)}
           aria-label="Comment on joue"
           className={`grid size-9 place-items-center rounded-full border text-[15px] transition ${
@@ -164,7 +165,7 @@ export function Home({
           }`}
         >
           ?
-        </button>
+        </Tap>
         <SoundToggle />
       </div>
 
@@ -190,7 +191,7 @@ export function Home({
       {/* the table */}
       <div data-depth="16" className="mt-auto flex w-full flex-col items-center gap-6 pb-[max(5.2rem,calc(env(safe-area-inset-bottom)+4rem))]">
         {saved && (
-          <button
+          <Tap
             data-pick="resume"
             onClick={(e) => take("resume", onResume, e)}
             className="flex items-center gap-3 active:scale-95"
@@ -209,12 +210,12 @@ export function Home({
                 votre partie en cours
               </div>
             </div>
-          </button>
+          </Tap>
         )}
 
         <div className="flex w-full items-end justify-center gap-[6vw]">
           {/* a deck: draw the top card */}
-          <button
+          <Tap
             data-pick="draw"
             onClick={(e) => take("draw", onDraw, e)}
             className="flex w-[min(33vw,138px)] flex-col items-center gap-4"
@@ -238,10 +239,10 @@ export function Home({
               <div className={label}>Tirer une carte</div>
               <div className={hint}>je la montre en face</div>
             </div>
-          </button>
+          </Tap>
 
           {/* a face-up card: find the other's colour */}
-          <button
+          <Tap
             data-pick="find"
             onClick={(e) => take("find", onFind, e)}
             className="flex w-[min(33vw,138px)] flex-col items-center gap-4"
@@ -289,7 +290,7 @@ export function Home({
               <div className={label}>Retrouver sa carte</div>
               <div className={hint}>je cherche celle d&apos;en face</div>
             </div>
-          </button>
+          </Tap>
         </div>
       </div>
 

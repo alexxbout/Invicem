@@ -3,6 +3,7 @@
 import type { JokerKind } from "@/lib/client";
 import { buzz, pick } from "@/lib/feel";
 import { JokerClassic } from "./JokerClassic";
+import { Tap } from "../Tap";
 
 /**
  * The answering player's joker, tucked behind the bottom-right corner of the question card
@@ -13,7 +14,7 @@ export function JokerFan({ kinds, onPlay }: { kinds: JokerKind[]; onPlay: (kind:
   if (!joker) return null;
   return (
     <div className="joker-fan pointer-events-none absolute -right-[10%] -bottom-[13%] w-[31%]">
-      <button
+      <Tap
         onClick={(e) => {
           buzz(14);
           pick();
@@ -26,7 +27,7 @@ export function JokerFan({ kinds, onPlay }: { kinds: JokerKind[]; onPlay: (kind:
         <div className="pointer-events-none" aria-hidden>
           <JokerClassic width="100%" variant="paper" />
         </div>
-      </button>
+      </Tap>
     </div>
   );
 }

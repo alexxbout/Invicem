@@ -4,6 +4,7 @@ import type { Criteria as CriteriaValue } from "@/lib/client";
 import { DEPTH_LABELS, THEME_GLYPH } from "@/lib/labels";
 import { Glyph } from "./Glyph";
 import { Depth } from "./Hand";
+import { Tap } from "./Tap";
 
 type DepthKey = 1 | 2 | 3;
 
@@ -54,7 +55,7 @@ export function Criteria({
           {REACH.map((r) => {
             const on = reach === r.max;
             return (
-              <button
+              <Tap
                 key={r.max}
                 onClick={() => setReach(r.max)}
                 aria-pressed={on}
@@ -67,7 +68,7 @@ export function Criteria({
                 <Depth depth={r.max} />
                 <span className="display text-[16px] leading-tight">{DEPTH_LABELS[r.max]}</span>
                 <span className="text-[11px] opacity-70">{r.hint}</span>
-              </button>
+              </Tap>
             );
           })}
         </div>
@@ -79,7 +80,7 @@ export function Criteria({
           {themes.map((t) => {
             const on = isOn(t);
             return (
-              <button
+              <Tap
                 key={t}
                 onClick={() => toggleTheme(t)}
                 aria-pressed={on}
@@ -93,7 +94,7 @@ export function Criteria({
                   strokeWidth={1.4}
                 />
                 <span className="text-[11px] leading-none">{t}</span>
-              </button>
+              </Tap>
             );
           })}
         </div>

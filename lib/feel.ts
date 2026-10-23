@@ -3,7 +3,10 @@
 export const reduced = () =>
   typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** Android vibrates; iOS Safari has no vibration API, so visuals carry the moment there. */
+/**
+ * Android vibrates for real. iOS Safari has no vibration API: there the tick comes
+ * from the tap itself, through the hidden switch inside every <Tap> (components/Tap.tsx).
+ */
 export const buzz = (pattern: number | number[]) => {
   if (!reduced()) navigator.vibrate?.(pattern);
 };

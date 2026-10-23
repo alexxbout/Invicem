@@ -5,6 +5,7 @@ import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
 import type { HandCard } from "@/lib/client";
 import { buzz, pick as pickSound, reduced, slide } from "@/lib/feel";
 import { BlankBack, CardBack, RareBack } from "./Card";
+import { Tap } from "./Tap";
 
 export function Depth({ depth }: { depth: number }) {
   return (
@@ -150,7 +151,7 @@ export function Hand({
   return (
     <div ref={rowRef} className="flex w-full items-start justify-center pb-6">
       {hand.map((h, i) => (
-        <button
+        <Tap
           key={i}
           disabled={!canPick}
           onClick={() => pick(i)}
@@ -158,7 +159,7 @@ export function Hand({
           onPointerUp={(e) => press(e.currentTarget.querySelector("[data-inner]"), false)}
           onPointerLeave={(e) => press(e.currentTarget.querySelector("[data-inner]"), false)}
           aria-label={h.blank ? "Carte blanche : écrire sa propre question" : `${h.rare ? "Carte rare, " : ""}${h.theme}, profondeur ${h.depth}`}
-          className="relative flex w-[var(--w)] flex-none flex-col items-center gap-6 disabled:cursor-default"
+          className="relative flex w-[var(--w)] flex-none flex-col items-center gap-6 aria-disabled:cursor-default"
           style={
             {
               // overlap is a share of the card, so it holds on any window width
@@ -183,7 +184,7 @@ export function Hand({
             </span>
             {h.blank ? <span className="text-[10px] text-paper/50">à toi d&apos;écrire</span> : <Depth depth={h.depth} />}
           </div>
-        </button>
+        </Tap>
       ))}
     </div>
   );

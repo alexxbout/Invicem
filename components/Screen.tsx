@@ -2,6 +2,7 @@
 
 import gsap from "gsap";
 import { useEffect, useRef, type ReactNode } from "react";
+import { Tap } from "./Tap";
 
 /** Full-height column that eases in; children flagged data-rise stagger up (CSS, see globals.css). */
 export function Screen({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -28,7 +29,7 @@ export function Wordmark({ onBack, right }: { onBack?: () => void; right?: React
   return (
     <header className="relative flex h-10 w-full items-center justify-center">
       {onBack && (
-        <button
+        <Tap
           onClick={onBack}
           aria-label="Retour"
           className="absolute left-0 grid size-10 place-items-center rounded-full text-paper/60 transition hover:bg-white/5 hover:text-paper"
@@ -36,7 +37,7 @@ export function Wordmark({ onBack, right }: { onBack?: () => void; right?: React
           <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
             <path d="M15 5l-7 7 7 7" />
           </svg>
-        </button>
+        </Tap>
       )}
       <span className="display text-[15px] italic tracking-[0.18em] text-paper/70">invicem</span>
       {right && <div className="absolute right-0">{right}</div>}

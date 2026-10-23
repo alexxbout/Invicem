@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
+import { Tap } from "./Tap";
 
 const KEY = "invicem:install-later";
 
@@ -51,9 +52,9 @@ export function InstallInvite() {
           <span className="text-gold">2.</span> puis « Sur l&apos;écran d&apos;accueil »
         </li>
       </ol>
-      <button onClick={later} className="absolute right-3 top-3 text-[12px] text-paper/45 underline-offset-4 hover:underline">
+      <Tap onClick={later} className="absolute right-3 top-3 text-[12px] text-paper/45 underline-offset-4 hover:underline">
         Plus tard
-      </button>
+      </Tap>
     </div>
   );
 }
