@@ -6,6 +6,7 @@ import type { JesterMood } from "@/components/joker/JesterHead";
 import { JokerClassic } from "@/components/joker/JokerClassic";
 import { JokerBack } from "@/components/joker/JokerCards";
 import { BlankBack, RareBack } from "@/components/Card";
+import { IconArt, type IconVariant } from "@/app/icon-art";
 
 type Design = ComponentType<{ width?: number; mood?: JesterMood }>;
 
@@ -183,6 +184,27 @@ export default function Maquettes() {
         </div>
         <div className="flex items-center justify-center gap-3 text-[12px] text-paper/55">
           <JokerBack width={44} /> Dos commun, quand le joker est en main
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-6">
+        <h2 className="display text-[26px] font-light">Icône de l&apos;app</h2>
+        <div className="flex flex-wrap justify-center gap-6">
+          {(
+            [
+              ["pair", "A · Deux cartes"],
+              ["seal", "B · Sceau"],
+              ["monogram", "C · Monogramme"],
+              ["jester", "D · Bonnet"],
+            ] as [IconVariant, string][]
+          ).map(([v, name]) => (
+            <figure key={v} className="flex flex-col items-center gap-2">
+              <div className="overflow-hidden rounded-[22%] shadow-[0_10px_24px_rgba(0,0,0,.6)]">
+                <IconArt size={110} variant={v} />
+              </div>
+              <figcaption className="text-[12px] text-paper/70">{name}</figcaption>
+            </figure>
+          ))}
         </div>
       </section>
 

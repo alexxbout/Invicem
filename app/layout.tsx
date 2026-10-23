@@ -23,6 +23,8 @@ const body = DM_Sans({
 export const metadata: Metadata = {
   title: "Invicem",
   description: "Un jeu de cartes pour se découvrir, à tour de rôle.",
+  // opened from the home screen: full screen, the status bar over our dark background
+  appleWebApp: { capable: true, title: "Invicem", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
