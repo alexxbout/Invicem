@@ -7,16 +7,49 @@
 **Un jeu de cartes pour deux, pour se découvrir une question après l'autre.**
 Assis côte à côte, un téléphone chacun.
 
+<br>
+
+<img src="docs/screens/home.jpg" alt="Accueil : la table de jeu" width="260"> &nbsp; <img src="docs/screens/joker.jpg" alt="Le joker" width="260">
+
 </div>
 
 ---
 
 ## Le principe
 
+<p align="center">
+<img src="docs/screens/howto.jpg" alt="Comment on joue" width="230">
+</p>
+
 1. **La rencontre.** L'un tire une carte : elle apparaît face cachée, avec un dos unique (une couleur et un symbole). L'autre regarde l'écran d'en face et touche la même couleur. Les deux cartes se retournent **au même instant** sur les deux téléphones.
 2. **L'ambiance.** Ensemble, vous choisissez jusqu'où aller ce soir (*Effleurer*, *Se confier*, *Se dévoiler*) et de quoi parler. La profondeur monte d'elle-même au fil de la soirée.
 3. **Le jeu.** Celui qui pioche choisit une carte parmi trois (thème et profondeur visibles, question cachée) et la lit à voix haute. L'autre l'écoute, carte face cachée, puis répond. Celui qui a répondu pioche à son tour.
 4. **La fin.** Après sept questions, une carte de clôture, puis chacun scelle **un mot** pour la soirée. Les deux mots se révèlent ensemble, et la soirée se résume en une carte.
+
+### En images
+
+<table>
+<tr>
+<td align="center"><img src="docs/screens/draw.jpg" alt="Tirer une carte" width="200"><br><sub><b>1. Tirer</b><br>un dos unique, montré en face</sub></td>
+<td align="center"><img src="docs/screens/finder.jpg" alt="Retrouver la couleur" width="200"><br><sub><b>2. Retrouver</b><br>toucher la même couleur</sub></td>
+<td align="center"><img src="docs/screens/charge.jpg" alt="La charge" width="200"><br><sub><b>3. La charge</b><br>les deux cartes s'éveillent</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/screens/question.jpg" alt="Première question" width="200"><br><sub><b>4. Le retournement</b><br>au même instant, sur les deux écrans</sub></td>
+<td align="center"><img src="docs/screens/mood.jpg" alt="L'ambiance" width="200"><br><sub><b>5. L'ambiance</b><br>jusqu'où, et de quoi parler</sub></td>
+<td align="center"><img src="docs/screens/hand.jpg" alt="La main" width="200"><br><sub><b>6. Piocher</b><br>trois cartes, la question cachée</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/screens/listen.jpg" alt="Écouter" width="200"><br><sub><b>7. Écouter</b><br>la carte reste face cachée</sub></td>
+<td align="center"><img src="docs/screens/joker.jpg" alt="Le joker" width="200"><br><sub><b>8. Le joker</b><br>passer une question, en dansant</sub></td>
+<td align="center"><img src="docs/screens/written.jpg" alt="Carte blanche" width="200"><br><sub><b>9. La carte blanche</b><br>une question écrite à la main</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/screens/word.jpg" alt="Le mot de la fin" width="200"><br><sub><b>10. Un mot</b><br>scellé à la cire</sub></td>
+<td align="center"><img src="docs/screens/words.jpg" alt="Les mots révélés" width="200"><br><sub><b>11. La révélation</b><br>les deux mots, ensemble</sub></td>
+<td align="center"><img src="docs/screens/recap.jpg" alt="Votre soirée" width="200"><br><sub><b>12. Votre soirée</b><br>le souvenir de la partie</sub></td>
+</tr>
+</table>
 
 ### Les cartes spéciales
 
