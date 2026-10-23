@@ -270,6 +270,8 @@ export function Card({
   const burstRef = useRef<HTMLDivElement>(null);
   const first = useRef(true);
   const quick = useRef<{ x: (v: number) => void; y: (v: number) => void } | null>(null);
+  /** the phone's tilt sensor is live: it drives the card and the finger is ignored */
+  const gyro = useRef(false);
 
   useEffect(() => {
     quick.current = {
@@ -283,18 +285,33 @@ export function Card({
     if (!tilt || reduced()) return;
     let base: number | null = null;
     const clamp = (v: number, m: number) => Math.max(-m, Math.min(m, v));
+    // the sheen eases toward where the phone points instead of jumping with each sensor reading
+    const sheen = { x: 50, y: 50, tx: 50, ty: 50 };
+    const glide = () => {
+      if (!gyro.current) return;
+      sheen.x += (sheen.tx - sheen.x) * 0.08;
+      sheen.y += (sheen.ty - sheen.y) * 0.08;
+      rootRef.current?.style.setProperty("--sx", `${sheen.x.toFixed(1)}%`);
+      rootRef.current?.style.setProperty("--sy", `${sheen.y.toFixed(1)}%`);
+    };
     const onTilt = (e: DeviceOrientationEvent) => {
       if (e.beta === null || e.gamma === null) return;
+      // once the phone reports its tilt, it alone moves the card: touches no longer do
+      gyro.current = true;
       base = base === null ? e.beta : base + (e.beta - base) * 0.02;
       const y = clamp(e.gamma * 0.45, 14);
       const x = clamp(-(e.beta - base) * 0.5, 14);
       quick.current?.y(y);
       quick.current?.x(x);
-      rootRef.current?.style.setProperty("--sx", `${50 + y * 3}%`);
-      rootRef.current?.style.setProperty("--sy", `${50 - x * 3}%`);
+      sheen.tx = 50 + y * 3;
+      sheen.ty = 50 - x * 3;
     };
     window.addEventListener("deviceorientation", onTilt);
-    return () => window.removeEventListener("deviceorientation", onTilt);
+    gsap.ticker.add(glide);
+    return () => {
+      window.removeEventListener("deviceorientation", onTilt);
+      gsap.ticker.remove(glide);
+    };
   }, [tilt]);
 
   useEffect(() => {
@@ -405,7 +422,7 @@ export function Card({
 
   const onMove = (e: React.PointerEvent) => {
     const root = rootRef.current;
-    if (!root || !tilt) return;
+    if (!root || !tilt || gyro.current) return;
     const r = root.getBoundingClientRect();
     const nx = (e.clientX - r.left) / r.width - 0.5;
     const ny = (e.clientY - r.top) / r.height - 0.5;
@@ -416,6 +433,7 @@ export function Card({
   };
 
   const onLeave = () => {
+    if (gyro.current) return;
     quick.current?.x(0);
     quick.current?.y(0);
   };

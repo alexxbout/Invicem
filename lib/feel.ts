@@ -47,18 +47,77 @@ export function armSound() {
   window.addEventListener("pointerdown", unlock, { once: true, passive: true });
 }
 
-function tone(freq: number, start: number, dur: number, peak: number) {
+/**
+ * Everything plays through one small "room": a gentle compressor and a soft, darkened echo,
+ * so notes bloom a little instead of stopping dry.
+ */
+let room: AudioNode | null = null;
+function out(): AudioNode {
+  if (room || !ctx) return room ?? ctx!.destination;
+  const comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -18;
+  comp.ratio.value = 3;
+  comp.connect(ctx.destination);
+  const dry = ctx.createGain();
+  dry.connect(comp);
+  // two short delays fed back through a low-pass: a warm, cheap reverb tail
+  [0.11, 0.17].forEach((t) => {
+    const delay = ctx!.createDelay(1);
+    delay.delayTime.value = t;
+    const tone = ctx!.createBiquadFilter();
+    tone.type = "lowpass";
+    tone.frequency.value = 2200;
+    const back = ctx!.createGain();
+    back.gain.value = 0.32;
+    dry.connect(delay).connect(tone).connect(back).connect(delay);
+    tone.connect(comp);
+  });
+  room = dry;
+  return room;
+}
+
+/** a bell-like note: a sine with a soft inharmonic overtone that dies sooner */
+function bell(freq: number, start: number, dur: number, peak: number) {
   if (!ctx) return;
-  const osc = ctx.createOscillator();
+  const dest = out();
+  [
+    [1, peak, dur],
+    [2.76, peak * 0.22, dur * 0.45],
+    [5.4, peak * 0.06, dur * 0.2],
+  ].forEach(([k, p, d]) => {
+    const osc = ctx!.createOscillator();
+    const gain = ctx!.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq * k;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(p, start + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + d);
+    osc.connect(gain).connect(dest);
+    osc.start(start);
+    osc.stop(start + d + 0.05);
+  });
+}
+
+/** a short breath of filtered noise: the sound of a card sliding or turning */
+function swish(start: number, dur: number, peak: number, from: number, to: number) {
+  if (!ctx) return;
+  const len = Math.ceil(ctx.sampleRate * dur);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const band = ctx.createBiquadFilter();
+  band.type = "bandpass";
+  band.Q.value = 1.2;
+  band.frequency.setValueAtTime(from, start);
+  band.frequency.exponentialRampToValueAtTime(to, start + dur);
   const gain = ctx.createGain();
-  osc.type = "sine";
-  osc.frequency.value = freq;
   gain.gain.setValueAtTime(0.0001, start);
-  gain.gain.exponentialRampToValueAtTime(peak, start + 0.02);
+  gain.gain.exponentialRampToValueAtTime(peak, start + dur * 0.3);
   gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
-  osc.connect(gain).connect(ctx.destination);
-  osc.start(start);
-  osc.stop(start + dur + 0.05);
+  src.connect(band).connect(gain).connect(out());
+  src.start(start);
 }
 
 export function setSound(on: boolean) {
@@ -72,18 +131,21 @@ export function setSound(on: boolean) {
   window.dispatchEvent(new Event("invicem-sound"));
 }
 
-/** the shared moment: a soft rising triad */
+/** the shared moment: a card swish, then four soft bells rising (E major), the last one held */
 export function chime() {
   if (!soundOn() || !ctx) return;
   const t = ctx.currentTime;
-  [659.25, 987.77, 1318.51].forEach((f, i) => tone(f, t + i * 0.09, 1.8, 0.06));
+  swish(t, 0.35, 0.05, 900, 3200);
+  [329.63, 415.3, 493.88, 659.25].forEach((f, i) => bell(f, t + 0.08 + i * 0.11, i === 3 ? 2.8 : 1.6, 0.05));
+  bell(164.81, t + 0.08, 2.4, 0.02);
 }
 
-/** small card sound for flips */
+/** a card turning: a quick paper swish with a faint wooden knock */
 export function tick() {
   if (!soundOn() || !ctx) return;
   const t = ctx.currentTime;
-  tone(880, t, 0.14, 0.025);
+  swish(t, 0.16, 0.035, 2400, 900);
+  bell(220, t + 0.05, 0.18, 0.012);
 }
 
 /* ---- device tilt ---- */
