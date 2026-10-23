@@ -8,6 +8,7 @@ import { buzz, reduced, requestTilt, tick } from "@/lib/feel";
 import { setAccent } from "./Ambient";
 import { CardBack } from "./Card";
 import { HowTo, howToSeen, subscribeHowTo } from "./HowTo";
+import { InstallInvite } from "./InstallInvite";
 import { Corner, Vine } from "./joker/JokerClassic";
 import { SoundToggle } from "./SoundToggle";
 
@@ -183,6 +184,8 @@ export function Home({
           l&apos;un l&apos;autre, à tour de rôle
         </p>
       </div>
+
+      <InstallInvite />
 
       {/* the table */}
       <div data-depth="16" className="mt-auto flex w-full flex-col items-center gap-6 pb-[max(5.2rem,calc(env(safe-area-inset-bottom)+4rem))]">
