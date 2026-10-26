@@ -362,11 +362,9 @@ export function Card({
         settle.kill();
       };
     }
-    // a slow, clearly felt sway, like a card held up in a draught
-    gsap.set(floatRef.current, { rotation: -0.9 });
+    // a slow float, straight up and down, no sway
     const tw = gsap.to(floatRef.current, {
-      y: -9,
-      rotation: 0.9,
+      y: -8,
       duration: 3.4,
       yoyo: true,
       repeat: -1,

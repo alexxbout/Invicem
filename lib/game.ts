@@ -39,7 +39,7 @@ const BLANK_AGAIN = 6;
 /** chance that a hand holds a rare card */
 const RARE_ODDS = 1 / 8;
 /** chance that a hand holds a duo card (answered by both, in secret) */
-const DUO_ODDS = 1 / 3;
+const DUO_ODDS = 0.9; // TEMP: 1 / 3 once tested
 /** a little time before the duo answers turn over, so both phones are ready */
 const DUO_REVEAL_MS = 1400;
 
@@ -462,7 +462,8 @@ export const continueEvening = (id: string, step: number) =>
 export const passQuestion = (id: string, step: number, role: "a" | "b", kind: JokerKind) =>
   update(id, (s) => {
     // a question written by the other player can't be passed
-    if (s.step !== step || s.phase !== "card" || role === s.turn || s.current <= -2 || !left(s, role).includes(kind)) return false;
+    // nor can a duo card, which both answer together
+    if (s.step !== step || s.phase !== "card" || role === s.turn || s.current <= -2 || !!DECK[s.current]?.duo || !left(s, role).includes(kind)) return false;
     s.spent = { a: s.spent?.a ?? [], b: s.spent?.b ?? [] };
     s.spent[role].push(kind);
     s.lastJoker = kind;

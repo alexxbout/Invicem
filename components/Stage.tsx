@@ -20,7 +20,7 @@ import { THEME_GLYPH } from "@/lib/labels";
 import { COLORS, SYMBOLS } from "@/lib/palette";
 import { ambient, setAccent } from "./Ambient";
 import { Card, GLINT_MASK } from "./Card";
-import { DuoPanel } from "./Duo";
+import { DuoPanel, WordOnCard } from "./Duo";
 import { Criteria } from "./Criteria";
 import { Depth, Hand, type HandHandle } from "./Hand";
 import { QuillWait, WordSeal, WordsReveal, WriteCard } from "./Scribe";
@@ -149,7 +149,7 @@ function Frise({ view, onOpen }: { view: SessionView; onOpen: () => void }) {
   );
 }
 
-function QuestionFace({ question, play }: { question: Question; play: boolean }) {
+function QuestionFace({ question, play, slot }: { question: Question; play: boolean; slot?: React.ReactNode }) {
   const ref = useRef<HTMLParagraphElement>(null);
   const themeLabel = question.rare ? `✦ Carte rare · ${question.theme} ✦` : question.written ? "Carte blanche" : question.theme;
 
@@ -200,7 +200,7 @@ function QuestionFace({ question, play }: { question: Question; play: boolean })
         <path d="M2 4 H24 M36 4 H58" strokeLinecap="round" />
         <path d="M30 0.8 L33.2 4 L30 7.2 L26.8 4 Z" fill="#c9993a" stroke="none" />
       </svg>
-      <div className="relative flex flex-1 items-center px-[2cqw]">
+      <div className="relative flex flex-1 flex-col items-center justify-center px-[2cqw]">
         <p ref={ref} className={question.written ? "hand text-[9.5cqw] leading-[1.1]" : "display text-[7cqw] leading-[1.2]"}>
           {question.written
             ? question.text.split(" ").map((w, i) => (
@@ -222,6 +222,7 @@ function QuestionFace({ question, play }: { question: Question; play: boolean })
                 </span>
               ))}
         </p>
+        {slot}
       </div>
       <div className="flex gap-[2cqw] pb-[2cqw] text-[#a77a22]">
         {[1, 2, 3].map((d) => (
@@ -262,6 +263,8 @@ export function Stage({
   const [word, setWord] = useState("");
   /** the last words have been turned over; the way to the recap opens */
   const [revealed, setRevealed] = useState(false);
+  /** the word being written on a "word" duo card, kept for the round it belongs to */
+  const [duoWord, setDuoWord] = useState({ round: 0, text: "" });
   /** the round whose duo answers have been turned over */
   const [duoShownAt, setDuoShownAt] = useState<number | null>(null);
   /** bumped to replay the joker flash on both phones */
@@ -684,11 +687,17 @@ export function Stage({
   const written = !!shown?.question?.written;
   /** I answer this card: my joker is at hand, except on a question the other wrote for me */
   const answering =
-    phase === "card" && !!shown && shown.turn !== role && !(shown.round === 1 && shown.history.length === 0) && !written;
+    phase === "card" && !!shown && shown.turn !== role && !(shown.round === 1 && shown.history.length === 0) && !written && !shown.question?.duo;
   const lastOne = !!shown && shown.round >= shown.goal;
   /** a duo card on the table, and whether its two answers are already shown */
   const duo = phase === "card" && shown?.question?.duo && shown.duo ? shown.duo : null;
   const duoOpen = !!duo && duoShownAt !== shown?.round;
+  const word4duo = shown && duoWord.round === shown.round ? duoWord.text : "";
+  // on a "word" duo the word is written on the card itself, with a quill
+  const wordSlot =
+    duo && duoOpen && shown?.question?.duo?.kind === "word" ? (
+      <WordOnCard value={word4duo} sealed={duo.sealed[role]} onChange={(t) => setDuoWord({ round: shown.round, text: t })} />
+    ) : undefined;
   /** rare cards and the last question of the evening get a bigger moment */
   const peak = !!shown?.question && (!!shown.question.rare || (phase === "card" && lastOne));
   /** the flip takes the tempo of the depth, a little longer on a peak, never twice the same */
@@ -852,7 +861,7 @@ export function Stage({
               charging={mode === "charging"}
               duration={firstReveal ? 2.6 : flipTime}
               burst={firstReveal || peak}
-              front={shown ? shown.question && <QuestionFace question={shown.question} play={flipped} /> : null}
+              front={shown ? shown.question && <QuestionFace question={shown.question} play={flipped} slot={wordSlot} /> : null}
               backNote={listening && shown?.question ? <Listening question={shown.question} /> : null}
               blank={written}
             />
@@ -918,6 +927,7 @@ export function Stage({
                 sealed={duo.sealed}
                 answers={duo.answers}
                 revealInMs={duo.revealAt ? Math.max(0, duo.revealAt - shown.now) : null}
+                word={word4duo}
                 onAnswer={(v) => void answerDuo(v)}
                 onRevealed={() => setDuoShownAt(shown.round)}
               />
