@@ -173,7 +173,7 @@ export function Home({
       <div data-depth="9" data-title-block className="mt-[9dvh] flex flex-col items-center text-center">
         {/* wide light capitals in gold, with a soft shadow copy set a little deeper for relief */}
         <h1
-          className="relative pb-1 pl-[0.32em] text-[clamp(34px,10.5vw,46px)] font-light uppercase leading-none tracking-[0.32em]"
+          className="relative pb-1 pl-[0.32em] text-[clamp(34px,10.5vw,46px)] font-semibold uppercase leading-none tracking-[0.32em]"
           style={{ fontFamily: "var(--font-cormorant), Georgia, serif" }}
           aria-label="Invicem"
         >

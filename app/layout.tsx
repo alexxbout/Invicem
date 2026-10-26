@@ -9,11 +9,11 @@ const display = Fraunces({
   style: ["normal", "italic"],
 });
 
-/** the title: light roman capitals, widely spaced */
+/** the title: strong roman capitals, widely spaced */
 const title = Cormorant_Garamond({
   variable: "--font-cormorant",
   subsets: ["latin"],
-  weight: ["300"],
+  weight: ["600"],
 });
 
 /** handwriting, for what the players write themselves */
