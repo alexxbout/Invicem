@@ -65,20 +65,35 @@ export function EdgeLight() {
   const [on, setOn] = useState(false);
   const [box, setBox] = useState({ w: 0, h: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!fullScreen()) return;
-    const size = () => setBox({ w: window.innerWidth, h: window.innerHeight });
-    const t = window.setTimeout(() => {
-      setOn(true);
-      size();
-    }, 0);
-    window.addEventListener("resize", size);
-    return () => {
-      window.clearTimeout(t);
-      window.removeEventListener("resize", size);
-    };
+    const t = window.setTimeout(() => setOn(true), 0);
+    return () => window.clearTimeout(t);
   }, []);
+
+  // window.innerHeight can be read before iOS settles the status bar, leaving the outline
+  // short of the bottom. The frame is sized by CSS to the whole screen (100lvh) and the
+  // outline follows whatever size it really ends up with.
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!on || !frame) return;
+    const size = () => {
+      const r = frame.getBoundingClientRect();
+      setBox((b) => (b.w === r.width && b.h === r.height ? b : { w: r.width, h: r.height }));
+    };
+    size();
+    const ro = new ResizeObserver(size);
+    ro.observe(frame);
+    window.addEventListener("pageshow", size);
+    window.addEventListener("orientationchange", size);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("pageshow", size);
+      window.removeEventListener("orientationchange", size);
+    };
+  }, [on]);
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -162,15 +177,16 @@ export function EdgeLight() {
     };
   }, [on, box]);
 
-  if (!on || !box.w) return null;
+  if (!on) return null;
   // the screen's own corners: a little over a tenth of its width on recent iPhones
   const r = Math.min(56, box.w * 0.125);
   const d = outline(box.w, box.h, r, 1.5);
   return (
+    <div ref={frameRef} aria-hidden className="pointer-events-none fixed left-0 top-0 z-[60] h-lvh w-full">
+    {box.w > 0 && (
     <svg
       ref={svgRef}
-      aria-hidden
-      className="pointer-events-none fixed inset-0 z-[60]"
+      className="absolute inset-0"
       width={box.w}
       height={box.h}
       viewBox={`0 0 ${box.w} ${box.h}`}
@@ -197,5 +213,7 @@ export function EdgeLight() {
         <path data-edge d={d} stroke="url(#edgeColor)" strokeWidth={2.2} strokeLinecap="round" opacity={0} />
       </g>
     </svg>
+    )}
+    </div>
   );
 }
