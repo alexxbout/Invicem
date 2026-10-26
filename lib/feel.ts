@@ -256,11 +256,12 @@ export function wax() {
   burst({ start: t + 0.01, dur: 0.18, peak: 0.02, type: "lowpass", freq: 900, to: 300, attack: 0.1 });
 }
 
-/** a fingertip brushing a card: a tiny, soft breath of paper */
+/** a fingertip on the card table's felt: a very muffled, low tap */
 export function twinkle() {
   if (!live()) return;
   const t = ctx!.currentTime;
-  burst({ start: t, dur: rnd(0.07, 0.11), peak: rnd(0.006, 0.009), type: "bandpass", freq: rnd(2600, 3600), to: rnd(1500, 2000), q: 0.7, attack: 0.35 });
+  thump(t, rnd(85, 110), 0.035, 0.07);
+  burst({ start: t, dur: 0.035, peak: 0.012, type: "lowpass", freq: rnd(380, 520), attack: 0.08 });
 }
 
 /* ---- device tilt ---- */
