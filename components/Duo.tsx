@@ -42,7 +42,7 @@ export function WordOnCard({
   const line = "relative flex w-[80%] items-end gap-[2cqw] border-b border-[#b8914d]/60 pb-[1cqw]";
   const ink = "hand flex-1 text-center text-[10cqw] leading-none";
   return (
-    <div className="mt-[4cqw] flex w-full flex-col items-center gap-[3cqw]">
+    <div className="mt-[7cqw] flex w-full flex-col items-center gap-[3cqw]">
       <div className={line}>
         <Quill className="mb-[1cqw] w-[7cqw] shrink-0 text-[#a77a22]" />
         {sealed || theirs ? (
