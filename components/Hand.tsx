@@ -80,7 +80,7 @@ export function Hand({
         // the fan never lands exactly the same way twice
         p.rotation = motion.vary(p.rotation, 0.18);
         const float = () =>
-          gsap.to(el, { y: p.y - 11, rotation: p.rotation + (i % 2 ? 1.2 : -1.2), duration: 2.6 + i * 0.45, yoyo: true, repeat: -1, ease: "sine.inOut" });
+          gsap.to(el, { y: p.y - 9, duration: 2.6 + i * 0.45, yoyo: true, repeat: -1, ease: "sine.inOut" });
         if (calm) {
           gsap.set(el, { rotation: p.rotation, y: p.y, opacity: 1 });
           return;
@@ -208,7 +208,15 @@ export function Hand({
             >
               {h.rare ? `✦ ${h.theme}` : h.theme}
             </span>
-            {h.blank ? <span className="text-[10px] text-paper/50">à toi d&apos;écrire</span> : <Depth depth={h.depth} />}
+            {h.blank ? (
+              <span className="text-[10px] text-paper/50">à toi d&apos;écrire</span>
+            ) : h.duo ? (
+              <span className="flex items-center gap-1.5 text-[10px] text-gold/80">
+                <Depth depth={h.depth} /> à deux
+              </span>
+            ) : (
+              <Depth depth={h.depth} />
+            )}
           </div>
         </Tap>
       ))}

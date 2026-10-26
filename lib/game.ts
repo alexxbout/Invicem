@@ -1,5 +1,5 @@
 import { COLOR_COUNT, SYMBOL_COUNT } from "./palette";
-import { CLOSING, DEFAULT_CRITERIA, matches, QUESTIONS, RARE_QUESTIONS, THEMES, type Criteria, type Question } from "./questions";
+import { CLOSING, DEFAULT_CRITERIA, DUO_QUESTIONS, matches, QUESTIONS, RARE_QUESTIONS, THEMES, type Criteria, type Question } from "./questions";
 import { store } from "./store";
 
 /** how long a drawn card keeps its back reserved */
@@ -26,9 +26,10 @@ type Card = {
 type Phase = "card" | "choose" | "setup" | "closing" | "write" | "words" | "reveal" | "end";
 
 /** every card id: >= 0 is in DECK (regular then rare), BLANK is the blank card, <= -2 a written one */
-const DECK: Question[] = [...QUESTIONS, ...RARE_QUESTIONS.map((q) => ({ ...q, rare: true }))];
+const DECK: Question[] = [...QUESTIONS, ...RARE_QUESTIONS.map((q) => ({ ...q, rare: true })), ...DUO_QUESTIONS];
 const BLANK = -1;
 const RARE_FROM = QUESTIONS.length;
+const DUO_FROM = RARE_FROM + RARE_QUESTIONS.length;
 /**
  * Each player is offered the blank card at their first pick from this question of the evening,
  * and once more from BLANK_AGAIN if they let it go; never again once they have written one.
@@ -37,6 +38,10 @@ const BLANK_AT = 3;
 const BLANK_AGAIN = 6;
 /** chance that a hand holds a rare card */
 const RARE_ODDS = 1 / 8;
+/** chance that a hand holds a duo card (answered by both, in secret) */
+const DUO_ODDS = 1 / 3;
+/** a little time before the duo answers turn over, so both phones are ready */
+const DUO_REVEAL_MS = 1400;
 
 type Session = {
   /** monotonic counter, bumped by every change; lets both phones detect and dedupe moves */
@@ -78,6 +83,8 @@ type Session = {
   words?: Partial<Record<"a" | "b", string>>;
   /** server time at which both phones turn the words over together */
   revealAt?: number;
+  /** on a duo card: each player's secret answer (a 0..100 position or a word), and when they turn over */
+  duo?: { a?: number | string; b?: number | string; revealAt?: number };
 };
 
 /** every player holds a single joker for the evening */
@@ -229,10 +236,16 @@ export type SessionView = {
   words: Record<"a" | "b", string> | null;
   /** server time of the shared reveal of the words */
   revealAt: number | null;
+  /** on a duo card: who has answered, both answers once both are in, and when they turn over */
+  duo: {
+    sealed: Record<"a" | "b", boolean>;
+    answers: Record<"a" | "b", number | string> | null;
+    revealAt: number | null;
+  } | null;
   now: number;
 };
 
-export type HandCard = Pick<Question, "theme" | "depth"> & { rare?: boolean; blank?: boolean };
+export type HandCard = Pick<Question, "theme" | "depth"> & { rare?: boolean; blank?: boolean; duo?: boolean };
 
 const BLANK_CARD: Question = { theme: "Carte blanche", depth: 2, text: "" };
 
@@ -254,7 +267,9 @@ function view(s: Session): SessionView {
     hand:
       s.phase === "choose"
         ? s.hand.map((id) =>
-            id === BLANK ? { theme: "Carte blanche", depth: 2, blank: true } : { theme: DECK[id].theme, depth: DECK[id].depth, rare: !!DECK[id].rare },
+            id === BLANK
+              ? { theme: "Carte blanche", depth: 2, blank: true }
+              : { theme: DECK[id].theme, depth: DECK[id].depth, rare: !!DECK[id].rare, duo: !!DECK[id].duo },
           )
         : [],
     pickedSlot: s.phase === "card" && s.lastPick !== undefined ? s.lastPick : null,
@@ -270,6 +285,14 @@ function view(s: Session): SessionView {
     sealed: { a: !!s.words?.a, b: !!s.words?.b },
     words: (s.phase === "reveal" || s.phase === "end") && s.words?.a && s.words?.b ? { a: s.words.a, b: s.words.b } : null,
     revealAt: s.phase === "reveal" ? (s.revealAt ?? null) : null,
+    duo:
+      s.phase === "card" && qOf(s, s.current).duo
+        ? {
+            sealed: { a: s.duo?.a !== undefined, b: s.duo?.b !== undefined },
+            answers: s.duo?.a !== undefined && s.duo?.b !== undefined ? { a: s.duo.a, b: s.duo.b } : null,
+            revealAt: s.duo?.revealAt ?? null,
+          }
+        : null,
     now: Date.now(),
   };
 }
@@ -306,6 +329,14 @@ function deal(s: Session): number[] {
   const hand = [...fit].sort((x, y) => score(x) - score(y)).slice(0, 3);
   const dealt = hand.length ? hand : shuffle(all).slice(0, 3);
 
+  // now and then a duo card slips in, fitting the mood like any other
+  const duos = DECK.map((_, i) => i).filter(
+    (i) => i >= DUO_FROM && !s.history.includes(i) && !skipped.includes(i) && matches(DECK[i], s.criteria),
+  );
+  if (duos.length && dealt.length && Math.random() < DUO_ODDS) {
+    dealt[rand(dealt.length)] = duos[rand(duos.length)];
+    return dealt;
+  }
   // the picker (whose turn it is) may get the blank card to write their own question
   const upcoming = s.history.length + 1 - (s.goal - EVENING);
   const picker = s.turn;
@@ -389,6 +420,7 @@ export const pickQuestion = (id: string, step: number, slot: number) =>
   update(id, (s) => {
     if (s.step !== step || s.phase !== "choose" || slot < 0 || slot >= s.hand.length) return false;
     s.current = s.hand[slot];
+    s.duo = undefined;
     s.lastPick = slot;
     s.passed = false;
     s.hand = [];
@@ -430,7 +462,8 @@ export const continueEvening = (id: string, step: number) =>
 export const passQuestion = (id: string, step: number, role: "a" | "b", kind: JokerKind) =>
   update(id, (s) => {
     // a question written by the other player can't be passed
-    if (s.step !== step || s.phase !== "card" || role === s.turn || s.current <= -2 || !left(s, role).includes(kind)) return false;
+    // nor can a duo card, which both answer together
+    if (s.step !== step || s.phase !== "card" || role === s.turn || s.current <= -2 || !!DECK[s.current]?.duo || !left(s, role).includes(kind)) return false;
     s.spent = { a: s.spent?.a ?? [], b: s.spent?.b ?? [] };
     s.spent[role].push(kind);
     s.lastJoker = kind;
@@ -454,6 +487,27 @@ export const writeQuestion = (id: string, step: number, role: "a" | "b", text: u
     s.blankUsed = { ...s.blankUsed, [role]: true };
     s.current = -2 - (s.custom.length - 1);
     s.phase = "card";
+    return true;
+  });
+
+/**
+ * On a duo card, each player answers for themselves in secret: a 0..100 position on the scale,
+ * or a single word. Once both are in, the two answers turn over together a moment later.
+ */
+export const answerDuo = (id: string, role: "a" | "b", value: unknown) =>
+  update(id, (s) => {
+    const q = s.phase === "card" ? qOf(s, s.current) : null;
+    if (!q?.duo || s.duo?.[role] !== undefined) return false;
+    let answer: number | string;
+    if (q.duo.kind === "scale") {
+      if (typeof value !== "number" || !Number.isFinite(value)) return false;
+      answer = Math.round(Math.max(0, Math.min(100, value)));
+    } else {
+      answer = clean(value, 28);
+      if (!answer) return false;
+    }
+    s.duo = { ...s.duo, [role]: answer };
+    if (s.duo.a !== undefined && s.duo.b !== undefined) s.duo.revealAt = Date.now() + DUO_REVEAL_MS;
     return true;
   });
 
