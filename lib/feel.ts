@@ -256,6 +256,14 @@ export function wax() {
   burst({ start: t + 0.01, dur: 0.18, peak: 0.02, type: "lowpass", freq: 900, to: 300, attack: 0.1 });
 }
 
+/** gold dust under the finger: two tiny high glints, barely there */
+export function twinkle() {
+  if (!live()) return;
+  const t = ctx!.currentTime;
+  note(rnd(2600, 3400), t, 0.18, 0.005, [[1, 1], [2.4, 0.3]]);
+  note(rnd(3600, 4400), t + rnd(0.03, 0.06), 0.14, 0.003);
+}
+
 /* ---- device tilt ---- */
 
 type OrientationCtor = { requestPermission?: () => Promise<"granted" | "denied"> };

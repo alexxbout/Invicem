@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
-import { armSound, reduced, requestTilt } from "@/lib/feel";
+import gsap from "gsap";
+import { armSound, reduced, requestTilt, twinkle } from "@/lib/feel";
 import { readSaved, subscribeSaved, type Match, type Saved } from "@/lib/client";
 import { Ambient } from "./Ambient";
 import { Finder } from "./Finder";
@@ -38,9 +39,44 @@ export function Game() {
       if (asked) return;
       asked = true;
       void requestTilt();
+      document.removeEventListener("pointerdown", sparkle);
       document.removeEventListener("touchend", askTilt);
       document.removeEventListener("click", askTilt);
     };
+    // every touch leaves a few sparks of gold where the finger lands
+    const sparkle = (e: PointerEvent) => {
+      if (reduced()) return;
+      twinkle();
+      for (let i = 0; i < 9; i++) {
+        const dot = document.createElement("span");
+        const size = 2 + Math.random() * 3.5;
+        Object.assign(dot.style, {
+          position: "fixed",
+          left: `${e.clientX - size / 2}px`,
+          top: `${e.clientY - size / 2}px`,
+          width: `${size}px`,
+          height: `${size}px`,
+          borderRadius: "50%",
+          background: i % 3 === 0 ? "#fff6d6" : "#f3d27a",
+          boxShadow: "0 0 6px 1px rgba(243,210,122,.8)",
+          pointerEvents: "none",
+          zIndex: "70",
+        });
+        document.body.appendChild(dot);
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 18 + Math.random() * 34;
+        gsap.to(dot, {
+          x: Math.cos(angle) * dist,
+          y: Math.sin(angle) * dist - 10,
+          scale: 0,
+          opacity: 0,
+          duration: 0.55 + Math.random() * 0.4,
+          ease: "power2.out",
+          onComplete: () => dot.remove(),
+        });
+      }
+    };
+    document.addEventListener("pointerdown", sparkle, { passive: true });
     document.addEventListener("touchend", askTilt, { passive: true });
     document.addEventListener("click", askTilt);
     // iOS Safari ignores the viewport's no-zoom: stop pinches (and two-finger moves) by hand;
