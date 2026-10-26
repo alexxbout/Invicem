@@ -289,6 +289,8 @@ export function Card({
     const sheen = { x: 50, y: 50, tx: 50, ty: 50 };
     const glide = () => {
       if (!gyro.current) return;
+      // settled: no style writes, so the card is not recalculated on idle frames
+      if (Math.abs(sheen.tx - sheen.x) < 0.1 && Math.abs(sheen.ty - sheen.y) < 0.1) return;
       sheen.x += (sheen.tx - sheen.x) * 0.08;
       sheen.y += (sheen.ty - sheen.y) * 0.08;
       rootRef.current?.style.setProperty("--sx", `${sheen.x.toFixed(1)}%`);

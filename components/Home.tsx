@@ -120,7 +120,7 @@ export function Home({
       .to(others, { opacity: 0, y: 30, scale: 0.9, duration: 0.4, ease: "power2.in" }, 0)
       .to("[data-title-block], [data-label], [data-invite]", { opacity: 0, y: -12, duration: 0.35, ease: "power2.in" }, 0)
       .to(card, { x: dx, y: dy, scale: 1.5, rotation: 0, duration: 0.6, ease: "power3.inOut" }, 0)
-      .to(card, { opacity: 0, filter: "blur(6px)", duration: 0.25 }, 0.5);
+      .to(card, { opacity: 0, scale: "+=0.08", duration: 0.25 }, 0.5);
   };
 
   const label = "display whitespace-nowrap text-[17px] leading-tight text-paper";

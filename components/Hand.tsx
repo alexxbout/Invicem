@@ -129,7 +129,8 @@ export function Hand({
       .to(chosen, { y: "-=18", scale: 1.06, duration: 0.14, ease: "power2.out" }, 0)
       .to(chosen, { rotation: 0, duration: 0.66, ease: "power3.inOut" }, 0.1)
       .to(chosen, { x: `+=${dx}`, y: `+=${dy + 18}`, scale, duration: 0.66, ease: "power3.inOut" }, 0.1)
-      .to(chosen, { boxShadow: "0 0 70px 14px var(--accent)", duration: 0.35, yoyo: true, repeat: 1 }, 0.2);
+      // the halo is drawn once and only its opacity moves: an animated box-shadow repaints every frame
+      .to(chosen.querySelector("[data-glow]"), { opacity: 1, duration: 0.35, yoyo: true, repeat: 1 }, 0.2);
     pickSound();
     return tl.then();
   };
@@ -174,6 +175,7 @@ export function Hand({
             className="relative aspect-[5/7] w-full rounded-[7%/5%] opacity-0"
             style={{ filter: "drop-shadow(0 16px 20px rgba(0,0,0,.5))" }}
           >
+            <div data-glow className="pointer-events-none absolute inset-0 rounded-[7%/5%] opacity-0" style={{ boxShadow: "0 0 70px 14px var(--accent)" }} />
             {h.rare ? <RareBack /> : h.blank ? <BlankBack /> : <CardBack color={color} />}
           </div>
           <div data-label className="flex flex-col items-center gap-2">

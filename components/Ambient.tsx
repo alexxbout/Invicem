@@ -144,8 +144,14 @@ export function Ambient() {
     window.addEventListener("pointermove", onPointer, { passive: true });
     window.addEventListener("deviceorientation", onTilt);
 
+    // slow motes read the same at 30 fps; drawing every other frame leaves the GPU to the cards.
+    // Full rate only while the motes swirl into a charging card or scatter from a flip.
+    let owed = 0;
     const tick = (_time: number, deltaMs: number) => {
-      const dt = Math.min(deltaMs, 50) / 16.7;
+      owed += deltaMs;
+      if (owed < 30 && charge.v <= 0.001 && !burstPending) return;
+      const dt = Math.min(owed, 50) / 16.7;
+      owed = 0;
       const t = performance.now() / 1000;
       const key = `${tint.r},${tint.g},${tint.b}`;
       if (key !== spriteKey) {

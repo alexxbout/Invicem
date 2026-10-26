@@ -168,8 +168,8 @@ function QuestionFace({ question, play }: { question: Question; play: boolean })
     }
     gsap.fromTo(
       parts,
-      { opacity: 0, y: 10, filter: "blur(4px)" },
-      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.6, ease: "power2.out", stagger: 0.05, delay: 0.5 },
+      { opacity: 0, y: 10, scale: 0.96 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power2.out", stagger: 0.05, delay: 0.5 },
     );
     // question is fixed for the life of this face
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -274,7 +274,15 @@ export function Stage({
     setMode(m);
   };
 
+  /** what a view says, minus any server clock, which changes on every poll */
+  const sameView = (a: SessionView | null, b: SessionView) => {
+    const skipClock = (k: string, v: unknown) => (k === "now" ? undefined : v);
+    return !!a && JSON.stringify(a, skipClock) === JSON.stringify(b, skipClock);
+  };
+
   const commitView = (v: SessionView) => {
+    // an unchanged poll must not re-render the table: it could land in the middle of a flip
+    if (sameView(shownRef.current, v)) return;
     shownRef.current = v;
     setShown(v);
   };
@@ -376,8 +384,8 @@ export function Stage({
     setModeBoth("waiting");
     gsap.fromTo(
       wrapRef.current,
-      { opacity: 0, scale: 0.9, y: 40, filter: "blur(10px)" },
-      { opacity: 1, scale: 1, y: 0, filter: "blur(0px)", duration: 1, ease: "power3.out" },
+      { opacity: 0, scale: 0.9, y: 40 },
+      { opacity: 1, scale: 1, y: 0, duration: 1, ease: "power3.out" },
     );
   };
 
@@ -436,7 +444,6 @@ export function Stage({
           opacity: 0,
           scale: 0.92,
           y: -20,
-          filter: "blur(14px)",
           duration: 1.1,
           ease: "power2.in",
           onComplete: () => void draw(),

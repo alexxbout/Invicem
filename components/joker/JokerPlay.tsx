@@ -91,7 +91,7 @@ export function JokerPlay({
       .fromTo(ring, { scale: 0.2, opacity: calm ? 0 : 0.95 }, { scale: 2.4, opacity: 0, duration: 0.9, ease: "power2.out" })
       .to(flash, { opacity: calm ? 0 : 0.7, duration: 0.06, yoyo: true, repeat: 1 }, "<")
       .to(flyer, { scale: 1, rotation: 0, duration: 0.5, ease: "back.out(3)" }, "<");
-    if (q) tl.to(q, { y: 70, rotation: 6, opacity: 0, filter: "blur(6px)", scale: 0.9, duration: 0.6, ease: "power2.in" }, "<");
+    if (q) tl.to(q, { y: 70, rotation: 6, opacity: 0, scale: 0.9, duration: 0.6, ease: "power2.in" }, "<");
     tl.to({}, { duration: 0.8 })
       .call(() => setMood("idle"))
       // leave by gliding softly off to the side, shedding gold dust behind it

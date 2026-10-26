@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { armSound } from "@/lib/feel";
+import { flushSync } from "react-dom";
+import { armSound, reduced } from "@/lib/feel";
 import { readSaved, subscribeSaved, type Match, type Saved } from "@/lib/client";
 import { Ambient } from "./Ambient";
 import { Finder } from "./Finder";
@@ -16,7 +17,14 @@ type Screen =
   | { k: "resume"; saved: Saved };
 
 export function Game() {
-  const [screen, setScreen] = useState<Screen>({ k: "home" });
+  const [screen, setScreenNow] = useState<Screen>({ k: "home" });
+  // screens cross-fade through a view transition (Safari 18+, Chrome) instead of cutting:
+  // the browser snapshots both and blends them on the compositor, so it costs no frames
+  const setScreen = (next: Screen) => {
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+    if (!doc.startViewTransition || reduced()) return setScreenNow(next);
+    doc.startViewTransition(() => flushSync(() => setScreenNow(next)));
+  };
   const raw = useSyncExternalStore(subscribeSaved, readSaved, () => null);
   const saved: Saved | null = raw ? (JSON.parse(raw) as Saved) : null;
   const home = () => setScreen({ k: "home" });
