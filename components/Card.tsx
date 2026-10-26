@@ -163,15 +163,33 @@ export function BlankBack() {
   );
 }
 
+/** only what lies under the moving sheen (the --sx/--sy light the tilt moves) shows through */
+export const GLINT_MASK = {
+  WebkitMaskImage: "radial-gradient(circle at var(--sx, 28%) var(--sy, 18%), #000 0%, rgba(0,0,0,.6) 18%, transparent 42%)",
+  maskImage: "radial-gradient(circle at var(--sx, 28%) var(--sy, 18%), #000 0%, rgba(0,0,0,.6) 18%, transparent 42%)",
+} as const;
+
 /** art deco corners for the paper face: straight gold brackets with a stepped inner line */
 function DecoCorners() {
   return (
     <>
+      <DecoSet stroke="#b8862e" fill="#c9993a" />
+      {/* the same brackets in bright gold, seen only where the light passes: they glint */}
+      <div className="pointer-events-none absolute inset-0" style={GLINT_MASK}>
+        <DecoSet stroke="#f7c948" fill="#f7c948" />
+      </div>
+    </>
+  );
+}
+
+function DecoSet({ stroke, fill }: { stroke: string; fill: string }) {
+  return (
+    <>
       {["left-[7%] top-[5.5%]", "right-[7%] top-[5.5%] -scale-x-100", "right-[7%] bottom-[5.5%] -scale-100", "left-[7%] bottom-[5.5%] -scale-y-100"].map((pos) => (
-        <svg key={pos} viewBox="0 0 30 30" className={`pointer-events-none absolute w-[14%] ${pos}`} fill="none" stroke="#b8862e" strokeWidth="1.2" aria-hidden>
+        <svg key={pos} viewBox="0 0 30 30" className={`pointer-events-none absolute w-[14%] ${pos}`} fill="none" stroke={stroke} strokeWidth="1.2" aria-hidden>
           <path d="M1 22 V1 H22" />
           <path d="M5 16 V5 H16" strokeWidth="0.8" />
-          <rect x="8.5" y="8.5" width="3" height="3" fill="#c9993a" stroke="none" transform="rotate(45 10 10)" />
+          <rect x="8.5" y="8.5" width="3" height="3" fill={fill} stroke="none" transform="rotate(45 10 10)" />
         </svg>
       ))}
     </>

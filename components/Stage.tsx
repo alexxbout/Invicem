@@ -19,7 +19,7 @@ import { motion } from "@/lib/motion";
 import { THEME_GLYPH } from "@/lib/labels";
 import { COLORS, SYMBOLS } from "@/lib/palette";
 import { ambient, setAccent } from "./Ambient";
-import { Card } from "./Card";
+import { Card, GLINT_MASK } from "./Card";
 import { Criteria } from "./Criteria";
 import { Depth, Hand, type HandHandle } from "./Hand";
 import { QuillWait, WordSeal, WordsReveal, WriteCard } from "./Scribe";
@@ -148,6 +148,7 @@ function Frise({ view, onOpen }: { view: SessionView; onOpen: () => void }) {
 
 function QuestionFace({ question, play }: { question: Question; play: boolean }) {
   const ref = useRef<HTMLParagraphElement>(null);
+  const themeLabel = question.rare ? `✦ Carte rare · ${question.theme} ✦` : question.written ? "Carte blanche" : question.theme;
 
   // words surface one after another once the card is turned; a handwritten question
   // writes itself letter by letter instead, as if the pen were moving in front of you
@@ -183,17 +184,14 @@ function QuestionFace({ question, play }: { question: Question; play: boolean })
   return (
     <div className="relative flex h-full flex-col items-center text-center">
       {question.rare && <div className="holo pointer-events-none absolute -inset-[15%] opacity-70" />}
-      {/* the theme is stamped in gold leaf, with a small fleuron under it */}
-      <div
-        className="relative pt-[2cqw] text-[3.4cqw] font-semibold uppercase tracking-[0.3em]"
-        style={{
-          background: "linear-gradient(100deg, #a77a22 0%, #e0b54a 35%, #f6dc8f 50%, #e0b54a 65%, #a77a22 100%)",
-          WebkitBackgroundClip: "text",
-          backgroundClip: "text",
-          color: "transparent",
-        }}
-      >
-        {question.rare ? `✦ Carte rare · ${question.theme} ✦` : question.written ? "Carte blanche" : question.theme}
+      {/* the theme is stamped in deep gold leaf, legible on ivory; a bright copy glints under the light */}
+      <div className="relative pt-[2cqw] text-[3.8cqw] font-semibold uppercase tracking-[0.28em]">
+        <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(100deg, #6e4d14 0%, #95691c 40%, #b8862e 50%, #95691c 60%, #6e4d14 100%)" }}>
+          {themeLabel}
+        </span>
+        <span aria-hidden className="absolute inset-x-0 bottom-0 top-[2cqw]" style={GLINT_MASK}>
+          <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(100deg, #e9a92a, #f7c948, #ffe08a, #f7c948, #e9a92a)" }}>{themeLabel}</span>
+        </span>
       </div>
       <svg viewBox="0 0 60 8" className="relative mt-[1.5cqw] w-[30%]" fill="none" stroke="#c9993a" strokeWidth="0.9" aria-hidden>
         <path d="M2 4 H24 M36 4 H58" strokeLinecap="round" />
@@ -222,7 +220,7 @@ function QuestionFace({ question, play }: { question: Question; play: boolean })
               ))}
         </p>
       </div>
-      <div className="flex gap-[2cqw] pb-[2cqw] text-[#c9993a]">
+      <div className="flex gap-[2cqw] pb-[2cqw] text-[#a77a22]">
         {[1, 2, 3].map((d) => (
           <span key={d} className={`size-[2.2cqw] rotate-45 border border-current ${d <= question.depth ? "bg-current" : ""}`} />
         ))}
