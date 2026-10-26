@@ -355,6 +355,13 @@ export function Card({
 
   useEffect(() => {
     if (!idle || reduced()) return;
+    // face up, the question is read: the card holds still
+    if (flipped) {
+      const settle = gsap.to(floatRef.current, { y: 0, rotation: 0, duration: 0.8, ease: "power2.out" });
+      return () => {
+        settle.kill();
+      };
+    }
     // a slow, clearly felt sway, like a card held up in a draught
     gsap.set(floatRef.current, { rotation: -0.9 });
     const tw = gsap.to(floatRef.current, {
@@ -368,7 +375,7 @@ export function Card({
     return () => {
       tw.kill();
     };
-  }, [idle]);
+  }, [idle, flipped]);
 
   useEffect(() => {
     const flip = flipRef.current;
