@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 import { call, msUntil, type Match } from "@/lib/client";
 import { requestTilt } from "@/lib/feel";
+import { edge } from "./EdgeLight";
 import { COLORS, SYMBOLS } from "@/lib/palette";
 import { setAccent } from "./Ambient";
 import { CardBack } from "./Card";
@@ -28,6 +29,12 @@ export function Finder({ onMatch, onBack }: { onMatch: (m: Match) => void; onBac
   }, [color]);
 
   useEffect(() => () => window.clearTimeout(noteTimer.current), []);
+
+  // while looking for the colour, a slow light runs round the screen
+  useEffect(() => {
+    edge.orbit("slow");
+    return () => edge.stop();
+  }, []);
 
   const shake = () => {
     gsap.fromTo(

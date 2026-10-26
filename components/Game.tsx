@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { armSound, reduced } from "@/lib/feel";
 import { readSaved, subscribeSaved, type Match, type Saved } from "@/lib/client";
 import { Ambient } from "./Ambient";
+import { EdgeLight } from "./EdgeLight";
 import { Finder } from "./Finder";
 import { Home } from "./Home";
 import { Stage } from "./Stage";
@@ -50,6 +51,7 @@ export function Game() {
   return (
     <>
       <Ambient />
+      <EdgeLight />
       {screen.k === "home" && (
         <Home
           saved={saved}
