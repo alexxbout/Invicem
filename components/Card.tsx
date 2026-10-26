@@ -163,6 +163,21 @@ export function BlankBack() {
   );
 }
 
+/** art deco corners for the paper face: straight gold brackets with a stepped inner line */
+function DecoCorners() {
+  return (
+    <>
+      {["left-[7%] top-[5.5%]", "right-[7%] top-[5.5%] -scale-x-100", "right-[7%] bottom-[5.5%] -scale-100", "left-[7%] bottom-[5.5%] -scale-y-100"].map((pos) => (
+        <svg key={pos} viewBox="0 0 30 30" className={`pointer-events-none absolute w-[14%] ${pos}`} fill="none" stroke="#b8862e" strokeWidth="1.2" aria-hidden>
+          <path d="M1 22 V1 H22" />
+          <path d="M5 16 V5 H16" strokeWidth="0.8" />
+          <rect x="8.5" y="8.5" width="3" height="3" fill="#c9993a" stroke="none" transform="rotate(45 10 10)" />
+        </svg>
+      ))}
+    </>
+  );
+}
+
 function Paper({ children }: { children: ReactNode }) {
   return (
     <div
@@ -175,6 +190,7 @@ function Paper({ children }: { children: ReactNode }) {
     >
       <div className="absolute inset-[3.2%] rounded-[5%/3.6%] border border-[#b8914d]/60" />
       <div className="absolute inset-[5.2%] rounded-[4%/2.8%] border border-[#b8914d]/25" />
+      <DecoCorners />
       <div className="absolute inset-[9%] flex flex-col">{children}</div>
       <div
         data-sheen

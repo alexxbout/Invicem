@@ -183,11 +183,22 @@ function QuestionFace({ question, play }: { question: Question; play: boolean })
   return (
     <div className="relative flex h-full flex-col items-center text-center">
       {question.rare && <div className="holo pointer-events-none absolute -inset-[15%] opacity-70" />}
+      {/* the theme is stamped in gold leaf, with a small fleuron under it */}
       <div
-        className={`relative pt-[2cqw] text-[3.4cqw] font-medium uppercase tracking-[0.3em] ${question.rare ? "text-[#a7741c]" : "text-[#8a6a33]"}`}
+        className="relative pt-[2cqw] text-[3.4cqw] font-semibold uppercase tracking-[0.3em]"
+        style={{
+          background: "linear-gradient(100deg, #a77a22 0%, #e0b54a 35%, #f6dc8f 50%, #e0b54a 65%, #a77a22 100%)",
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          color: "transparent",
+        }}
       >
         {question.rare ? `✦ Carte rare · ${question.theme} ✦` : question.written ? "Carte blanche" : question.theme}
       </div>
+      <svg viewBox="0 0 60 8" className="relative mt-[1.5cqw] w-[30%]" fill="none" stroke="#c9993a" strokeWidth="0.9" aria-hidden>
+        <path d="M2 4 H24 M36 4 H58" strokeLinecap="round" />
+        <path d="M30 0.8 L33.2 4 L30 7.2 L26.8 4 Z" fill="#c9993a" stroke="none" />
+      </svg>
       <div className="relative flex flex-1 items-center px-[2cqw]">
         <p ref={ref} className={question.written ? "hand text-[9.5cqw] leading-[1.1]" : "display text-[7cqw] leading-[1.2]"}>
           {question.written
@@ -211,7 +222,7 @@ function QuestionFace({ question, play }: { question: Question; play: boolean })
               ))}
         </p>
       </div>
-      <div className="flex gap-[2cqw] pb-[2cqw] text-[#b8914d]">
+      <div className="flex gap-[2cqw] pb-[2cqw] text-[#c9993a]">
         {[1, 2, 3].map((d) => (
           <span key={d} className={`size-[2.2cqw] rotate-45 border border-current ${d <= question.depth ? "bg-current" : ""}`} />
         ))}
