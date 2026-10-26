@@ -60,9 +60,19 @@ export function Hand({
   // deal from the middle of the table, then float
   useEffect(() => {
     const calm = reduced();
-    const ctx = gsap.context(() => {
+    const ctx = gsap.context(() => {}, rowRef);
+    // one frame later: the new screen gets painted first, then the deal starts on a quiet frame
+    const raf = requestAnimationFrame(() => ctx.add(() => {
       const row = rowRef.current!.getBoundingClientRect();
       const cards = inners();
+      // each card on its own GPU layer, moved as a ready image; the blended sheen waits
+      // for the cards to land, so nothing has to be re-blended while they fly
+      const sheens = gsap.utils.toArray<HTMLElement>("[data-sheen]", rowRef.current);
+      gsap.set(cards, { willChange: "transform, opacity" });
+      if (!calm) {
+        gsap.set(sheens, { opacity: 0 });
+        gsap.to(sheens, { opacity: 1, duration: 0.6, delay: (0.9 + cards.length * 0.14) * motion.tempo() });
+      }
       const fromY = canPick ? 160 : -160;
       const t = motion.tempo();
       cards.forEach((el, i) => {
@@ -95,8 +105,11 @@ export function Hand({
       });
       if (calm) gsap.set("[data-label]", { opacity: 1 });
       else gsap.from("[data-label]", { opacity: 0, y: 8, duration: 0.5, delay: 0.55 + cards.length * 0.12 });
-    }, rowRef);
-    return () => ctx.revert();
+    }));
+    return () => {
+      cancelAnimationFrame(raf);
+      ctx.revert();
+    };
     // dealt once: a new hand remounts with its own key
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -183,7 +196,8 @@ export function Hand({
           <div
             data-inner
             className={`relative aspect-[5/7] w-full rounded-[7%/5%] opacity-0 ${nudge && canPick ? "nudge" : ""}`}
-            style={{ filter: "drop-shadow(0 16px 20px rgba(0,0,0,.5))" }}
+            // a box-shadow drawn once with the card, not a filter recomputed on every frame of motion
+            style={{ boxShadow: "0 18px 26px -10px rgba(0,0,0,.6)" }}
           >
             <div data-glow className="pointer-events-none absolute inset-0 rounded-[7%/5%] opacity-0" style={{ boxShadow: "0 0 70px 14px var(--accent)" }} />
             {h.rare ? <RareBack /> : h.blank ? <BlankBack /> : <CardBack color={color} />}

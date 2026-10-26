@@ -101,6 +101,7 @@ export function CardBack({ color, symbol }: { color: number; symbol?: number }) 
         </>
       )}
       <div
+        data-sheen
         className="pointer-events-none absolute inset-0 mix-blend-soft-light"
         style={{
           background:
@@ -176,6 +177,7 @@ function Paper({ children }: { children: ReactNode }) {
       <div className="absolute inset-[5.2%] rounded-[4%/2.8%] border border-[#b8914d]/25" />
       <div className="absolute inset-[9%] flex flex-col">{children}</div>
       <div
+        data-sheen
         className="pointer-events-none absolute inset-0 mix-blend-soft-light"
         style={{
           background: "radial-gradient(circle at var(--sx, 28%) var(--sy, 18%), rgba(255,255,255,.9), transparent 50%)",
