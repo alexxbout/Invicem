@@ -38,7 +38,7 @@ export function Tap({
       aria-disabled={disabled || undefined}
       onClick={activate}
       onKeyDown={key}
-      className={`${display} ${className ?? ""} cursor-pointer select-none ${disabled ? "pointer-events-none" : ""}`}
+      className={`${display} ${className ?? ""} text-center cursor-pointer select-none ${disabled ? "pointer-events-none" : ""}`}
       {...rest}
     >
       <input

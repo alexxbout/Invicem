@@ -19,6 +19,18 @@ html {
   background: #130f1a;
 }
 
+/* full height of the screen. From the home screen iOS sometimes measures the dynamic
+   viewport before the status bar settles, leaving a strip at the bottom; with no browser
+   bars there, the large viewport is always the whole screen. */
+.app-h {
+  min-height: 100dvh;
+}
+@media (display-mode: standalone) {
+  .app-h {
+    min-height: 100lvh;
+  }
+}
+
 html,
 body {
   color: #f4eadb;

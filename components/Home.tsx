@@ -118,7 +118,7 @@ export function Home({
     gsap
       .timeline({ onComplete: go })
       .to(others, { opacity: 0, y: 30, scale: 0.9, duration: 0.4, ease: "power2.in" }, 0)
-      .to("[data-title-block], [data-label]", { opacity: 0, y: -12, duration: 0.35, ease: "power2.in" }, 0)
+      .to("[data-title-block], [data-label], [data-invite]", { opacity: 0, y: -12, duration: 0.35, ease: "power2.in" }, 0)
       .to(card, { x: dx, y: dy, scale: 1.5, rotation: 0, duration: 0.6, ease: "power3.inOut" }, 0)
       .to(card, { opacity: 0, filter: "blur(6px)", duration: 0.25 }, 0.5);
   };
@@ -127,7 +127,7 @@ export function Home({
   const hint = "whitespace-nowrap text-[11.5px] text-paper/50";
 
   return (
-    <div ref={root} className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col items-center overflow-hidden px-5">
+    <div ref={root} className="app-h relative mx-auto flex w-full max-w-md flex-col items-center overflow-hidden px-5">
       {/* gilded frame around the whole screen */}
       <div
         data-depth="5"
@@ -189,7 +189,7 @@ export function Home({
       <InstallInvite />
 
       {/* the table */}
-      <div data-depth="16" className="mt-auto flex w-full flex-col items-center gap-6 pb-[max(5.2rem,calc(env(safe-area-inset-bottom)+4rem))]">
+      <div data-depth="16" className="relative z-30 mt-auto flex w-full flex-col items-center gap-6 pb-[max(5.2rem,calc(env(safe-area-inset-bottom)+4rem))]">
         {saved && (
           <Tap
             data-pick="resume"

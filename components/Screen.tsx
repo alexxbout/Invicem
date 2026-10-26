@@ -18,7 +18,7 @@ export function Screen({ children, className = "" }: { children: ReactNode; clas
   return (
     <div
       ref={ref}
-      className={`mx-auto flex min-h-dvh w-full max-w-md flex-col items-center px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] ${className}`}
+      className={`app-h mx-auto flex w-full max-w-md flex-col items-center px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] ${className}`}
     >
       {children}
     </div>

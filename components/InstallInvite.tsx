@@ -37,7 +37,7 @@ export function InstallInvite() {
   };
 
   return (
-    <div data-rise className="relative z-20 mx-auto mt-4 w-full max-w-[320px] rounded-2xl border border-gold/30 bg-[#1d1727]/90 px-4 py-3.5 backdrop-blur">
+    <div data-rise data-invite className="relative mx-auto mt-4 w-full max-w-[320px] rounded-2xl border border-gold/30 bg-[#1d1727]/90 px-4 py-3.5 backdrop-blur">
       <div className="display text-[17px] text-paper">Jouez en plein écran</div>
       <ol className="mt-2 flex flex-col gap-1.5 text-[13px] text-paper/70">
         <li className="flex items-center gap-2">
