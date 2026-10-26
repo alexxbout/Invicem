@@ -155,15 +155,6 @@ export function DuoPanel({
             aria-valuetext={notches(duo.low, duo.high)[notch]}
             className="duo-range w-full"
           />
-          <div className="-mt-[16px] mb-2 flex justify-between px-[11px]" aria-hidden>
-            {[0, 1, 2, 3, 4].map((n) => (
-              <span key={n} className={`size-[5px] rotate-45 ${n === notch ? "bg-transparent" : "bg-gold/50"}`} />
-            ))}
-          </div>
-          <div className="flex justify-between text-[12px] text-paper/55">
-            <span>{duo.low}</span>
-            <span>{duo.high}</span>
-          </div>
         </div>
       )}
       <Tap
@@ -190,7 +181,6 @@ function ScaleReveal({ low, high, mine, theirs }: { low: string; high: string; m
   }, []);
   const left = Math.min(mine, theirs);
   const width = Math.abs(mine - theirs);
-  const close = notchOf(mine) === notchOf(theirs);
   return (
     <div ref={ref} className="flex w-full max-w-[320px] flex-col items-center gap-3">
       <div className="relative mt-7 h-[2px] w-full rounded bg-paper/20">
@@ -209,15 +199,10 @@ function ScaleReveal({ low, high, mine, theirs }: { low: string; high: string; m
           </div>
         ))}
       </div>
-      <div className="flex w-full justify-between text-[12px] text-paper/60">
-        <span>{low}</span>
-        <span>{high}</span>
-      </div>
       <div className="grid w-full grid-cols-2 gap-2 text-center">
         <p className="text-[13px] text-gold">Toi : {notches(low, high)[notchOf(mine)]}</p>
         <p className="text-[13px] text-paper/75">En face : {notches(low, high)[notchOf(theirs)]}</p>
       </div>
-      <p className="display text-[15px] italic text-paper/65">{close ? "Au même endroit." : "Parlez de cet écart."}</p>
     </div>
   );
 }
