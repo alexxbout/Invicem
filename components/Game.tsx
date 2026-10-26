@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
-import { armSound, reduced } from "@/lib/feel";
+import { armSound, reduced, requestTilt } from "@/lib/feel";
 import { readSaved, subscribeSaved, type Match, type Saved } from "@/lib/client";
 import { Ambient } from "./Ambient";
 import { Finder } from "./Finder";
@@ -31,6 +31,18 @@ export function Game() {
 
   useEffect(() => {
     armSound();
+    // iOS only shows its motion prompt from a tap: ask on the very first one, wherever it lands,
+    // so the cards follow the phone's tilt from the start
+    let asked = false;
+    const askTilt = () => {
+      if (asked) return;
+      asked = true;
+      void requestTilt();
+      document.removeEventListener("touchend", askTilt);
+      document.removeEventListener("click", askTilt);
+    };
+    document.addEventListener("touchend", askTilt, { passive: true });
+    document.addEventListener("click", askTilt);
     // iOS Safari ignores the viewport's no-zoom: stop pinches (and two-finger moves) by hand;
     // double-tap zoom is already off through touch-action: manipulation
     const stop = (e: Event) => e.preventDefault();
@@ -44,6 +56,8 @@ export function Game() {
       document.removeEventListener("gesturestart", stop);
       document.removeEventListener("gesturechange", stop);
       document.removeEventListener("touchmove", twoFingers);
+      document.removeEventListener("touchend", askTilt);
+      document.removeEventListener("click", askTilt);
     };
   }, []);
 
