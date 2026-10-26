@@ -154,8 +154,11 @@ function QuestionFace({ question, play }: { question: Question; play: boolean })
   useEffect(() => {
     const parts = ref.current?.querySelectorAll("[data-w]");
     if (!parts) return;
-    if (!play || reduced()) {
-      gsap.set(parts, { opacity: play ? 1 : 0, y: 0, filter: "none", scale: 1 });
+    // turning away, the words stay printed: the face hides them as it turns, so blanking them
+    // here would show an empty card for a moment before the flip
+    if (!play) return;
+    if (reduced()) {
+      gsap.set(parts, { opacity: 1, y: 0, filter: "none", scale: 1 });
       return;
     }
     if (question.written) {
@@ -348,6 +351,13 @@ export function Stage({
     });
   };
 
+  /** the card sinks a little and fades, giving the table over to what comes next */
+  const settle = (then: () => void) => {
+    const el = wrapRef.current;
+    if (!el || reduced()) return then();
+    gsap.to(el, { y: 26, scale: 0.94, opacity: 0, duration: 0.55 * motion.tempo(), ease: "power2.in", onComplete: then });
+  };
+
   /**
    * `head` is how long the card has already been turning before the server answered
    * (the move started on tap), so that much is taken off the wait.
@@ -401,8 +411,11 @@ export function Stage({
       const wasFaceUp = !!prev && faceUpFor(prev, role);
       // a face-up card turns over first; a face-down one (or one already flying) goes at once
       const wait = wasFaceUp ? 1150 * motion.tempo() - head : 250 - head;
+      // the frieze only stays on screen for the next cards; when the table gives way to the
+      // mood or the last words, the card settles down and fades instead of flying to it
+      const toFriseNext = v.phase === "card" || v.phase === "choose" || v.phase === "closing";
       if (head > 0 && !wasFaceUp) later(swap, Math.max(0, 1300 - head));
-      else later(() => toFrise(swap), Math.max(0, wait));
+      else later(() => (toFriseNext ? toFrise(swap) : settle(swap)), Math.max(0, wait));
     }
   };
 
