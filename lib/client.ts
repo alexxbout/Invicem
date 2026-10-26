@@ -3,8 +3,9 @@ import { useEffect, useRef } from "react";
 export type Role = "a" | "b";
 export type JokerKind = "paper";
 
-export type Question = { text: string; theme: string; depth: 1 | 2 | 3; rare?: boolean; written?: boolean };
-export type HandCard = Pick<Question, "theme" | "depth"> & { rare?: boolean; blank?: boolean };
+export type Duo = { kind: "scale"; low: string; high: string } | { kind: "word" };
+export type Question = { text: string; theme: string; depth: 1 | 2 | 3; rare?: boolean; written?: boolean; duo?: Duo };
+export type HandCard = Pick<Question, "theme" | "depth"> & { rare?: boolean; blank?: boolean; duo?: boolean };
 export type Criteria = { depths: (1 | 2 | 3)[]; themes: string[] };
 export type SessionView = {
   step: number;
@@ -35,6 +36,8 @@ export type SessionView = {
   words: Record<Role, string> | null;
   /** server time of the shared reveal of the words */
   revealAt: number | null;
+  /** on a duo card: who has answered, both answers once in, and when they turn over */
+  duo: { sealed: Record<Role, boolean>; answers: Record<Role, number | string> | null; revealAt: number | null } | null;
   now: number;
 };
 

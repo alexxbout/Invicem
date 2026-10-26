@@ -370,3 +370,37 @@ button {
     animation: none;
   }
 }
+
+/* the duo scale: a thin gold line with a round gold cursor */
+.duo-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 28px;
+  background: transparent;
+}
+.duo-range::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(244, 234, 219, 0.25), rgba(217, 183, 121, 0.7), rgba(244, 234, 219, 0.25));
+}
+.duo-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  margin-top: -12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff1c2, #e0b54a 55%, #a77a22);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 14px rgba(224, 181, 74, 0.45);
+}
+.duo-range::-moz-range-track {
+  height: 2px;
+  background: rgba(217, 183, 121, 0.6);
+}
+.duo-range::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff1c2, #e0b54a 55%, #a77a22);
+}

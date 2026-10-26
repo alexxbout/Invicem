@@ -20,6 +20,7 @@ import { THEME_GLYPH } from "@/lib/labels";
 import { COLORS, SYMBOLS } from "@/lib/palette";
 import { ambient, setAccent } from "./Ambient";
 import { Card, GLINT_MASK } from "./Card";
+import { DuoPanel } from "./Duo";
 import { Criteria } from "./Criteria";
 import { Depth, Hand, type HandHandle } from "./Hand";
 import { QuillWait, WordSeal, WordsReveal, WriteCard } from "./Scribe";
@@ -84,6 +85,8 @@ function Recap({ items, words }: { items: Question[]; words: [string, string] | 
 const faceUpFor = (v: SessionView, role: Role) => {
   if (!onTable(v.phase)) return false;
   if (v.phase !== "card" || (v.round === 1 && v.history.length === 0)) return true;
+  // a duo card is answered by both at once: both see it
+  if (v.question?.duo) return true;
   // a question written on a blank card is a gift: the other reads it, its author keeps it face down
   if (v.question?.written) return v.turn !== role;
   return v.turn === role;
@@ -259,6 +262,8 @@ export function Stage({
   const [word, setWord] = useState("");
   /** the last words have been turned over; the way to the recap opens */
   const [revealed, setRevealed] = useState(false);
+  /** the round whose duo answers have been turned over */
+  const [duoShownAt, setDuoShownAt] = useState<number | null>(null);
   /** bumped to replay the joker flash on both phones */
   /** a joker being played on the table (both phones), and the one that just left my hand */
   const [jokerRun, setJokerRun] = useState<{ kind: JokerKind; from: DOMRect | null; n: number } | null>(null);
@@ -374,7 +379,11 @@ export function Stage({
   const showNext = (v: SessionView, played = false, head = 0) => {
     latest.current = v;
     if (busy.current) return;
-    if (shownRef.current && v.step === shownRef.current.step) {
+    const cur = shownRef.current;
+    // same step, or an answer on the duo card still on the table: just update, the card stays put
+    const sameCard =
+      !!cur && cur.phase === "card" && v.phase === "card" && v.round === cur.round && v.question?.text === cur.question?.text;
+    if (cur && (v.step === cur.step || sameCard)) {
       commitView(v);
       return;
     }
@@ -589,6 +598,15 @@ export function Stage({
     }
   };
 
+  /** my secret answer to a duo card; both turn over once the other's is in */
+  const answerDuo = async (value: number | string) => {
+    if (!sessionId || pending) return;
+    setPending(true);
+    const { data } = await call<SessionView>(`/api/session/${sessionId}/duo`, "POST", { role, value });
+    setPending(false);
+    if (data && alive.current) showNext(data);
+  };
+
   /** seal my last word; the reveal starts when the other's is in too */
   const seal = async () => {
     if (!sessionId || pending) return;
@@ -668,6 +686,9 @@ export function Stage({
   const answering =
     phase === "card" && !!shown && shown.turn !== role && !(shown.round === 1 && shown.history.length === 0) && !written;
   const lastOne = !!shown && shown.round >= shown.goal;
+  /** a duo card on the table, and whether its two answers are already shown */
+  const duo = phase === "card" && shown?.question?.duo && shown.duo ? shown.duo : null;
+  const duoOpen = !!duo && duoShownAt !== shown?.round;
   /** rare cards and the last question of the evening get a bigger moment */
   const peak = !!shown?.question && (!!shown.question.rare || (phase === "card" && lastOne));
   /** the flip takes the tempo of the depth, a little longer on a peak, never twice the same */
@@ -712,7 +733,11 @@ export function Stage({
         ? mine
           ? "À toi de piocher une carte"
           : "La pioche est en face…"
-        : phase === "closing"
+        : duo
+          ? duoOpen
+            ? "Répondez chacun en secret"
+            : "Parlez-en"
+          : phase === "closing"
           ? "Chacun votre tour"
           : writing
             ? mine
@@ -885,8 +910,21 @@ export function Stage({
               </p>
             )}
 
+            {duo && shown.question?.duo && (
+              <DuoPanel
+                key={`${shown.round}:${shown.question.text}`}
+                duo={shown.question.duo}
+                role={role}
+                sealed={duo.sealed}
+                answers={duo.answers}
+                revealInMs={duo.revealAt ? Math.max(0, duo.revealAt - shown.now) : null}
+                onAnswer={(v) => void answerDuo(v)}
+                onRevealed={() => setDuoShownAt(shown.round)}
+              />
+            )}
+
             {/* only the one who answered moves on: the deck passes to them */}
-            {phase === "card" &&
+            {phase === "card" && !duoOpen &&
               (mine ? (
                 <p className="display flex h-[50px] items-center text-[15px] italic text-paper/45">
                   {lastOne ? "Ensuite, la dernière carte." : opening ? "Ensuite, vous choisirez l'ambiance." : "Ensuite, la pioche change de main."}

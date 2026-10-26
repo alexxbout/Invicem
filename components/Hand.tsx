@@ -208,7 +208,15 @@ export function Hand({
             >
               {h.rare ? `✦ ${h.theme}` : h.theme}
             </span>
-            {h.blank ? <span className="text-[10px] text-paper/50">à toi d&apos;écrire</span> : <Depth depth={h.depth} />}
+            {h.blank ? (
+              <span className="text-[10px] text-paper/50">à toi d&apos;écrire</span>
+            ) : h.duo ? (
+              <span className="flex items-center gap-1.5 text-[10px] text-gold/80">
+                <Depth depth={h.depth} /> à deux
+              </span>
+            ) : (
+              <Depth depth={h.depth} />
+            )}
           </div>
         </Tap>
       ))}
