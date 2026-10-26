@@ -78,6 +78,29 @@ export const QUESTIONS: Question[] = [
   { theme: "Regard", depth: 3, text: "Quand t'es-tu senti(e) le plus incompris(e) ?" },
   { theme: "Souvenirs", depth: 3, text: "Quel moment t'a fait grandir d'un coup ?" },
   { theme: "Envies", depth: 3, text: "Qu'est-ce qui, dans ta vie actuelle, ne te ressemble plus ?" },
+  // the player's second batch, rewritten to stay personal and concrete
+  { theme: "Envies", depth: 1, text: "Quel super pouvoir aimerais-tu avoir, et que ferais-tu en premier avec ?" },
+  { theme: "Valeurs", depth: 1, text: "Quelle qualité admires-tu le plus chez l'un de tes parents ?" },
+  { theme: "Valeurs", depth: 1, text: "Y a-t-il une phrase ou un conseil qui te guide encore aujourd'hui ? D'où vient-il ?" },
+  { theme: "Goûts", depth: 1, text: "Qu'est-ce que tu trouves beau, que les autres ne remarquent pas forcément ?" },
+  { theme: "Relation", depth: 2, text: "Dans une relation, qu'est-ce qui te fait te sentir vraiment aimé(e) ?" },
+  { theme: "Peurs", depth: 2, text: "Quels types de conversations te mettent mal à l'aise, et pourquoi ?" },
+  { theme: "Regard", depth: 2, text: "Qu'est-ce que tu aimes le plus chez toi, et qu'est-ce que tu aimes le moins ?" },
+  { theme: "Envies", depth: 2, text: "Si ta vie était un livre, quel titre aurait le chapitre en cours ?" },
+  { theme: "Souvenirs", depth: 2, text: "Qu'est-ce qui t'a le plus fait grandir ces dernières années ?" },
+  { theme: "Valeurs", depth: 2, text: "Y a-t-il une cause pour laquelle tu aimerais vraiment t'engager ?" },
+  { theme: "Valeurs", depth: 2, text: "Pour quoi es-tu reconnaissant(e) en ce moment, sans assez le dire ?" },
+  { theme: "Valeurs", depth: 2, text: "Dans quelle situation trouves-tu normal de mentir ?" },
+  { theme: "Envies", depth: 2, text: "Qu'est-ce qui te ferait dire, dans dix ans, que tu as réussi ta vie ?" },
+  // more in the same vein
+  { theme: "Quotidien", depth: 1, text: "Quel moment de ta journée attends-tu le plus, et pourquoi ?" },
+  { theme: "Goûts", depth: 1, text: "Quel lieu te fait du bien à chaque fois que tu y vas ?" },
+  { theme: "Souvenirs", depth: 1, text: "Quelle bêtise d'enfant te fait encore rire aujourd'hui ?" },
+  { theme: "Regard", depth: 2, text: "Qu'est-ce que les gens se trompent souvent à ton sujet ?" },
+  { theme: "Relation", depth: 2, text: "Comment montres-tu à quelqu'un qu'il compte pour toi ?" },
+  { theme: "Valeurs", depth: 2, text: "Sur quoi as-tu complètement changé d'avis en grandissant ?" },
+  { theme: "Peurs", depth: 3, text: "Qu'est-ce que tu aurais peur de découvrir sur toi ?" },
+  { theme: "Valeurs", depth: 3, text: "À quel moment as-tu agi contre tes principes, et qu'en as-tu retenu ?" },
 ];
 
 /**
@@ -121,6 +144,7 @@ export const DUO_QUESTIONS: Question[] = [
   { theme: "Relation", depth: 2, text: "Dans un conflit, tu évites ou tu affrontes ?", duo: scale("J'évite", "J'affronte") },
   { theme: "Souvenirs", depth: 2, text: "Le passé, tu y repenses souvent ?", duo: scale("Rarement", "Souvent") },
   { theme: "Valeurs", depth: 3, text: "Avec toi-même, tu es plutôt tendre ou sévère ?", duo: scale("Tendre", "Sévère") },
+  { theme: "Valeurs", depth: 2, text: "Est-ce que tu pardonnes facilement ?", duo: scale("Difficilement", "Facilement") },
   { theme: "Souvenirs", depth: 1, text: "Un mot pour ton enfance.", duo: word },
   { theme: "Goûts", depth: 1, text: "Un mot pour ton dimanche idéal.", duo: word },
   { theme: "Quotidien", depth: 1, text: "Un mot pour ta semaine.", duo: word },
@@ -134,7 +158,7 @@ export const DUO_QUESTIONS: Question[] = [
   { theme: "Quotidien", depth: 1, text: "Un mot pour ce que tu ressens, là, maintenant.", duo: word },
   { theme: "Souvenirs", depth: 2, text: "Un mot pour ta famille.", duo: word },
   { theme: "Regard", depth: 2, text: "Un mot que tu aimerais qu'on utilise pour te décrire.", duo: word },
-  { theme: "Relation", depth: 3, text: "Un mot pour ta dernière relation.", duo: word },
+  { theme: "Regard", depth: 1, text: "Un mot pour ta plus belle qualité.", duo: word },
   { theme: "Peurs", depth: 3, text: "Un mot pour ce qui te fait le plus peur en amour.", duo: word },
 ];
 

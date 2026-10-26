@@ -18,6 +18,13 @@ qu'elle vit, pense et ressent : d'elle-même, des autres, de l'autre.
   - ✓ « Quelle règle t'es-tu fixée après ta dernière relation sérieuse ? »
   - ✗ « Qu'est-ce que tu ne m'as jamais dit, parce que tu avais peur de ma réaction ? »
 - **Une formulation simple et naturelle**, comme on la poserait à voix haute.
+- **Les opinions et les valeurs, oui, mais pour soi.** Pas « qu'est-ce que la beauté ? »,
+  mais « qu'est-ce que *tu* trouves beau, que les autres ne remarquent pas ? ». On doit
+  pouvoir répondre par un exemple de sa vie.
+  - ✓ « Dans quelle situation trouves-tu normal de mentir ? »
+  - ✗ « Qu'est-ce qui nous fait grandir, en tant qu'êtres humains ? »
+- **Les relations passées, avec modération.** Ce qu'on a appris, ce qu'on attend, oui ;
+  pas de question qui revient sans cesse sur « la dernière relation ».
 
 ## Ce qu'on évite
 
