@@ -24,6 +24,7 @@ function grain(host: HTMLElement, x: number, y: number, color: string, size: num
     background: color,
     boxShadow: glow ? `0 0 6px 2px ${color}` : "none",
     pointerEvents: "none",
+    zIndex: "6",
   });
   host.appendChild(d);
   return d;
@@ -101,6 +102,8 @@ export function burnAway(card: HTMLElement, host: HTMLElement, { duration = 2, o
     height: `${box.height}px`,
     borderRadius: "7% / 5%",
     pointerEvents: "none",
+    // above the card, wherever the host sits in the page
+    zIndex: "5",
   });
   host.appendChild(edge);
   const at = `${box.width * 0.85}px ${box.height * 0.95}px`;

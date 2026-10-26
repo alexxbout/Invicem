@@ -256,6 +256,16 @@ export function wax() {
   burst({ start: t + 0.01, dur: 0.18, peak: 0.02, type: "lowpass", freq: 900, to: 300, attack: 0.1 });
 }
 
+/** a card burning away: a low hiss of fire with dry crackles, for about two seconds */
+export function burn() {
+  if (!live()) return;
+  const t = ctx!.currentTime;
+  burst({ start: t, dur: 2.1, peak: 0.012, type: "bandpass", freq: 700, to: 1800, q: 0.5, attack: 0.25 });
+  for (let i = 0; i < 26; i++) {
+    burst({ start: t + Math.random() * 1.9, dur: rnd(0.004, 0.012), peak: rnd(0.01, 0.03), type: "highpass", freq: rnd(1500, 3500), attack: 0.05 });
+  }
+}
+
 /** a fingertip on the card table's felt: a very muffled, low tap */
 export function twinkle() {
   if (!live()) return;

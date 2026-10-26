@@ -13,7 +13,7 @@ export function JokerFan({ kinds, onPlay }: { kinds: JokerKind[]; onPlay: (kind:
   const joker = kinds[0];
   if (!joker) return null;
   return (
-    <div className="joker-fan pointer-events-none absolute -right-[10%] -bottom-[13%] w-[31%]">
+    <div className="joker-fan pointer-events-none absolute -right-[10%] -bottom-[13%] z-20 w-[31%]">
       <Tap
         onClick={(e) => {
           buzz(14);
