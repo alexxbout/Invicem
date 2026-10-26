@@ -338,8 +338,8 @@ export function Card({
       gyro.current = true;
       base = base === null ? e.beta : base + (e.beta - base) * 0.02;
       // the card leans well into the phone's tilt, as if it had real weight
-      const y = clamp(e.gamma * 0.75, 24);
-      const x = clamp(-(e.beta - base) * 0.8, 24);
+      const y = clamp(e.gamma * 0.62, 20);
+      const x = clamp(-(e.beta - base) * 0.66, 20);
       quick.current?.y(y);
       quick.current?.x(x);
       sheen.tx = 50 + y * 2;
@@ -356,10 +356,10 @@ export function Card({
   useEffect(() => {
     if (!idle || reduced()) return;
     // a slow, clearly felt sway, like a card held up in a draught
-    gsap.set(floatRef.current, { rotation: -1.25 });
+    gsap.set(floatRef.current, { rotation: -0.9 });
     const tw = gsap.to(floatRef.current, {
-      y: -10,
-      rotation: 1.25,
+      y: -9,
+      rotation: 0.9,
       duration: 3.4,
       yoyo: true,
       repeat: -1,
@@ -467,8 +467,8 @@ export function Card({
     const r = root.getBoundingClientRect();
     const nx = (e.clientX - r.left) / r.width - 0.5;
     const ny = (e.clientY - r.top) / r.height - 0.5;
-    quick.current?.y(nx * 34);
-    quick.current?.x(-ny * 34);
+    quick.current?.y(nx * 29);
+    quick.current?.x(-ny * 29);
     root.style.setProperty("--sx", `${(nx + 0.5) * 100}%`);
     root.style.setProperty("--sy", `${(ny + 0.5) * 100}%`);
   };
