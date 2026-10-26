@@ -3,7 +3,6 @@
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 import { buzz, flip, jester, reduced } from "@/lib/feel";
-import { edge } from "../EdgeLight";
 import { JokerBack } from "./JokerCards";
 import { JokerClassic, type DanceMood } from "./JokerClassic";
 
@@ -87,7 +86,6 @@ export function JokerPlay({
         setMood("play");
         flip();
         jester();
-        edge.jester();
         buzz([24, 30, 60]);
       })
       .fromTo(ring, { scale: 0.2, opacity: calm ? 0 : 0.95 }, { scale: 2.4, opacity: 0, duration: 0.9, ease: "power2.out" })

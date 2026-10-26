@@ -4,7 +4,6 @@ import gsap from "gsap";
 import { useEffect, useRef, type ReactNode } from "react";
 import { buzz, flip as flipSound, reduced, reveal } from "@/lib/feel";
 import { ambient } from "./Ambient";
-import { edge } from "./EdgeLight";
 import { COLORS } from "@/lib/palette";
 import { Glyph } from "./Glyph";
 
@@ -373,7 +372,6 @@ export function Card({
           }
           reveal();
           ambient.burst();
-          edge.burst();
           buzz([30, 40, 30, 40, 160]);
         } else {
           flipSound();

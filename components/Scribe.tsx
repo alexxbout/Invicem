@@ -4,7 +4,6 @@ import gsap from "gsap";
 import { useEffect, useRef } from "react";
 import { buzz, reduced, reveal, rustle, scratch, wax } from "@/lib/feel";
 import { ambient } from "./Ambient";
-import { edge } from "./EdgeLight";
 import { Quill } from "./Card";
 
 const PAPER = "linear-gradient(165deg, #f8f0e3 0%, #eadcc6 100%)";
@@ -168,7 +167,6 @@ export function WordsReveal({
             reveal();
             buzz([30, 40, 120]);
             ambient.burst();
-            edge.burst();
           },
           [],
           "<0.55",

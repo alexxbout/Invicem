@@ -19,7 +19,6 @@ import { motion } from "@/lib/motion";
 import { THEME_GLYPH } from "@/lib/labels";
 import { COLORS, SYMBOLS } from "@/lib/palette";
 import { ambient, setAccent } from "./Ambient";
-import { edge } from "./EdgeLight";
 import { Card } from "./Card";
 import { Criteria } from "./Criteria";
 import { Depth, Hand, type HandHandle } from "./Hand";
@@ -627,14 +626,6 @@ export function Stage({
   }, [roomDepth]);
   useEffect(() => () => ambient.depth(2), []);
 
-  // the screen's edges stay dark while the card waits to be found; a comet races round
-  // them while the two cards charge, and the burst comes with the flip itself
-  useEffect(() => {
-    if (mode === "charging") edge.orbit("fast");
-    else edge.stop();
-  }, [mode]);
-  useEffect(() => () => edge.stop(), []);
-
   const color = card ? COLORS[card.color] : null;
   const phase = mode === "open" ? shown?.phase : undefined;
   /** "mine" = I picked this card (or pick the next one in a hand); the other answers */
@@ -679,15 +670,6 @@ export function Stage({
     };
     // re-armed at every new step
   }, [stepKey]);
-  // my turn to pick: light climbs the edges once; a rare card or the last question: gold stitches
-  const myPick = choosing && mine;
-  useEffect(() => {
-    if (myPick) edge.rise();
-  }, [myPick, shown?.step]);
-  const goldNow = peak && flipped && !firstReveal;
-  useEffect(() => {
-    if (goldNow) edge.gold();
-  }, [goldNow]);
   /** my phone has nothing to do for now: its light goes down a little */
   const resting =
     (choosing && !mine) || (writing && !mine) || (sealing && !!shown?.sealed[role] && !shown?.sealed[other]);
