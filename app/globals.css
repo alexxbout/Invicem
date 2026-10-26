@@ -36,6 +36,8 @@ body {
   color: #f4eadb;
   -webkit-user-select: none;
   user-select: none;
+  /* a long press sheds sparks: no iOS callout or magnifier on top of it */
+  -webkit-touch-callout: none;
   font-family: var(--font-dmsans), system-ui, sans-serif;
   overscroll-behavior: none;
   /* nothing may push the page sideways (the jokers in hand lean past the card) */

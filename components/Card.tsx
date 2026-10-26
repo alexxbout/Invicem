@@ -354,9 +354,11 @@ export function Card({
 
   useEffect(() => {
     if (!idle || reduced()) return;
+    // a slow, clearly felt sway, like a card held up in a draught
+    gsap.set(floatRef.current, { rotation: -1.6 });
     const tw = gsap.to(floatRef.current, {
-      y: -8,
-      rotation: 0.6,
+      y: -12,
+      rotation: 1.6,
       duration: 3.4,
       yoyo: true,
       repeat: -1,

@@ -40,20 +40,28 @@ export function Game() {
       asked = true;
       void requestTilt();
       document.removeEventListener("pointerdown", sparkle);
+      document.removeEventListener("pointermove", follow);
+      document.removeEventListener("pointerup", release);
+      document.removeEventListener("pointercancel", release);
+      release();
       document.removeEventListener("touchend", askTilt);
       document.removeEventListener("click", askTilt);
+      document.removeEventListener("pointerdown", sparkle);
+      document.removeEventListener("pointermove", follow);
+      document.removeEventListener("pointerup", release);
+      document.removeEventListener("pointercancel", release);
+      release();
     };
-    // every touch leaves a few sparks of gold where the finger lands
-    const sparkle = (e: PointerEvent) => {
-      if (reduced()) return;
-      twinkle();
-      for (let i = 0; i < 9; i++) {
+    // every touch leaves a few sparks of gold where the finger lands; held down, the finger
+    // keeps shedding them, following it as it moves
+    const burst = (x: number, y: number, count: number) => {
+      for (let i = 0; i < count; i++) {
         const dot = document.createElement("span");
         const size = 2 + Math.random() * 3.5;
         Object.assign(dot.style, {
           position: "fixed",
-          left: `${e.clientX - size / 2}px`,
-          top: `${e.clientY - size / 2}px`,
+          left: `${x - size / 2}px`,
+          top: `${y - size / 2}px`,
           width: `${size}px`,
           height: `${size}px`,
           borderRadius: "50%",
@@ -76,7 +84,36 @@ export function Game() {
         });
       }
     };
+    const held = { x: 0, y: 0, timer: 0, loop: 0, beat: 0 };
+    const release = () => {
+      window.clearTimeout(held.timer);
+      window.clearInterval(held.loop);
+      held.loop = 0;
+    };
+    const sparkle = (e: PointerEvent) => {
+      if (reduced()) return;
+      twinkle();
+      burst(e.clientX, e.clientY, 9);
+      held.x = e.clientX;
+      held.y = e.clientY;
+      release();
+      // a long press: a steady trickle of sparks, with a faint glint now and then
+      held.timer = window.setTimeout(() => {
+        held.beat = 0;
+        held.loop = window.setInterval(() => {
+          burst(held.x, held.y, 3);
+          if (++held.beat % 5 === 0) twinkle();
+        }, 70);
+      }, 320);
+    };
+    const follow = (e: PointerEvent) => {
+      held.x = e.clientX;
+      held.y = e.clientY;
+    };
     document.addEventListener("pointerdown", sparkle, { passive: true });
+    document.addEventListener("pointermove", follow, { passive: true });
+    document.addEventListener("pointerup", release);
+    document.addEventListener("pointercancel", release);
     document.addEventListener("touchend", askTilt, { passive: true });
     document.addEventListener("click", askTilt);
     // iOS Safari ignores the viewport's no-zoom: stop pinches (and two-finger moves) by hand;
