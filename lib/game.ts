@@ -39,7 +39,7 @@ const BLANK_AGAIN = 6;
 /** chance that a hand holds a rare card */
 const RARE_ODDS = 1 / 8;
 /** chance that a hand holds a duo card (answered by both, in secret) */
-const DUO_ODDS = 0.9; // TEMP: 1 / 3 once tested
+const DUO_ODDS = 1; // TEMP: 1 / 3 once tested
 /** a little time before the duo answers turn over, so both phones are ready */
 const DUO_REVEAL_MS = 1400;
 
@@ -329,6 +329,16 @@ function deal(s: Session): number[] {
   const hand = [...fit].sort((x, y) => score(x) - score(y)).slice(0, 3);
   const dealt = hand.length ? hand : shuffle(all).slice(0, 3);
 
+  // now and then a duo card slips in, fitting the mood like any other
+  const duos = DECK.map((_, i) => i).filter(
+    (i) => i >= DUO_FROM && !s.history.includes(i) && !skipped.includes(i) && matches(DECK[i], s.criteria),
+  );
+  if (duos.length && dealt.length && Math.random() < DUO_ODDS) {
+    // TEMP while testing (odds at 1): the whole hand is duo cards
+    if (DUO_ODDS >= 1) return shuffle(duos).slice(0, 3);
+    dealt[rand(dealt.length)] = duos[rand(duos.length)];
+    return dealt;
+  }
   // the picker (whose turn it is) may get the blank card to write their own question
   const upcoming = s.history.length + 1 - (s.goal - EVENING);
   const picker = s.turn;
@@ -337,14 +347,6 @@ function deal(s: Session): number[] {
   if (!s.blankUsed?.[picker] && due && dealt.length) {
     s.blankOffers = { ...s.blankOffers, [picker]: offers + 1 };
     dealt[rand(dealt.length)] = BLANK;
-    return dealt;
-  }
-  // now and then a duo card slips in, fitting the mood like any other
-  const duos = DECK.map((_, i) => i).filter(
-    (i) => i >= DUO_FROM && !s.history.includes(i) && !skipped.includes(i) && matches(DECK[i], s.criteria),
-  );
-  if (duos.length && dealt.length && Math.random() < DUO_ODDS) {
-    dealt[rand(dealt.length)] = duos[rand(duos.length)];
     return dealt;
   }
   // now and then a golden card slips in

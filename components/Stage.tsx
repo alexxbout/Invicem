@@ -695,8 +695,13 @@ export function Stage({
   const word4duo = shown && duoWord.round === shown.round ? duoWord.text : "";
   // on a "word" duo the word is written on the card itself, with a quill
   const wordSlot =
-    duo && duoOpen && shown?.question?.duo?.kind === "word" ? (
-      <WordOnCard value={word4duo} sealed={duo.sealed[role]} onChange={(t) => setDuoWord({ round: shown.round, text: t })} />
+    duo && shown?.question?.duo?.kind === "word" ? (
+      <WordOnCard
+        value={!duoOpen && duo.answers ? String(duo.answers[role]) : word4duo}
+        sealed={duo.sealed[role]}
+        theirs={!duoOpen && duo.answers ? String(duo.answers[other]) : null}
+        onChange={(t) => setDuoWord({ round: shown.round, text: t })}
+      />
     ) : undefined;
   /** rare cards and the last question of the evening get a bigger moment */
   const peak = !!shown?.question && (!!shown.question.rare || (phase === "card" && lastOne));

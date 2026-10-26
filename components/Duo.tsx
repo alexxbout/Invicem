@@ -3,7 +3,7 @@
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 import type { Duo as DuoKind, Role } from "@/lib/client";
-import { buzz, reduced, reveal } from "@/lib/feel";
+import { buzz, reduced, reveal, scratch } from "@/lib/feel";
 import { Quill } from "./Card";
 import { Tap } from "./Tap";
 
@@ -14,14 +14,39 @@ export const notches = (low: string, high: string) => {
 };
 const notchOf = (v: number) => Math.round(Math.max(0, Math.min(100, v)) / 25);
 
-/** the word, written on the card itself with a quill */
-export function WordOnCard({ value, onChange, sealed }: { value: string; onChange: (v: string) => void; sealed: boolean }) {
+/**
+ * The word, written on the card itself with a quill. Once both are turned over, the other's
+ * word writes itself on the line under mine, letter by letter, as if their pen were moving.
+ */
+export function WordOnCard({
+  value,
+  onChange,
+  sealed,
+  theirs,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  sealed: boolean;
+  /** the other's word, once revealed */
+  theirs?: string | null;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!theirs || !ref.current) return;
+    const letters = ref.current.querySelectorAll("[data-l]");
+    scratch(Math.min(1.6, letters.length * 0.09), 0.25);
+    if (reduced()) return;
+    gsap.fromTo(letters, { opacity: 0, y: 2, scale: 0.6 }, { opacity: 1, y: 0, scale: 1, duration: 0.2, stagger: 0.09, delay: 0.25, ease: "power1.out" });
+  }, [theirs]);
+
+  const line = "relative flex w-[80%] items-end gap-[2cqw] border-b border-[#b8914d]/60 pb-[1cqw]";
+  const ink = "hand flex-1 text-center text-[10cqw] leading-none";
   return (
-    <div className="mt-[5cqw] flex w-full flex-col items-center">
-      <div className="relative flex w-[78%] items-end gap-[2cqw] border-b border-[#b8914d]/60 pb-[1cqw]">
+    <div className="mt-[4cqw] flex w-full flex-col items-center gap-[3cqw]">
+      <div className={line}>
         <Quill className="mb-[1cqw] w-[7cqw] shrink-0 text-[#a77a22]" />
-        {sealed ? (
-          <span className="hand flex-1 text-center text-[11cqw] leading-none text-[#2a2132]/75">{value}</span>
+        {sealed || theirs ? (
+          <span className={`${ink} text-[#2a2132]/80`}>{value}</span>
         ) : (
           <input
             value={value}
@@ -29,10 +54,24 @@ export function WordOnCard({ value, onChange, sealed }: { value: string; onChang
             onChange={(e) => onChange(e.target.value.replace(/\s+/g, " ").trimStart())}
             placeholder="ton mot…"
             aria-label="Ton mot"
-            className="hand w-0 flex-1 bg-transparent text-center text-[11cqw] leading-none text-[#2a2132] outline-none placeholder:text-[#2a2132]/25"
+            className={`${ink} w-0 bg-transparent text-[#2a2132] outline-none placeholder:text-[#2a2132]/25`}
           />
         )}
+        {theirs && <span className="absolute -bottom-[4.2cqw] left-0 text-[2.8cqw] uppercase tracking-[0.2em] text-[#8a6a33]">toi</span>}
       </div>
+      {theirs && (
+        <div className={line}>
+          <Quill className="mb-[1cqw] w-[7cqw] shrink-0 -scale-x-100 text-[#a77a22]" />
+          <div ref={ref} className={`${ink} text-[#6e2a1e]`} aria-label={theirs}>
+            {[...theirs].map((ch, i) => (
+              <span key={i} data-l className="inline-block">
+                {ch === " " ? "\u00a0" : ch}
+              </span>
+            ))}
+          </div>
+          <span className="absolute -bottom-[4.2cqw] left-0 text-[2.8cqw] uppercase tracking-[0.2em] text-[#8a6a33]">en face</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -84,7 +123,9 @@ export function DuoPanel({
     return duo.kind === "scale" ? (
       <ScaleReveal low={duo.low} high={duo.high} mine={Number(answers[role])} theirs={Number(answers[other])} />
     ) : (
-      <WordsSide mine={String(answers[role])} theirs={String(answers[other])} />
+      <p data-rise className="display py-2 text-[17px] italic text-paper/75">
+        {String(answers[role]).toLowerCase() === String(answers[other]).toLowerCase() ? "Le même mot !" : "Racontez-vous."}
+      </p>
     );
   }
 
@@ -177,40 +218,6 @@ function ScaleReveal({ low, high, mine, theirs }: { low: string; high: string; m
         <p className="text-[13px] text-paper/75">En face : {notches(low, high)[notchOf(theirs)]}</p>
       </div>
       <p className="display text-[15px] italic text-paper/65">{close ? "Au même endroit." : "Parlez de cet écart."}</p>
-    </div>
-  );
-}
-
-/** the two words, side by side, turning over */
-function WordsSide({ mine, theirs }: { mine: string; theirs: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (reduced()) return;
-    const ctx = gsap.context(() => {
-      gsap.from("[data-word]", { rotationY: 90, opacity: 0, duration: 0.7, ease: "power3.out", stagger: 0.12 });
-    }, ref);
-    return () => ctx.revert();
-  }, []);
-  const same = mine.toLowerCase() === theirs.toLowerCase();
-  return (
-    <div ref={ref} className="flex flex-col items-center gap-2" style={{ perspective: 600 }}>
-      <div className="flex gap-3">
-        {[
-          { w: mine, label: "Toi" },
-          { w: theirs, label: "En face" },
-        ].map((x) => (
-          <div key={x.label} data-word className="flex flex-col items-center gap-1">
-            <div
-              className="hand grid min-w-[120px] place-items-center rounded-lg px-3 py-2 text-[26px] leading-none text-[#2a2132]"
-              style={{ background: "linear-gradient(165deg, #f8f0e3, #e3d3ba)", boxShadow: "inset 0 0 0 1px rgba(184,145,77,.6)" }}
-            >
-              {x.w}
-            </div>
-            <span className="text-[11px] tracking-wide text-paper/55">{x.label}</span>
-          </div>
-        ))}
-      </div>
-      <p className="display text-[15px] italic text-paper/65">{same ? "Le même mot !" : "Racontez-vous."}</p>
     </div>
   );
 }
