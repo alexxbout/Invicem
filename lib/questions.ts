@@ -96,7 +96,7 @@ export const QUESTIONS: Question[] = [
   { theme: "Quotidien", depth: 1, text: "Quel moment de ta journée attends-tu le plus, et pourquoi ?" },
   { theme: "Goûts", depth: 1, text: "Quel lieu te fait du bien à chaque fois que tu y vas ?" },
   { theme: "Souvenirs", depth: 1, text: "Quelle bêtise d'enfant te fait encore rire aujourd'hui ?" },
-  { theme: "Regard", depth: 2, text: "Qu'est-ce que les gens se trompent souvent à ton sujet ?" },
+  { theme: "Regard", depth: 2, text: "Sur quoi les gens se trompent-ils souvent à ton sujet ?" },
   { theme: "Relation", depth: 2, text: "Comment montres-tu à quelqu'un qu'il compte pour toi ?" },
   { theme: "Valeurs", depth: 2, text: "Sur quoi as-tu complètement changé d'avis en grandissant ?" },
   { theme: "Peurs", depth: 3, text: "Qu'est-ce que tu aurais peur de découvrir sur toi ?" },
