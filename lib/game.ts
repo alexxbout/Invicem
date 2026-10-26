@@ -103,6 +103,9 @@ function shuffle<T>(items: T[]): T[] {
 export class GameFullError extends Error {}
 
 /** Reserve a unique back. Prefers a colour nobody holds, so the partner needs one tap. */
+/** colours drawn more often: Vermillon (0), Ambre (1), Améthyste (5) */
+const FAVOURED = new Set([0, 1, 5]);
+
 export async function drawCard() {
   const all: [number, number][] = [];
   for (let c = 0; c < COLOR_COUNT; c++) for (let s = 0; s < SYMBOL_COUNT; s++) all.push([c, s]);
@@ -119,7 +122,12 @@ export async function drawCard() {
     const pool = freeColors.length ? freeColors : free;
     if (!pool.length) throw new GameFullError();
 
-    const [color, symbol] = pool[rand(pool.length)];
+    // the warm golds, reds and violets show off the table best: they come up more often
+    const weights = pool.map(([c]) => FAVOURED.has(c) ? 2.5 : 1);
+    let roll = Math.random() * weights.reduce((a, w) => a + w, 0);
+    let pick = 0;
+    while (roll >= weights[pick] && pick < pool.length - 1) roll -= weights[pick++];
+    const [color, symbol] = pool[pick];
     const id = newId();
     if (!(await store.setNX(backKey(color, symbol), id, HOLD_SEC))) continue;
 
