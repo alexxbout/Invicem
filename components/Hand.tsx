@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
 import type { HandCard } from "@/lib/client";
 import { buzz, pick as pickSound, reduced, slide } from "@/lib/feel";
+import { motion } from "@/lib/motion";
 import { BlankBack, CardBack, RareBack } from "./Card";
 import { Tap } from "./Tap";
 
@@ -39,12 +40,15 @@ export function Hand({
   color,
   hand,
   canPick,
+  nudge = false,
   onPick,
   handle,
 }: {
   color: number;
   hand: HandCard[];
   canPick: boolean;
+  /** glow softly to say "pick one" after a long pause */
+  nudge?: boolean;
   onPick: (slot: number, settled: Promise<unknown>) => void;
   handle?: Ref<HandHandle>;
 }) {
@@ -59,8 +63,12 @@ export function Hand({
     const ctx = gsap.context(() => {
       const row = rowRef.current!.getBoundingClientRect();
       const cards = inners();
+      const fromY = canPick ? 160 : -160;
+      const t = motion.tempo();
       cards.forEach((el, i) => {
         const p = pose(i, cards.length);
+        // the fan never lands exactly the same way twice
+        p.rotation = motion.vary(p.rotation, 0.18);
         const float = () =>
           gsap.to(el, { y: p.y - 9, duration: 2.6 + i * 0.45, yoyo: true, repeat: -1, ease: "sine.inOut" });
         if (calm) {
@@ -70,16 +78,16 @@ export function Hand({
         const box = el.getBoundingClientRect();
         gsap.fromTo(
           el,
-          { x: row.left + row.width / 2 - (box.left + box.width / 2), y: -50, rotation: 0, scale: 0.82, opacity: 0 },
+          { x: row.left + row.width / 2 - (box.left + box.width / 2), y: fromY, rotation: canPick ? 0 : 180 - p.rotation, scale: 0.82, opacity: 0 },
           {
             x: 0,
             y: p.y,
             rotation: p.rotation,
             scale: 1,
             opacity: 1,
-            duration: 0.75,
-            ease: "back.out(1.35)",
-            delay: 0.12 + i * 0.14,
+            duration: motion.vary(0.75 * t, 0.06),
+            ease: motion.settle(),
+            delay: (0.12 + i * 0.14) * t,
             onStart: () => slide(),
             onComplete: float,
           },
@@ -89,6 +97,8 @@ export function Hand({
       else gsap.from("[data-label]", { opacity: 0, y: 8, duration: 0.5, delay: 0.55 + cards.length * 0.12 });
     }, rowRef);
     return () => ctx.revert();
+    // dealt once: a new hand remounts with its own key
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const animatePick = (slot: number) => {
@@ -143,6 +153,38 @@ export function Hand({
     onPick(slot, animatePick(slot));
   };
 
+  /** the card follows the finger upward; a flick or a long enough pull plays it */
+  const drag = useRef<{ y: number; t: number; dy: number; el: HTMLElement } | null>(null);
+  const grab = (e: React.PointerEvent<HTMLElement>) => {
+    if (!canPick || picked.current || reduced()) return;
+    drag.current = { y: e.clientY, t: e.timeStamp, dy: 0, el: e.currentTarget };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  /** a pull that sprang back must not count as a tap */
+  const sprangAt = useRef(0);
+  const pull = (e: React.PointerEvent<HTMLElement>) => {
+    const d = drag.current;
+    if (!d) return;
+    // upward follows the finger, downward resists
+    const raw = e.clientY - d.y;
+    d.dy = raw < 0 ? raw * 0.8 : raw * 0.15;
+    gsap.set(d.el, { y: d.dy });
+  };
+  const release = (slot: number, at: number) => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d) return false;
+    const speed = d.dy / Math.max(1, at - d.t);
+    if (d.dy < -60 || (d.dy < -20 && speed < -0.5)) {
+      gsap.to(d.el, { y: 0, duration: 0.5, ease: "power2.out" });
+      pick(slot);
+      return true;
+    }
+    if (Math.abs(d.dy) > 8) sprangAt.current = at;
+    gsap.to(d.el, { y: 0, duration: 0.6, ease: "elastic.out(1, 0.5)" });
+    return false;
+  };
+
   /** the card rises under the finger before the tap completes */
   const press = (el: HTMLElement | null, down: boolean) => {
     if (!canPick || picked.current || !el || reduced()) return;
@@ -155,16 +197,27 @@ export function Hand({
         <Tap
           key={i}
           disabled={!canPick}
-          onClick={() => pick(i)}
-          onPointerDown={(e) => press(e.currentTarget.querySelector("[data-inner]"), true)}
-          onPointerUp={(e) => press(e.currentTarget.querySelector("[data-inner]"), false)}
+          onClick={(e) => {
+            if (e.timeStamp - sprangAt.current > 300) pick(i);
+          }}
+          onPointerDown={(e) => {
+            grab(e);
+            press(e.currentTarget.querySelector("[data-inner]"), true);
+          }}
+          onPointerMove={pull}
+          onPointerUp={(e) => {
+            release(i, e.timeStamp);
+            press(e.currentTarget.querySelector("[data-inner]"), false);
+          }}
           onPointerLeave={(e) => press(e.currentTarget.querySelector("[data-inner]"), false)}
           aria-label={h.blank ? "Carte blanche : écrire sa propre question" : `${h.rare ? "Carte rare, " : ""}${h.theme}, profondeur ${h.depth}`}
           className="relative flex w-[var(--w)] flex-none flex-col items-center gap-6 aria-disabled:cursor-default"
+          // the finger drags the card, so the browser must not take the gesture for a scroll
           style={
             {
               // overlap is a share of the card, so it holds on any window width
               "--w": "min(33vw, 140px)",
+              touchAction: canPick ? "none" : undefined,
               marginLeft: i === 0 ? 0 : "calc(var(--w) * -0.14)",
               zIndex: hand.length - Math.abs(i - (hand.length - 1) / 2) * 2,
             } as React.CSSProperties
@@ -172,7 +225,7 @@ export function Hand({
         >
           <div
             data-inner
-            className="relative aspect-[5/7] w-full rounded-[7%/5%] opacity-0"
+            className={`relative aspect-[5/7] w-full rounded-[7%/5%] opacity-0 ${nudge && canPick ? "nudge" : ""}`}
             style={{ filter: "drop-shadow(0 16px 20px rgba(0,0,0,.5))" }}
           >
             <div data-glow className="pointer-events-none absolute inset-0 rounded-[7%/5%] opacity-0" style={{ boxShadow: "0 0 70px 14px var(--accent)" }} />

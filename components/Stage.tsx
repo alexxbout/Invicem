@@ -15,6 +15,7 @@ import {
   type SessionView,
 } from "@/lib/client";
 import { reduced, scratch } from "@/lib/feel";
+import { motion } from "@/lib/motion";
 import { THEME_GLYPH } from "@/lib/labels";
 import { COLORS, SYMBOLS } from "@/lib/palette";
 import { ambient, setAccent } from "./Ambient";
@@ -124,6 +125,7 @@ function Frise({ view, onOpen }: { view: SessionView; onOpen: () => void }) {
         return (
           <span
             key={k}
+            data-frise-current={start + k === view.round - 1 || undefined}
             className={`grid aspect-[5/7] w-[22px] place-items-center rounded-[4px] border transition-all duration-700 ${current ? "-translate-y-1" : ""}`}
             style={
               q
@@ -318,8 +320,32 @@ export function Stage({
    * or it would finish after this and hide the next card.
    */
   const standUp = () => {
-    gsap.killTweensOf(wrapRef.current, "y,rotation,scale,opacity,filter");
-    gsap.set(wrapRef.current, { y: 0, rotation: 0, scale: 1, opacity: 1, filter: "none" });
+    gsap.killTweensOf(wrapRef.current, "x,y,rotation,scale,opacity,filter");
+    gsap.set(wrapRef.current, { x: 0, y: 0, rotation: 0, scale: 1, opacity: 1, filter: "none" });
+  };
+
+  /**
+   * A played card is never just erased: it shrinks and flies up into its slot in the frieze,
+   * up towards the other side of the table, then the table is cleared for what comes next.
+   */
+  const toFrise = (then?: () => void) => {
+    const el = wrapRef.current;
+    if (!el || reduced()) return then?.();
+    const from = el.getBoundingClientRect();
+    const slot = document.querySelector("[data-frise-current]")?.getBoundingClientRect();
+    const tx = slot ? slot.left + slot.width / 2 : window.innerWidth / 2;
+    const ty = slot ? slot.top + slot.height / 2 : 40;
+    const scale = slot ? slot.width / from.width : 0.1;
+    gsap.to(el, {
+      x: tx - (from.left + from.width / 2),
+      y: ty - (from.top + from.height / 2),
+      scale,
+      rotation: motion.vary(8, 0.5) * (Math.random() < 0.5 ? -1 : 1),
+      opacity: 0,
+      duration: 0.62 * motion.tempo(),
+      ease: "power3.in",
+      onComplete: () => then?.(),
+    });
   };
 
   /**
@@ -368,8 +394,15 @@ export function Stage({
       const from = jokerFrom.current;
       jokerFrom.current = null;
       setJokerRun({ kind: v.lastJoker ?? "paper", from, n: v.step });
+    } else if (fromHand) {
+      later(swap, 0);
     } else {
-      later(swap, fromHand ? 0 : Math.max(0, 1300 - head));
+      const prev = shownRef.current;
+      const wasFaceUp = !!prev && faceUpFor(prev, role);
+      // a face-up card turns over first; a face-down one (or one already flying) goes at once
+      const wait = wasFaceUp ? 1150 * motion.tempo() - head : 250 - head;
+      if (head > 0 && !wasFaceUp) later(swap, Math.max(0, 1300 - head));
+      else later(() => toFrise(swap), Math.max(0, wait));
     }
   };
 
@@ -479,7 +512,7 @@ export function Stage({
     setPending(true);
     // a face-up card turns over; a face-down one (the listener's) is put back on the deck
     const faceDown = !faceUpFor(cur, role);
-    if (faceDown) gsap.to(wrapRef.current, { y: 34, rotation: -5, scale: 0.9, opacity: 0, duration: 0.55, ease: "power2.in" });
+    if (faceDown) toFrise();
     else setFlipped(false);
     const t0 = performance.now();
     const { data } = await call<SessionView>(`/api/session/${sessionId}/next`, "POST", { step: cur.step });
@@ -589,6 +622,7 @@ export function Stage({
         : shown.criteria.depths.reduce((a, b) => a + b, 0) / shown.criteria.depths.length;
   useEffect(() => {
     ambient.depth(roomDepth);
+    motion.setDepth(roomDepth);
   }, [roomDepth]);
   useEffect(() => () => ambient.depth(2), []);
 
@@ -612,11 +646,40 @@ export function Stage({
   const answering =
     phase === "card" && !!shown && shown.turn !== role && !(shown.round === 1 && shown.history.length === 0) && !written;
   const lastOne = !!shown && shown.round >= shown.goal;
+  /** rare cards and the last question of the evening get a bigger moment */
+  const peak = !!shown?.question && (!!shown.question.rare || (phase === "card" && lastOne));
+  /** the flip takes the tempo of the depth, a little longer on a peak, never twice the same */
+  const [flipJitter] = useState(() => motion.vary(1, 0.05));
+  const flipTime = 1.35 * motion.tempo(roomDepth) * (peak ? 1.4 : 1) * flipJitter;
+  /** nothing touched for a while: what can be touched next starts to glow */
+  const [idle, setIdle] = useState(false);
+  const stepKey = shown ? `${shown.step}:${mode}` : mode;
+  useEffect(() => {
+    let timer = 0;
+    const arm = () => {
+      window.clearTimeout(timer);
+      setIdle(false);
+      timer = window.setTimeout(() => setIdle(true), 9000);
+    };
+    timer = window.setTimeout(() => setIdle(true), 9000);
+    window.addEventListener("pointerdown", arm);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pointerdown", arm);
+      later(() => setIdle(false), 0);
+    };
+    // re-armed at every new step
+  }, [stepKey]);
+  /** my phone has nothing to do for now: its light goes down a little */
+  const resting =
+    (choosing && !mine) || (writing && !mine) || (sealing && !!shown?.sealed[role] && !shown?.sealed[other]);
 
   const waiting = pending ? " pointer-events-none btn-pending" : "";
   const primary =
+    (idle ? "nudge " : "") +
     "rounded-full bg-gradient-to-b from-[#ecd09a] to-[#c79a50] px-9 py-3.5 text-[15px] font-medium text-[#2a1d0a] shadow-[0_10px_36px_-8px_rgba(217,183,121,.55)] transition active:scale-95";
   const secondary =
+    (idle ? "nudge " : "") +
     "rounded-full border border-white/15 bg-white/[.06] px-8 py-3.5 text-[15px] text-paper backdrop-blur transition active:scale-95";
 
   const status = !shown
@@ -647,6 +710,12 @@ export function Stage({
 
   return (
     <Screen>
+      {/* when the move is the other's, this phone's light goes down a little */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-[5] bg-[#06030a] transition-opacity duration-[1400ms]"
+        style={{ opacity: resting ? 0.32 : 0 }}
+      />
       <Wordmark
         onBack={() => leave(false)}
         right={
@@ -688,6 +757,7 @@ export function Stage({
             hand={shown.hand}
             handle={handRef}
             canPick={mine}
+            nudge={idle}
             onPick={(slot, settled) => void pick(slot, settled)}
           />
         )}
@@ -733,8 +803,8 @@ export function Stage({
               symbol={card.symbol}
               flipped={flipped}
               charging={mode === "charging"}
-              duration={firstReveal ? 2.6 : 1.35}
-              burst={firstReveal || !!shown?.question?.rare}
+              duration={firstReveal ? 2.6 : flipTime}
+              burst={firstReveal || peak}
               front={shown ? shown.question && <QuestionFace question={shown.question} play={flipped} /> : null}
               backNote={listening && shown?.question ? <Listening question={shown.question} /> : null}
               blank={written}

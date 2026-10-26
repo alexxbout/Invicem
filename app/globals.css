@@ -339,3 +339,32 @@ button {
   animation-duration: 0.38s;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* after a long pause, what can be touched next glows softly (opacity only: cheap) */
+@keyframes nudge {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.nudge {
+  position: relative;
+}
+.nudge::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  box-shadow: 0 0 22px 4px color-mix(in srgb, var(--accent) 55%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  animation: nudge 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nudge::after {
+    animation: none;
+  }
+}
