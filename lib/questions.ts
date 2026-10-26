@@ -86,7 +86,7 @@ export const DUO_QUESTIONS: Question[] = [
   { theme: "Relation", depth: 2, text: "Pour te sentir aimé(e), plutôt les mots ou les gestes ?", duo: scale("Les mots", "Les gestes") },
   { theme: "Souvenirs", depth: 2, text: "Ton enfance, plutôt légère ou lourde à porter ?", duo: scale("Légère", "Lourde") },
   { theme: "Envies", depth: 2, text: "Ta vie aujourd'hui, par rapport à celle dont tu rêvais ?", duo: scale("Éloignée", "Fidèle") },
-  { theme: "Valeurs", depth: 3, text: "À quel point te sens-tu libre d'être toi-même ?", duo: scale("Retenu(e)", "Libre") },
+  { theme: "Valeurs", depth: 3, text: "À quel point te sens-tu libre d'être toi-même ?", duo: scale("Sur la réserve", "Libre") },
   { theme: "Relation", depth: 3, text: "À quel point est-ce facile pour toi de demander de l'aide ?", duo: scale("Difficile", "Facile") },
   { theme: "Souvenirs", depth: 1, text: "Un mot pour ton enfance.", duo: word },
   { theme: "Goûts", depth: 1, text: "Un mot pour ton dimanche idéal.", duo: word },

@@ -39,7 +39,7 @@ const BLANK_AGAIN = 6;
 /** chance that a hand holds a rare card */
 const RARE_ODDS = 1 / 8;
 /** chance that a hand holds a duo card (answered by both, in secret) */
-const DUO_ODDS = 1; // TEMP: 1 / 3 once tested
+const DUO_ODDS = 1 / 3;
 /** a little time before the duo answers turn over, so both phones are ready */
 const DUO_REVEAL_MS = 1400;
 
@@ -334,8 +334,6 @@ function deal(s: Session): number[] {
     (i) => i >= DUO_FROM && !s.history.includes(i) && !skipped.includes(i) && matches(DECK[i], s.criteria),
   );
   if (duos.length && dealt.length && Math.random() < DUO_ODDS) {
-    // TEMP while testing (odds at 1): the whole hand is duo cards
-    if (DUO_ODDS >= 1) return shuffle(duos).slice(0, 3);
     dealt[rand(dealt.length)] = duos[rand(duos.length)];
     return dealt;
   }
