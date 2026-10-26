@@ -627,11 +627,10 @@ export function Stage({
   }, [roomDepth]);
   useEffect(() => () => ambient.depth(2), []);
 
-  // the screen's edges follow the moment: a slow comet while the card waits to be found,
-  // a racing one while the two cards charge, and the burst comes with the flip itself
+  // the screen's edges stay dark while the card waits to be found; a comet races round
+  // them while the two cards charge, and the burst comes with the flip itself
   useEffect(() => {
-    if (mode === "waiting") edge.orbit("slow");
-    else if (mode === "charging") edge.orbit("fast");
+    if (mode === "charging") edge.orbit("fast");
     else edge.stop();
   }, [mode]);
   useEffect(() => () => edge.stop(), []);
