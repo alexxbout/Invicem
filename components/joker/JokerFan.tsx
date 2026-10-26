@@ -14,6 +14,8 @@ export function JokerFan({ kinds, onPlay }: { kinds: JokerKind[]; onPlay: (kind:
   if (!joker) return null;
   return (
     <div className="joker-fan pointer-events-none absolute -right-[10%] -bottom-[13%] z-20 w-[31%]">
+      {/* it slides in from behind the corner, as if drawn from the hand, once the card has turned */}
+      <div className="joker-in">
       <Tap
         onClick={(e) => {
           buzz(14);
@@ -28,6 +30,7 @@ export function JokerFan({ kinds, onPlay }: { kinds: JokerKind[]; onPlay: (kind:
           <JokerClassic width="100%" variant="paper" />
         </div>
       </Tap>
+      </div>
     </div>
   );
 }

@@ -404,3 +404,27 @@ button {
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #fff1c2, #e0b54a 55%, #a77a22);
 }
+
+/* the joker in hand slides out from behind the card's corner */
+@keyframes joker-in {
+  from {
+    opacity: 0;
+    transform: translate(-45%, -30%) rotate(-28deg) scale(0.7);
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.joker-in {
+  transform-origin: 0% 100%;
+  animation: joker-in 0.9s cubic-bezier(0.25, 1.3, 0.45, 1) 0.5s both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .joker-in {
+    animation: none;
+  }
+}
