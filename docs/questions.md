@@ -32,6 +32,8 @@ qu'elle vit, pense et ressent : d'elle-même, des autres, de l'autre.
 - Ce qui dépend d'avoir un grand entourage (« pour quoi tes amis t'appellent-ils… »).
 - Les tournures étranges (« fier en secret », « rêve abandonné »).
 - Les jeux, défis et devinettes (« imite-moi », « devine mon plaisir coupable »).
+- Les mots qui font réfléchir avant même de répondre (« agir contre ses principes ») :
+  on doit comprendre la question du premier coup.
 - Les consignes longues qui ennuient (« raconte notre rencontre comme un film »).
 
 ## Profondeur

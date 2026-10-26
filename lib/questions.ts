@@ -100,7 +100,7 @@ export const QUESTIONS: Question[] = [
   { theme: "Relation", depth: 2, text: "Comment montres-tu à quelqu'un qu'il compte pour toi ?" },
   { theme: "Valeurs", depth: 2, text: "Sur quoi as-tu complètement changé d'avis en grandissant ?" },
   { theme: "Peurs", depth: 3, text: "Qu'est-ce que tu aurais peur de découvrir sur toi ?" },
-  { theme: "Valeurs", depth: 3, text: "À quel moment as-tu agi contre tes principes, et qu'en as-tu retenu ?" },
+  { theme: "Valeurs", depth: 3, text: "Quelle décision regrettes-tu le plus ?" },
 ];
 
 /**
