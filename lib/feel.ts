@@ -260,8 +260,8 @@ export function wax() {
 export function twinkle() {
   if (!live()) return;
   const t = ctx!.currentTime;
-  thump(t, rnd(85, 110), 0.035, 0.07);
-  burst({ start: t, dur: 0.035, peak: 0.012, type: "lowpass", freq: rnd(380, 520), attack: 0.08 });
+  thump(t, rnd(85, 110), 0.05, 0.07);
+  burst({ start: t, dur: 0.035, peak: 0.017, type: "lowpass", freq: rnd(380, 520), attack: 0.08 });
 }
 
 /* ---- device tilt ---- */
