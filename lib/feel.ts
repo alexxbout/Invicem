@@ -256,12 +256,21 @@ export function wax() {
   burst({ start: t + 0.01, dur: 0.18, peak: 0.02, type: "lowpass", freq: 900, to: 300, attack: 0.1 });
 }
 
-/** gold dust under the finger: two tiny high glints, barely there */
+/** gold dust under the finger: a tiny crackle, like an ember or a grain of sugar breaking */
 export function twinkle() {
   if (!live()) return;
   const t = ctx!.currentTime;
-  note(rnd(2600, 3400), t, 0.18, 0.005, [[1, 1], [2.4, 0.3]]);
-  note(rnd(3600, 4400), t + rnd(0.03, 0.06), 0.14, 0.003);
+  const grains = 3 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < grains; i++) {
+    burst({
+      start: t + Math.random() * 0.09,
+      dur: rnd(0.003, 0.009),
+      peak: rnd(0.012, 0.03),
+      type: "highpass",
+      freq: rnd(1400, 3200),
+      attack: 0.05,
+    });
+  }
 }
 
 /* ---- device tilt ---- */
