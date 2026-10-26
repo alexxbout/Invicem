@@ -337,12 +337,13 @@ export function Card({
       // once the phone reports its tilt, it alone moves the card: touches no longer do
       gyro.current = true;
       base = base === null ? e.beta : base + (e.beta - base) * 0.02;
-      const y = clamp(e.gamma * 0.45, 14);
-      const x = clamp(-(e.beta - base) * 0.5, 14);
+      // the card leans well into the phone's tilt, as if it had real weight
+      const y = clamp(e.gamma * 0.75, 24);
+      const x = clamp(-(e.beta - base) * 0.8, 24);
       quick.current?.y(y);
       quick.current?.x(x);
-      sheen.tx = 50 + y * 3;
-      sheen.ty = 50 - x * 3;
+      sheen.tx = 50 + y * 2;
+      sheen.ty = 50 - x * 2;
     };
     window.addEventListener("deviceorientation", onTilt);
     gsap.ticker.add(glide);
@@ -355,10 +356,10 @@ export function Card({
   useEffect(() => {
     if (!idle || reduced()) return;
     // a slow, clearly felt sway, like a card held up in a draught
-    gsap.set(floatRef.current, { rotation: -1.6 });
+    gsap.set(floatRef.current, { rotation: -1.25 });
     const tw = gsap.to(floatRef.current, {
-      y: -12,
-      rotation: 1.6,
+      y: -10,
+      rotation: 1.25,
       duration: 3.4,
       yoyo: true,
       repeat: -1,
@@ -466,8 +467,8 @@ export function Card({
     const r = root.getBoundingClientRect();
     const nx = (e.clientX - r.left) / r.width - 0.5;
     const ny = (e.clientY - r.top) / r.height - 0.5;
-    quick.current?.y(nx * 22);
-    quick.current?.x(-ny * 22);
+    quick.current?.y(nx * 34);
+    quick.current?.x(-ny * 34);
     root.style.setProperty("--sx", `${(nx + 0.5) * 100}%`);
     root.style.setProperty("--sy", `${(ny + 0.5) * 100}%`);
   };

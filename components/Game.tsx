@@ -39,14 +39,14 @@ export function Game() {
       if (asked) return;
       asked = true;
       void requestTilt();
-      document.removeEventListener("pointerdown", sparkle);
+      document.removeEventListener("pointerdown", sparkle, { capture: true });
       document.removeEventListener("pointermove", follow);
       document.removeEventListener("pointerup", release);
       document.removeEventListener("pointercancel", release);
       release();
       document.removeEventListener("touchend", askTilt);
       document.removeEventListener("click", askTilt);
-      document.removeEventListener("pointerdown", sparkle);
+      document.removeEventListener("pointerdown", sparkle, { capture: true });
       document.removeEventListener("pointermove", follow);
       document.removeEventListener("pointerup", release);
       document.removeEventListener("pointercancel", release);
@@ -92,8 +92,11 @@ export function Game() {
     };
     const sparkle = (e: PointerEvent) => {
       if (reduced()) return;
-      twinkle();
       burst(e.clientX, e.clientY, 9);
+      // the sound must never keep the sparks from showing
+      try {
+        twinkle();
+      } catch {}
       held.x = e.clientX;
       held.y = e.clientY;
       release();
@@ -102,7 +105,11 @@ export function Game() {
         held.beat = 0;
         held.loop = window.setInterval(() => {
           burst(held.x, held.y, 3);
-          if (++held.beat % 5 === 0) twinkle();
+          if (++held.beat % 5 === 0) {
+            try {
+              twinkle();
+            } catch {}
+          }
         }, 70);
       }, 320);
     };
@@ -110,7 +117,7 @@ export function Game() {
       held.x = e.clientX;
       held.y = e.clientY;
     };
-    document.addEventListener("pointerdown", sparkle, { passive: true });
+    document.addEventListener("pointerdown", sparkle, { passive: true, capture: true });
     document.addEventListener("pointermove", follow, { passive: true });
     document.addEventListener("pointerup", release);
     document.addEventListener("pointercancel", release);

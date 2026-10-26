@@ -80,7 +80,7 @@ export function Hand({
         // the fan never lands exactly the same way twice
         p.rotation = motion.vary(p.rotation, 0.18);
         const float = () =>
-          gsap.to(el, { y: p.y - 12, rotation: p.rotation + (i % 2 ? 2.2 : -2.2), duration: 2.6 + i * 0.45, yoyo: true, repeat: -1, ease: "sine.inOut" });
+          gsap.to(el, { y: p.y - 11, rotation: p.rotation + (i % 2 ? 1.7 : -1.7), duration: 2.6 + i * 0.45, yoyo: true, repeat: -1, ease: "sine.inOut" });
         if (calm) {
           gsap.set(el, { rotation: p.rotation, y: p.y, opacity: 1 });
           return;
