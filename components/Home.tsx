@@ -171,15 +171,22 @@ export function Home({
 
       {/* engraved title */}
       <div data-depth="9" data-title-block className="mt-[9dvh] flex flex-col items-center text-center">
+        {/* wide light capitals in gold, with a soft shadow copy set a little deeper for relief */}
         <h1
-          className="gold-engrave display flex overflow-hidden pb-1 text-[clamp(52px,15vw,72px)] font-light leading-none tracking-tight"
+          className="relative pb-1 pl-[0.32em] text-[clamp(34px,10.5vw,46px)] font-light uppercase leading-none tracking-[0.32em]"
+          style={{ fontFamily: "var(--font-cormorant), Georgia, serif" }}
           aria-label="Invicem"
         >
-          {"Invicem".split("").map((l, i) => (
-            <span key={i} data-letter className="inline-block">
-              {l}
-            </span>
-          ))}
+          <span aria-hidden data-depth="-4" className="absolute inset-x-0 top-[5px] flex pl-[0.32em] text-black/55 blur-[3px]">
+            Invicem
+          </span>
+          <span className="gold-engrave relative flex overflow-hidden">
+            {"Invicem".split("").map((l, i) => (
+              <span key={i} data-letter className="inline-block">
+                {l}
+              </span>
+            ))}
+          </span>
         </h1>
         <p data-latin className="display mt-3 text-[15px] italic text-paper/55">
           l&apos;un l&apos;autre, à tour de rôle

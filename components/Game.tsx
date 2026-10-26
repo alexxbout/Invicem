@@ -39,18 +39,8 @@ export function Game() {
       if (asked) return;
       asked = true;
       void requestTilt();
-      document.removeEventListener("pointerdown", sparkle, { capture: true });
-      document.removeEventListener("pointermove", follow);
-      document.removeEventListener("pointerup", release);
-      document.removeEventListener("pointercancel", release);
-      release();
       document.removeEventListener("touchend", askTilt);
       document.removeEventListener("click", askTilt);
-      document.removeEventListener("pointerdown", sparkle, { capture: true });
-      document.removeEventListener("pointermove", follow);
-      document.removeEventListener("pointerup", release);
-      document.removeEventListener("pointercancel", release);
-      release();
     };
     // every touch leaves a few sparks of gold where the finger lands; held down, the finger
     // keeps shedding them, following it as it moves
@@ -138,6 +128,11 @@ export function Game() {
       document.removeEventListener("touchmove", twoFingers);
       document.removeEventListener("touchend", askTilt);
       document.removeEventListener("click", askTilt);
+      document.removeEventListener("pointerdown", sparkle, { capture: true });
+      document.removeEventListener("pointermove", follow);
+      document.removeEventListener("pointerup", release);
+      document.removeEventListener("pointercancel", release);
+      release();
     };
   }, []);
 

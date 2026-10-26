@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Caveat, DM_Sans, Fraunces } from "next/font/google";
+import { Caveat, Cormorant_Garamond, DM_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
 
 const display = Fraunces({
@@ -7,6 +7,13 @@ const display = Fraunces({
   subsets: ["latin"],
   axes: ["opsz", "SOFT"],
   style: ["normal", "italic"],
+});
+
+/** the title: light roman capitals, widely spaced */
+const title = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  subsets: ["latin"],
+  weight: ["300"],
 });
 
 /** handwriting, for what the players write themselves */
@@ -38,7 +45,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="fr" className={`${display.variable} ${body.variable} ${hand.variable} h-full antialiased`}>
+    <html lang="fr" className={`${display.variable} ${body.variable} ${hand.variable} ${title.variable} h-full antialiased`}>
       <body className="min-h-full">{children}</body>
     </html>
   );
