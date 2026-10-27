@@ -159,7 +159,7 @@ export function Home({
 
   return (
     <div ref={root} className="app-h relative mx-auto flex w-full max-w-md flex-col items-center overflow-hidden px-5">
-      {/* depth: far lights, a lamp's pool of light, a felt table in perspective, and soft
+      {/* depth: far lights, a lamp's pool of light, a soft felt table, and soft
           out-of-focus lights in front. Each layer has its own data-depth for the parallax. */}
       <div data-depth="3" aria-hidden className="pointer-events-none absolute -inset-[30px]">
         {FAR_LIGHTS.map((l, i) => (
@@ -182,28 +182,18 @@ export function Home({
           WebkitMaskImage: "linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%)",
         }}
       />
-      <div data-depth="12" aria-hidden className="pointer-events-none absolute inset-x-[-70%] bottom-[-6%] h-[80%]" style={{ perspective: 800 }}>
-        {/* the felt, laid flat and running away from us, wider than the screen so only its
-            far edge shows; the sides fade into the dark instead of ending */}
-        <div
-          className="absolute inset-0 origin-bottom rounded-[50%_50%_0_0/14%_14%_0_0]"
-          style={{
-            transform: "rotateX(52deg)",
-            background: [
-              // the lamp's pool, right under the cards
-              "radial-gradient(ellipse 22% 38% at 50% 52%, rgba(255,214,150,.32), rgba(255,214,150,.1) 50%, rgba(255,214,150,0) 80%)",
-              // the felt's nap: fine noise, then a faint weave
-              `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .35 0 0 0 0 .3 0 0 0 1.1 -.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-              "repeating-linear-gradient(45deg, rgba(255,255,255,.04) 0 1px, transparent 1px 3px)",
-              "repeating-linear-gradient(-45deg, rgba(0,0,0,.14) 0 1px, transparent 1px 3px)",
-              "radial-gradient(ellipse 40% 70% at 50% 55%, #43203a 0%, #261220 50%, #11070e 85%)",
-            ].join(", "),
-            boxShadow: "inset 0 0 0 3px rgba(224,181,74,.5), inset 0 0 0 8px rgba(0,0,0,.35), inset 0 0 0 9px rgba(224,181,74,.2), inset 0 40px 50px rgba(0,0,0,.5)",
-            maskImage: "linear-gradient(to right, transparent 14%, #000 30%, #000 70%, transparent 86%)",
-            WebkitMaskImage: "linear-gradient(to right, transparent 14%, #000 30%, #000 70%, transparent 86%)",
-          }}
-        />
-      </div>
+      {/* the felt: a flat, soft ellipse wider than the screen, its far edge a thin gold rim.
+          No 3D and no texture, so it costs one painted layer. */}
+      <div
+        data-depth="12"
+        aria-hidden
+        className="pointer-events-none absolute inset-x-[-45%] bottom-[-12%] h-[58%] rounded-[50%/22%]"
+        style={{
+          background:
+            "radial-gradient(ellipse 30% 40% at 50% 38%, rgba(255,214,150,.16), rgba(255,214,150,0) 75%), radial-gradient(ellipse 60% 70% at 50% 40%, #3a1c30 0%, #24111e 55%, #13080f 100%)",
+          boxShadow: "inset 0 2px 0 rgba(224,181,74,.35), inset 0 30px 40px -10px rgba(0,0,0,.5)",
+        }}
+      />
 
       {/* gilded frame around the whole screen */}
       <div
