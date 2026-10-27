@@ -90,7 +90,7 @@ export function Hand({
       const launches: gsap.core.Tween[] = [];
       if (!calm && hold && mid) {
         const base = canPick ? 0 : 180;
-        void reach(hold, { width: mid.width * 0.6, angle: base + leanOf(order[0]), duration: 0.4, from: 200 }).then((g) => {
+        void reach(hold, { width: mid.width * 0.6, angle: base + leanOf(order[0]), duration: 0.28, from: 200 }).then((g) => {
           const el = g.el;
           if (!el) return order.forEach((i) => launches[i]?.play());
           const hx = Number(gsap.getProperty(el, "x"));
@@ -102,19 +102,19 @@ export function Hand({
             // aim: turn towards the card's place, the wrist shifting a little that way
             const ax = hx + Math.sin(rad) * 6;
             const ay = hy - Math.cos(rad) * 6 + Math.abs(leanOf(i)) * 0.2;
-            tl.to(el, { rotation: a, x: ax, y: ay, duration: k === 0 ? 0.12 : 0.24 * t, ease: "power2.inOut" })
+            tl.to(el, { rotation: a, x: ax, y: ay, duration: k === 0 ? 0.08 : 0.13 * t, ease: "power2.inOut" })
               // the push forward sends the card
               .to(el, {
                 x: ax + Math.sin(rad) * 20,
                 y: ay - Math.cos(rad) * 20,
-                duration: 0.12,
+                duration: 0.08,
                 ease: "power2.out",
                 onStart: () => void launches[i]?.play(),
               })
               // and the hand draws back
-              .to(el, { x: ax, y: ay, duration: 0.2 * t, ease: "power2.inOut" });
+              .to(el, { x: ax, y: ay, duration: 0.11 * t, ease: "power2.inOut" });
           });
-          tl.to(el, { rotation: base, x: hx, y: hy, duration: 0.22, ease: "power2.inOut" }).to({}, { duration: 0.15 });
+          tl.to(el, { rotation: base, x: hx, y: hy, duration: 0.15, ease: "power2.inOut" }).to({}, { duration: 0.08 });
         });
       }
       cards.forEach((el, i) => {
@@ -139,7 +139,7 @@ export function Hand({
             rotation: p.rotation,
             scale: 1,
             opacity: 1,
-            duration: motion.vary(0.55 * t, 0.06),
+            duration: motion.vary(0.42 * t, 0.06),
             ease: motion.settle(),
             paused: !!hold,
             onStart: () => slide(),
@@ -149,7 +149,7 @@ export function Hand({
       });
       if (calm) gsap.set("[data-label]", { opacity: 1 });
       // the labels come once the cards are on the table
-      else gsap.from("[data-label]", { opacity: 0, y: 8, duration: 0.5, delay: 0.55 + cards.length * 0.55 * t });
+      else gsap.from("[data-label]", { opacity: 0, y: 8, duration: 0.5, delay: 0.4 + cards.length * 0.32 * t });
     }));
     return () => {
       cancelAnimationFrame(raf);
