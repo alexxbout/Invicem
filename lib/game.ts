@@ -6,7 +6,11 @@ import { store } from "./store";
 const HOLD_SEC = 120;
 /** both screens flip together this long after the match, in server time */
 const FLIP_DELAY_MS = 2600;
-const SESSION_SEC = 60 * 60 * 6;
+/**
+ * A game nobody has played for this long is abandoned: every move pushes it back, merely
+ * looking at it does not. Its colour was already freed when the two cards met.
+ */
+const SESSION_SEC = 60 * 60;
 /** questions in an evening before the closing card is offered */
 const EVENING = 7;
 
