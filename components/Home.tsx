@@ -25,11 +25,6 @@ const FAR_LIGHTS = [
   { x: 60, y: 28, s: 6, o: 0.35 },
   { x: 40, y: 8, s: 9, o: 0.3 },
 ];
-/** big, blurred lights in front of everything, like candle flames out of focus */
-const NEAR_LIGHTS = [
-  { x: -14, y: 70, s: 170, c: "rgba(255,190,120,.35)", o: 0.5 },
-  { x: 84, y: 8, s: 130, c: "rgba(255,214,150,.3)", o: 0.45 },
-];
 
 /** the card the deck shows on top, before any colour is drawn */
 const DECK = { color: 1, symbol: 0 };
@@ -159,8 +154,7 @@ export function Home({
 
   return (
     <div ref={root} className="app-h relative mx-auto flex w-full max-w-md flex-col items-center overflow-hidden px-5">
-      {/* depth: far lights, a lamp's pool of light, a soft felt table, and soft
-          out-of-focus lights in front. Each layer has its own data-depth for the parallax. */}
+      {/* depth: far lights and a soft felt table, each with its own data-depth for the parallax */}
       <div data-depth="3" aria-hidden className="pointer-events-none absolute -inset-[30px]">
         {FAR_LIGHTS.map((l, i) => (
           <span
@@ -170,18 +164,6 @@ export function Home({
           />
         ))}
       </div>
-      {/* the lamp above the table: one source, straight above the cards. Its cone, then its
-          pool on the felt; everything else falls off into the dark. */}
-      <div
-        data-depth="6"
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[-6%] h-[90%] w-[140%] -translate-x-1/2"
-        style={{
-          background: "conic-gradient(from 180deg at 50% 0%, transparent 162deg, rgba(255,220,160,.07) 172deg, rgba(255,226,175,.12) 180deg, rgba(255,220,160,.07) 188deg, transparent 198deg)",
-          maskImage: "linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%)",
-        }}
-      />
       {/* the felt: a flat, soft ellipse wider than the screen, its far edge a thin gold rim.
           No 3D and no texture, so it costs one painted layer. */}
       <div
@@ -265,30 +247,7 @@ export function Home({
       <InstallInvite />
 
       {/* the table */}
-      <div data-depth="16" className="relative z-30 mt-auto flex w-full flex-col items-center gap-6 pb-[max(5.2rem,calc(env(safe-area-inset-bottom)+4rem))]">
-        {saved && (
-          <Tap
-            data-pick="resume"
-            onClick={(e) => take("resume", onResume, e)}
-            className="flex items-center gap-3 active:scale-95"
-            aria-label="Reprendre la partie en cours"
-          >
-            <div data-deal>
-              <div data-float>
-                <div data-card className="relative aspect-[5/7] w-[46px] -rotate-6" style={{ filter: "drop-shadow(0 8px 12px rgba(0,0,0,.5))" }}>
-                  <CardBack color={saved.color} symbol={saved.symbol} />
-                </div>
-              </div>
-            </div>
-            <div data-label className="text-left">
-              <div className="display text-[16px] text-paper">Reprendre</div>
-              <div className="text-[12px]" style={{ color: COLORS[saved.color].from }}>
-                votre partie en cours
-              </div>
-            </div>
-          </Tap>
-        )}
-
+      <div data-depth="16" className="relative z-30 mt-auto flex w-full flex-col items-center gap-5 pb-[max(4.2rem,calc(env(safe-area-inset-bottom)+3rem))]">
         <div className="flex w-full items-end justify-center gap-[6vw]">
           {/* a deck: draw the top card */}
           <Tap
@@ -300,7 +259,7 @@ export function Home({
             <div data-deal className="w-full">
               <div data-float className="relative w-full">
                 {/* its shadow on the felt slides the other way when the phone tilts */}
-                <div data-depth="-7" data-shadow aria-hidden className="pointer-events-none absolute inset-x-[8%] -bottom-[6%] h-[14%] rounded-[50%]" style={{ background: "radial-gradient(ellipse, rgba(0,0,0,.85), rgba(0,0,0,0) 70%)" }} />
+                <div data-shadow aria-hidden className="pointer-events-none absolute inset-x-[8%] -bottom-[6%] h-[14%] rounded-[50%]" style={{ background: "radial-gradient(ellipse, rgba(0,0,0,.85), rgba(0,0,0,0) 70%)" }} />
                 <div data-card className="relative aspect-[5/7] w-full -rotate-[5deg]">
                   {[3, 2, 1].map((k) => (
                     <div key={k} className="absolute inset-0" style={{ transform: `translate(${k * 2.5}px, ${k * 2.5}px)` }}>
@@ -330,7 +289,7 @@ export function Home({
           >
             <div data-deal className="w-full">
               <div data-float className="relative w-full">
-                <div data-depth="-7" data-shadow aria-hidden className="pointer-events-none absolute inset-x-[8%] -bottom-[6%] h-[14%] rounded-[50%]" style={{ background: "radial-gradient(ellipse, rgba(0,0,0,.85), rgba(0,0,0,0) 70%)" }} />
+                <div data-shadow aria-hidden className="pointer-events-none absolute inset-x-[8%] -bottom-[6%] h-[14%] rounded-[50%]" style={{ background: "radial-gradient(ellipse, rgba(0,0,0,.85), rgba(0,0,0,0) 70%)" }} />
                 <div
                   data-card
                   className="relative aspect-[5/7] w-full rotate-[5deg] overflow-hidden rounded-[7%/5%]"
@@ -373,18 +332,29 @@ export function Home({
             </div>
           </Tap>
         </div>
+        {/* a game left open: a small pill under the cards, out of the way */}
+        {saved && (
+          <Tap
+            data-pick="resume"
+            onClick={(e) => take("resume", onResume, e)}
+            className="flex items-center gap-3 rounded-full border border-[#e0b54a]/30 bg-black/30 py-1.5 pl-2 pr-4 active:scale-95"
+            aria-label="Reprendre la partie en cours"
+          >
+            <div data-deal>
+              <div data-card className="relative aspect-[5/7] w-[22px] -rotate-6">
+                <CardBack color={saved.color} symbol={saved.symbol} />
+              </div>
+            </div>
+            <div data-label className="flex items-baseline gap-2 whitespace-nowrap">
+              <span className="display text-[15px] text-paper">Reprendre</span>
+              <span className="text-[12px]" style={{ color: COLORS[saved.color].from }}>
+                votre partie en cours
+              </span>
+            </div>
+          </Tap>
+        )}
       </div>
 
-      {/* in front: big soft out-of-focus lights, moving fastest with the tilt */}
-      <div data-depth="34" aria-hidden className="pointer-events-none absolute -inset-[40px] z-40">
-        {NEAR_LIGHTS.map((l, i) => (
-          <span
-            key={i}
-            className="absolute rounded-full"
-            style={{ left: `${l.x}%`, top: `${l.y}%`, width: l.s, height: l.s, background: `radial-gradient(circle, ${l.c}, transparent 68%)`, opacity: l.o }}
-          />
-        ))}
-      </div>
 
       {(howTo || !seen) && <HowTo onClose={() => setHowTo(false)} />}
     </div>
