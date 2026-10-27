@@ -48,4 +48,5 @@ qu'elle vit, pense et ressent : d'elle-même, des autres, de l'autre.
   (rapport aux émotions, au conflit, à soi). Pas de goûts anodins (« rangé ou chaos »),
   rien qui dépende trop du contexte (« la tête ou le cœur »). Les deux bornes se lisent
   après « Plutôt … » (« Plutôt rarement », « Plutôt en parler »).
-- **Un mot** : un mot qui ouvre une histoire (« Un mot pour ta dernière relation »).
+- **Un mot** : un mot qui ouvre une histoire, avec une consigne sans ambiguïté :
+  « Un mot pour **décrire** ton enfance », pas « Un mot pour tes 15 ans ».
