@@ -744,7 +744,7 @@ export function Stage({
     "rounded-full bg-gradient-to-b from-[#ecd09a] to-[#c79a50] px-9 py-3.5 text-[15px] font-medium text-[#2a1d0a] shadow-[0_10px_36px_-8px_rgba(217,183,121,.55)] transition active:scale-95";
   const secondary =
     (idle ? "nudge " : "") +
-    "rounded-full border border-white/15 bg-white/[.06] px-8 py-3.5 text-[15px] text-paper backdrop-blur transition active:scale-95";
+    "rounded-full border border-white/15 bg-[#2a2433]/70 px-8 py-3.5 text-[15px] text-paper transition active:scale-95";
 
   const status = !shown
     ? ""

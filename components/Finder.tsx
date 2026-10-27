@@ -101,8 +101,9 @@ export function Finder({ onMatch, onBack }: { onMatch: (m: Match) => void; onBac
                 aria-label={c.name}
               >
                 <div
-                  className="relative aspect-[5/7] w-full"
-                  style={{ filter: "drop-shadow(0 10px 14px rgba(0,0,0,.45))" }}
+                  className="relative aspect-[5/7] w-full rounded-[7%/5%]"
+                  // a box shadow, not a drop-shadow filter: eight filtered cards cost a repaint each as they animate
+                  style={{ boxShadow: "0 10px 14px -2px rgba(0,0,0,.45)" }}
                 >
                   <CardBack color={i} />
                 </div>
