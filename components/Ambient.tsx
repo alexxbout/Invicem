@@ -328,7 +328,7 @@ export function Ambient() {
         const age = t - c.born;
         if (age > life) constellation = null;
         else {
-          const k = Math.min(1, age / (c.segs.length > 8 ? 1.8 : 1.2));
+          const k = Math.min(1, age / (c.segs.length > 8 ? 1.35 : 1.2));
           const fade = age < life - 1.4 ? 1 : 1 - (age - (life - 1.4)) / 1.4;
           const at = (p: Pt) => ({ x: p.x + par.x * p.depth, y: p.y + par.y * p.depth });
           ctx.globalCompositeOperation = "lighter";

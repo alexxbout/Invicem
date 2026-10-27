@@ -73,7 +73,7 @@ export function JokerPlay({
         tl.pause();
         burn();
         // while it burns away, its face draws itself in stars where it stood
-        gsap.delayedCall(0.7, () => ambient.constellation("jester"));
+        gsap.delayedCall(0.5, () => ambient.constellation("jester"));
         burnAway(flyer, sparks, { duration: 2, onDone: () => tl.resume() });
       })
       .set(flyer, { opacity: 0 });
