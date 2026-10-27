@@ -4,7 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import gsap from "gsap";
 import { armSound, reduced, requestTilt, twinkle } from "@/lib/feel";
-import { readSaved, subscribeSaved, type Match, type Saved } from "@/lib/client";
+import { call, readSaved, subscribeSaved, writeSaved, type Match, type Saved } from "@/lib/client";
 import { Ambient } from "./Ambient";
 import { Finder } from "./Finder";
 import { Home } from "./Home";
@@ -29,6 +29,15 @@ export function Game() {
   const raw = useSyncExternalStore(subscribeSaved, readSaved, () => null);
   const saved: Saved | null = raw ? (JSON.parse(raw) as Saved) : null;
   const home = () => setScreen({ k: "home" });
+
+  // a saved game that was abandoned in the meantime: forget it, so "Reprendre" goes away
+  const savedId = saved?.sessionId;
+  useEffect(() => {
+    if (!savedId || screen.k !== "home") return;
+    void call(`/api/session/${savedId}`).then(({ status }) => {
+      if (status === 404) writeSaved(null);
+    });
+  }, [savedId, screen.k]);
 
   useEffect(() => {
     armSound();
