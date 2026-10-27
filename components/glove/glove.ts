@@ -86,6 +86,9 @@ export type Grip = {
   flick: () => void;
   /** a short push forward, turned `toward` degrees from where the fingers point */
   push: (toward: number) => void;
+  /** the glove itself and its resting angle, to choreograph it directly */
+  el: HTMLElement | null;
+  base: number;
   /** let go and slide back out of the screen */
   release: (delay?: number) => Promise<void>;
 };
@@ -105,7 +108,8 @@ export function reach(
   p: Box,
   { width = 110, side = 0, angle = 0, duration = 0.55, mirror = false, from = 0 } = {},
 ): Promise<Grip> {
-  if (reduced()) return Promise.resolve({ follow: () => {}, flick: () => {}, push: () => {}, release: () => Promise.resolve() });
+  if (reduced())
+    return Promise.resolve({ follow: () => {}, flick: () => {}, push: () => {}, release: () => Promise.resolve(), el: null, base: angle });
   const g = place(width, mirror);
   const target = g.at(p);
   // it comes from behind the fingers' direction, from off screen
@@ -118,6 +122,8 @@ export function reach(
   // a second release (a later one overtaking a delayed one) just hurries the first
   let leaving: gsap.core.Tween | null = null;
   const grip: Grip = {
+    el: g.el,
+    base: rest,
     follow: (q) => {
       const t = g.at(q);
       gsap.set(g.el, { x: t.x, y: t.y });

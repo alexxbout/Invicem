@@ -77,21 +77,45 @@ export function Hand({
       }
       const fromY = canPick ? 160 : -160;
       const t = motion.tempo();
-      // a glove deals from where it stays, low on my side (or high, across the table): each
-      // card leaves it for its place in the fan, sent with a short push of the hand angled
-      // towards that place; once the hand is dealt, the glove withdraws
+      // a glove deals from where it stays, low on my side (or high, across the table). For each
+      // card in turn it turns towards that card's place, moves forward a little, sends the card,
+      // and draws back; then it aims at the next one. Once the hand is dealt, it withdraws.
       const boxes = cards.map((el) => el.getBoundingClientRect());
       const order = canPick ? boxes.map((_, i) => i) : boxes.map((_, i) => boxes.length - 1 - i);
-      const step = 0.24 * t;
-      const lead = calm || !boxes.length ? 0 : 0.45;
-      const slot = new Map(order.map((idx, k) => [idx, k]));
       const mid = boxes.length ? boxes[Math.floor(boxes.length / 2)] : null;
       const hold = mid ? { x: mid.left + mid.width / 2, y: canPick ? mid.bottom + mid.height * 0.55 : mid.top - mid.height * 0.55 } : null;
-      let dealer: Promise<Grip> | null = null;
+      /** how far the hand turns towards a card's place, in degrees */
+      const leanOf = (i: number) =>
+        hold ? Math.max(-30, Math.min(30, ((boxes[i].left + boxes[i].width / 2 - hold.x) / boxes[i].width) * 24)) * (canPick ? 1 : -1) : 0;
+      const launches: gsap.core.Tween[] = [];
       if (!calm && hold && mid) {
-        dealer = reach(hold, { width: mid.width * 0.6, angle: canPick ? 0 : 180, duration: lead, from: 200 });
-        const done = lead + step * (boxes.length - 1) + 0.6;
-        void dealer.then((g) => g.release(Math.max(0, done - lead)));
+        const base = canPick ? 0 : 180;
+        void reach(hold, { width: mid.width * 0.6, angle: base + leanOf(order[0]), duration: 0.4, from: 200 }).then((g) => {
+          const el = g.el;
+          if (!el) return order.forEach((i) => launches[i]?.play());
+          const hx = Number(gsap.getProperty(el, "x"));
+          const hy = Number(gsap.getProperty(el, "y"));
+          const tl = gsap.timeline({ onComplete: () => void g.release() });
+          order.forEach((i, k) => {
+            const a = base + leanOf(i);
+            const rad = (a * Math.PI) / 180;
+            // aim: turn towards the card's place, the wrist shifting a little that way
+            const ax = hx + Math.sin(rad) * 6;
+            const ay = hy - Math.cos(rad) * 6 + Math.abs(leanOf(i)) * 0.2;
+            tl.to(el, { rotation: a, x: ax, y: ay, duration: k === 0 ? 0.12 : 0.24 * t, ease: "power2.inOut" })
+              // the push forward sends the card
+              .to(el, {
+                x: ax + Math.sin(rad) * 20,
+                y: ay - Math.cos(rad) * 20,
+                duration: 0.12,
+                ease: "power2.out",
+                onStart: () => void launches[i]?.play(),
+              })
+              // and the hand draws back
+              .to(el, { x: ax, y: ay, duration: 0.2 * t, ease: "power2.inOut" });
+          });
+          tl.to(el, { rotation: base, x: hx, y: hy, duration: 0.22, ease: "power2.inOut" }).to({}, { duration: 0.15 });
+        });
       }
       cards.forEach((el, i) => {
         const p = pose(i, cards.length);
@@ -103,33 +127,29 @@ export function Hand({
           gsap.set(el, { rotation: p.rotation, y: p.y, opacity: 1 });
           return;
         }
-        // each card leaves the glove and lands in its place in the fan
+        // each card waits in the glove's hand, and leaves it for its place when pushed
         const b = boxes[i];
         const from = hold ? { x: hold.x - (b.left + b.width / 2), y: hold.y - (b.top + b.height / 2) } : { x: 0, y: fromY };
-        // the push leans the hand towards the card's place, a little to the side
-        const lean = hold ? Math.max(-28, Math.min(28, ((b.left + b.width / 2 - hold.x) / b.width) * 22)) * (canPick ? 1 : -1) : 0;
-        gsap.fromTo(
+        launches[i] = gsap.fromTo(
           el,
-          { x: from.x, y: from.y, rotation: canPick ? 0 : 180, scale: 0.6, opacity: 0 },
+          { x: from.x, y: from.y, rotation: (canPick ? 0 : 180) + leanOf(i), scale: 0.6, opacity: 0 },
           {
             x: 0,
             y: p.y,
             rotation: p.rotation,
             scale: 1,
             opacity: 1,
-            duration: motion.vary(0.6 * t, 0.06),
+            duration: motion.vary(0.55 * t, 0.06),
             ease: motion.settle(),
-            delay: lead + (slot.get(i) ?? i) * step,
-            onStart: () => {
-              slide();
-              void dealer?.then((g) => g.push(lean));
-            },
+            paused: !!hold,
+            onStart: () => slide(),
             onComplete: float,
           },
         );
       });
       if (calm) gsap.set("[data-label]", { opacity: 1 });
-      else gsap.from("[data-label]", { opacity: 0, y: 8, duration: 0.5, delay: 0.55 + cards.length * 0.12 });
+      // the labels come once the cards are on the table
+      else gsap.from("[data-label]", { opacity: 0, y: 8, duration: 0.5, delay: 0.55 + cards.length * 0.55 * t });
     }));
     return () => {
       cancelAnimationFrame(raf);
