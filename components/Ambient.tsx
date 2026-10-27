@@ -61,6 +61,22 @@ export const ambient = {
   },
 };
 
+/** a star: a sharp white point inside a small tinted glow */
+function makeStar(r: number, g: number, b: number) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 32;
+  const x = c.getContext("2d")!;
+  const grad = x.createRadialGradient(16, 16, 0, 16, 16, 16);
+  grad.addColorStop(0, "rgba(255,255,255,1)");
+  grad.addColorStop(0.1, "rgba(255,250,240,.95)");
+  grad.addColorStop(0.18, `rgba(${r},${g},${b},.45)`);
+  grad.addColorStop(0.45, `rgba(${r},${g},${b},.08)`);
+  grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+  x.fillStyle = grad;
+  x.fillRect(0, 0, 32, 32);
+  return c;
+}
+
 function makeSprite(r: number, g: number, b: number) {
   const c = document.createElement("canvas");
   c.width = c.height = 64;
@@ -91,8 +107,14 @@ export function Ambient() {
     let w = 0;
     let h = 0;
     let motes: Mote[] = [];
+    let stars: { x: number; y: number; r: number; base: number; tw: number; phase: number; depth: number }[] = [];
+    // now and then a shooting star; on each reveal, a constellation drawn for a moment
+    let shooting: { x: number; y: number; vx: number; vy: number; born: number } | null = null;
+    let nextShot = 4 + Math.random() * 8;
+    let constellation: { pts: number[]; born: number } | null = null;
     let sprite = makeSprite(tint.r, tint.g, tint.b);
     let spriteKey = `${tint.r},${tint.g},${tint.b}`;
+    let starSprite = makeStar(tint.r, tint.g, tint.b);
     // parallax target and smoothed value, -1..1
     const par = { tx: 0, ty: 0, x: 0, y: 0 };
 
@@ -124,7 +146,20 @@ export function Ambient() {
       canvas.width = w * dpr;
       canvas.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      motes = Array.from({ length: Math.round(Math.min(72, (w * h) / 11000)) }, () => spawn());
+      // a still sky: the stars replace the drifting motes
+      motes = [];
+      stars = Array.from({ length: Math.round(Math.min(140, (w * h) / 2600)) }, () => {
+        const near = Math.random() < 0.12;
+        return {
+          x: Math.random() * w,
+          y: Math.random() * h * 0.85,
+          r: near ? 1.3 + Math.random() * 0.9 : 0.5 + Math.random() * 0.7,
+          base: near ? 0.75 : 0.25 + Math.random() * 0.4,
+          tw: 0.6 + Math.random() * 2.2,
+          phase: Math.random() * Math.PI * 2,
+          depth: near ? 14 : 4 + Math.random() * 6,
+        };
+      });
     };
     resize();
     window.addEventListener("resize", resize);
@@ -149,13 +184,14 @@ export function Ambient() {
     let owed = 0;
     const tick = (_time: number, deltaMs: number) => {
       owed += deltaMs;
-      if (owed < 30 && charge.v <= 0.001 && !burstPending) return;
+      if (owed < 30 && charge.v <= 0.001 && !burstPending && !shooting && !constellation) return;
       const dt = Math.min(owed, 50) / 16.7;
       owed = 0;
       const t = performance.now() / 1000;
       const key = `${tint.r},${tint.g},${tint.b}`;
       if (key !== spriteKey) {
         sprite = makeSprite(tint.r, tint.g, tint.b);
+        starSprite = makeStar(tint.r, tint.g, tint.b);
         spriteKey = key;
       }
       par.x += (par.tx - par.x) * 0.05 * dt;
@@ -172,17 +208,98 @@ export function Ambient() {
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = "lighter";
 
-      // mist: three huge soft blobs wandering slowly
+      // a faint nebula: the three soft blobs, dimmed, so the stars read on a deep sky
       for (let k = 0; k < 3; k++) {
         const size = Math.max(w, h) * (0.75 + k * 0.15);
         const mx = w * (0.25 + k * 0.25) + Math.sin(t * 0.07 + k * 2.1) * w * 0.14 + par.x * 12 * (k + 1);
         const my = h * (0.32 + k * 0.17) + Math.cos(t * 0.055 + k * 1.7) * h * 0.1 + par.y * 12 * (k + 1);
-        ctx.globalAlpha = (0.085 + 0.03 * Math.sin(t * 0.18 + k)) * mistMul;
+        ctx.globalAlpha = (0.045 + 0.015 * Math.sin(t * 0.18 + k)) * mistMul;
         ctx.drawImage(sprite, mx - size / 2, my - size / 2, size, size);
+      }
+
+      // the stars: still, each twinkling at its own pace, brighter as the cards draw near
+      const lift = 1 + charge.v * 0.9;
+      for (const st of stars) {
+        const a = st.base * (0.55 + 0.45 * Math.sin(t * st.tw + st.phase)) * lift;
+        const size = st.r * 11;
+        ctx.globalAlpha = Math.min(1, a);
+        ctx.drawImage(starSprite, st.x + par.x * st.depth - size / 2, st.y + par.y * st.depth - size / 2, size, size);
+      }
+
+      if (!shooting && t > nextShot) {
+        const fromLeft = Math.random() < 0.5;
+        shooting = { x: fromLeft ? w * Math.random() * 0.4 : w * (0.6 + Math.random() * 0.4), y: h * Math.random() * 0.3, vx: (fromLeft ? 1 : -1) * w * 0.9, vy: h * 0.35, born: t };
+      }
+      if (shooting) {
+        const age = t - shooting.born;
+        if (age > 0.9) {
+          shooting = null;
+          nextShot = t + 9 + Math.random() * 14;
+        } else {
+          // a streak: a row of shrinking glows behind the head
+          for (let i = 0; i < 14; i++) {
+            const back = age - i * 0.012;
+            if (back < 0) break;
+            const x = shooting.x + shooting.vx * back;
+            const y = shooting.y + shooting.vy * back;
+            const size = (14 - i) * 1.4;
+            ctx.globalAlpha = (1 - i / 14) * Math.sin((age / 0.9) * Math.PI) * 0.9;
+            ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size);
+          }
+        }
+      }
+
+      if (constellation) {
+        const age = t - constellation.born;
+        if (age > 4) constellation = null;
+        else {
+          const k = Math.min(1, age / 1.2);
+          const fade = age < 2.6 ? 1 : 1 - (age - 2.6) / 1.4;
+          ctx.globalCompositeOperation = "lighter";
+          ctx.strokeStyle = `rgba(${tint.r},${tint.g},${tint.b},${0.45 * fade})`;
+          ctx.lineWidth = 0.8;
+          ctx.globalAlpha = 1;
+          ctx.beginPath();
+          const pts = constellation.pts;
+          // the lines draw themselves from star to star
+          const reach = k * (pts.length - 1);
+          for (let i = 0; i < pts.length - 1 && i < reach; i++) {
+            const a = stars[pts[i]];
+            const b = stars[pts[i + 1]];
+            const f = Math.min(1, reach - i);
+            const ax = a.x + par.x * a.depth;
+            const ay = a.y + par.y * a.depth;
+            ctx.moveTo(ax, ay);
+            ctx.lineTo(ax + (b.x + par.x * b.depth - ax) * f, ay + (b.y + par.y * b.depth - ay) * f);
+          }
+          ctx.stroke();
+          for (const i of pts) {
+            const st = stars[i];
+            const size = 26 * fade;
+            ctx.globalAlpha = fade;
+            ctx.drawImage(starSprite, st.x + par.x * st.depth - size / 2, st.y + par.y * st.depth - size / 2, size, size);
+          }
+        }
       }
 
       if (burstPending) {
         burstPending = false;
+        // the brighter stars nearest the middle of the sky, joined one to the next
+        if (stars.length) {
+          const pick = stars
+            .map((st, i) => ({ i, d: Math.hypot(st.x - w / 2, st.y - h * 0.3) - st.base * 60 }))
+            .sort((p, q) => p.d - q.d)
+            .slice(0, 6)
+            .map((p) => p.i);
+          const order = [pick[0]];
+          const rest = pick.slice(1);
+          while (rest.length) {
+            const last = stars[order[order.length - 1]];
+            rest.sort((p, q) => Math.hypot(stars[p].x - last.x, stars[p].y - last.y) - Math.hypot(stars[q].x - last.x, stars[q].y - last.y));
+            order.push(rest.shift()!);
+          }
+          constellation = { pts: order, born: t };
+        }
         for (const m of motes) {
           const dx = m.x - cx;
           const dy = m.y - cy;
