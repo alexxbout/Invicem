@@ -82,6 +82,8 @@ export function bottomGrip(target: Element): Box {
 export type Grip = {
   /** keep the glove on a point while something else moves (call every frame or on tween update) */
   follow: (p: Box) => void;
+  /** a small snap of the wrist, as when tossing a card */
+  flick: () => void;
   /** let go and slide back out of the screen */
   release: (delay?: number) => Promise<void>;
 };
@@ -101,7 +103,7 @@ export function reach(
   p: Box,
   { width = 110, side = 0, angle = 0, duration = 0.55, mirror = false, from = 0 } = {},
 ): Promise<Grip> {
-  if (reduced()) return Promise.resolve({ follow: () => {}, release: () => Promise.resolve() });
+  if (reduced()) return Promise.resolve({ follow: () => {}, flick: () => {}, release: () => Promise.resolve() });
   const g = place(width, mirror);
   const target = g.at(p);
   // it comes from behind the fingers' direction, from off screen
@@ -117,6 +119,10 @@ export function reach(
     follow: (q) => {
       const t = g.at(q);
       gsap.set(g.el, { x: t.x, y: t.y });
+    },
+    flick: () => {
+      if (leaving) return;
+      gsap.fromTo(g.el, { rotation: rest - 9 }, { rotation: rest, duration: 0.22, ease: "back.out(3)", overwrite: "auto" });
     },
     release: (delay = 0) =>
       new Promise((done) => {
