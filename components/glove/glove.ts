@@ -26,22 +26,21 @@ export function gloveSvg(mirror = false) {
   </defs>
   <!-- a magician's glove: round, bold shapes and a thick outline, no fussy detail -->
   <g fill="url(#${id}w)" stroke="#4a3210" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round">
-    <!-- three fingers folded into the palm, peeking out on the far side -->
-    <ellipse cx="74" cy="60" rx="11" ry="10"/>
-    <ellipse cx="77" cy="78" rx="11" ry="10"/>
-    <ellipse cx="72" cy="95" rx="10" ry="9"/>
-    <!-- index finger, straight up, a round capsule -->
-    <path d="M48 64 L48 24 C48 13 62 13 62 24 L62 64 Z"/>
-    <!-- thumb, angled in from the left, its tip resting against the index: the pinch -->
-    <path d="M27 74 C25 62 33 46 41 34 C45 27 53 29 50 37 C45 48 41 60 39 76 Z"/>
+    <!-- four fingers side by side, fanning slightly, the middle one longest -->
+    <rect x="27" y="22" width="13" height="50" rx="6.5" transform="rotate(-7 33 72)"/>
+    <rect x="39.5" y="13" width="13" height="59" rx="6.5" transform="rotate(-2 46 72)"/>
+    <rect x="52" y="17" width="13" height="55" rx="6.5" transform="rotate(4 58 72)"/>
+    <rect x="63.5" y="29" width="11.5" height="43" rx="5.75" transform="rotate(10 69 72)"/>
+    <!-- thumb, out to the left -->
+    <path d="M32 98 C24 94 15 82 11 70 C8 61 17 56 21 63 C25 72 31 80 38 86 Z"/>
     <!-- palm and back of the hand, over the bases of the fingers -->
-    <path d="M24 114 C18 94 21 72 31 62 C41 53 62 52 72 59 C80 67 80 92 75 114 Z"/>
+    <path d="M24 114 C20 94 21 76 26 66 C31 58 70 56 76 65 C80 74 80 94 76 114 Z"/>
   </g>
   <!-- three gold stitches on the back, the classic glove -->
   <g stroke="${gold}" stroke-width="2.8" stroke-linecap="round" fill="none">
-    <path d="M42 100 L45 78"/>
-    <path d="M51 102 L53 80"/>
-    <path d="M60 100 L61 80"/>
+    <path d="M40 98 L40 76"/>
+    <path d="M51 100 L51 76"/>
+    <path d="M62 98 L62 76"/>
   </g>
   <!-- a wide rolled cuff in gold -->
   <path d="M19 108 Q50 98 81 108 L83 140 Q50 150 17 140 Z" fill="${gold}" stroke="#4a3210" stroke-width="3.2" stroke-linejoin="round"/>
@@ -62,15 +61,15 @@ function place(width: number, mirror = false) {
     width: `${width}px`,
     pointerEvents: "none",
     zIndex: "45",
-    // the pinch point, where thumb and index meet (about 57%, 10% of the drawing)
-    transformOrigin: "57% 10%",
+    // the grip point, at the fingertips (about 50%, 12% of the drawing)
+    transformOrigin: "50% 12%",
     filter: "drop-shadow(0 10px 14px rgba(0,0,0,.45))",
     willChange: "transform",
   });
   document.body.appendChild(el);
   // offsets so that `x, y` lands on the pinch (mirrored: the pinch sits on the other side)
-  const px = mirror ? 0.43 : 0.57;
-  const at = (p: Box) => ({ x: p.x - width * px, y: p.y - width * 0.15 });
+  const px = mirror ? 0.52 : 0.48;
+  const at = (p: Box) => ({ x: p.x - width * px, y: p.y - width * 0.18 });
   return { el, at };
 }
 
