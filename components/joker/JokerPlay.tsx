@@ -3,6 +3,7 @@
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 import { burn, buzz, flip, jester, reduced } from "@/lib/feel";
+import { ambient } from "../Ambient";
 import { burnAway } from "./Disintegrate";
 import { JokerBack } from "./JokerCards";
 import { JokerClassic, type DanceMood } from "./JokerClassic";
@@ -71,6 +72,8 @@ export function JokerPlay({
         if (calm) return;
         tl.pause();
         burn();
+        // as the last of it burns away, stars join up in the sky
+        gsap.delayedCall(1.4, () => ambient.constellation());
         burnAway(flyer, sparks, { duration: 2, onDone: () => tl.resume() });
       })
       .set(flyer, { opacity: 0 });

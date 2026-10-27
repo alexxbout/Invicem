@@ -5,7 +5,7 @@ import { flushSync } from "react-dom";
 import gsap from "gsap";
 import { armSound, reduced, requestTilt, twinkle } from "@/lib/feel";
 import { call, readSaved, subscribeSaved, writeSaved, type Match, type Saved } from "@/lib/client";
-import { Ambient } from "./Ambient";
+import { Ambient, ambient } from "./Ambient";
 import { Finder } from "./Finder";
 import { Home } from "./Home";
 import { Stage } from "./Stage";
@@ -23,6 +23,8 @@ export function Game() {
   // the browser snapshots both and blends them on the compositor, so it costs no frames
   const setScreen = (next: Screen) => {
     const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+    // now and then, between two screens, a constellation shows itself
+    if (Math.random() < 0.45) ambient.constellation();
     if (!doc.startViewTransition || reduced()) return setScreenNow(next);
     doc.startViewTransition(() => flushSync(() => setScreenNow(next)));
   };

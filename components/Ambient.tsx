@@ -37,6 +37,7 @@ const charge = { v: 0 };
 /** average chosen depth, 1 (light) to 3 (deep): fewer, slower motes and a denser, darker haze when deep */
 const mood = { depth: 2 };
 let burstPending = false;
+let constellationPending = false;
 
 /** Retint the motes, the mist and the halo; call from any screen. */
 export function setAccent(hex: string) {
@@ -50,9 +51,14 @@ export const ambient = {
   charge(on: boolean) {
     gsap.to(charge, { v: on ? 1 : 0, duration: on ? 2.4 : 0.8, ease: on ? "power2.in" : "power2.out" });
   },
-  /** the peak: everything is blown outwards */
+  /** the peak: everything is blown outwards, and a constellation draws itself */
   burst() {
     burstPending = true;
+    constellationPending = true;
+  },
+  /** a constellation draws itself in the sky, then fades */
+  constellation() {
+    constellationPending = true;
   },
   /** average depth of the chosen mood, 1 to 3 */
   depth(avg: number) {
@@ -112,6 +118,8 @@ export function Ambient() {
     let shooting: { x: number; y: number; vx: number; vy: number; born: number } | null = null;
     let nextShot = 4 + Math.random() * 8;
     let constellation: { pts: number[]; born: number } | null = null;
+    let nextConstellation = 20 + Math.random() * 25;
+    const rand = (n: number) => Math.floor(Math.random() * n);
     let sprite = makeSprite(tint.r, tint.g, tint.b);
     let spriteKey = `${tint.r},${tint.g},${tint.b}`;
     let starSprite = makeStar(tint.r, tint.g, tint.b);
@@ -184,7 +192,7 @@ export function Ambient() {
     let owed = 0;
     const tick = (_time: number, deltaMs: number) => {
       owed += deltaMs;
-      if (owed < 30 && charge.v <= 0.001 && !burstPending && !shooting && !constellation) return;
+      if (owed < 30 && charge.v <= 0.001 && !burstPending && !shooting && !constellation && !constellationPending) return;
       const dt = Math.min(owed, 50) / 16.7;
       owed = 0;
       const t = performance.now() / 1000;
@@ -249,6 +257,33 @@ export function Ambient() {
         }
       }
 
+      // a new constellation each time: a bright star somewhere in the sky, and four to seven of
+      // its neighbours joined one to the next. Also now and then on its own.
+      if (!constellation && t > nextConstellation) constellationPending = true;
+      // a called one replaces whatever is drawn
+      if (constellationPending && stars.length) {
+        constellationPending = false;
+        nextConstellation = t + 35 + Math.random() * 40;
+        const bright = stars.map((st, i) => i).filter((i) => stars[i].y > h * 0.08 && stars[i].y < h * 0.45 && stars[i].base > 0.45);
+        const seed = bright.length ? bright[rand(bright.length)] : rand(stars.length);
+        const s0 = stars[seed];
+        const reach = Math.min(w, h) * 0.38;
+        const near = stars
+          .map((st, i) => ({ i, d: Math.hypot(st.x - s0.x, st.y - s0.y) }))
+          .filter((p) => p.i !== seed && p.d < reach && p.d > 14)
+          .sort((p, q) => p.d - q.d - (stars[q.i].base - stars[p.i].base) * 40)
+          .slice(0, 4 + rand(4))
+          .map((p) => p.i);
+        const order = [seed];
+        const rest = near;
+        while (rest.length) {
+          const last = stars[order[order.length - 1]];
+          rest.sort((p, q) => Math.hypot(stars[p].x - last.x, stars[p].y - last.y) - Math.hypot(stars[q].x - last.x, stars[q].y - last.y));
+          order.push(rest.shift()!);
+        }
+        if (order.length > 2) constellation = { pts: order, born: t };
+      }
+
       if (constellation) {
         const age = t - constellation.born;
         if (age > 4) constellation = null;
@@ -284,22 +319,6 @@ export function Ambient() {
 
       if (burstPending) {
         burstPending = false;
-        // the brighter stars nearest the middle of the sky, joined one to the next
-        if (stars.length) {
-          const pick = stars
-            .map((st, i) => ({ i, d: Math.hypot(st.x - w / 2, st.y - h * 0.3) - st.base * 60 }))
-            .sort((p, q) => p.d - q.d)
-            .slice(0, 6)
-            .map((p) => p.i);
-          const order = [pick[0]];
-          const rest = pick.slice(1);
-          while (rest.length) {
-            const last = stars[order[order.length - 1]];
-            rest.sort((p, q) => Math.hypot(stars[p].x - last.x, stars[p].y - last.y) - Math.hypot(stars[q].x - last.x, stars[q].y - last.y));
-            order.push(rest.shift()!);
-          }
-          constellation = { pts: order, born: t };
-        }
         for (const m of motes) {
           const dx = m.x - cx;
           const dy = m.y - cy;
