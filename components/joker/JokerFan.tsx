@@ -2,6 +2,7 @@
 
 import type { JokerKind } from "@/lib/client";
 import { buzz, pick } from "@/lib/feel";
+import { flick } from "../glove/glove";
 import { JokerClassic } from "./JokerClassic";
 import { Tap } from "../Tap";
 
@@ -20,6 +21,8 @@ export function JokerFan({ kinds, onPlay }: { kinds: JokerKind[]; onPlay: (kind:
         onClick={(e) => {
           buzz(14);
           pick();
+          // a gloved finger flicks the joker onto the table
+          flick(e.currentTarget);
           onPlay(joker, e.currentTarget);
         }}
         aria-label="Jouer ton joker pour passer cette carte"

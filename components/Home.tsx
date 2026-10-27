@@ -7,6 +7,7 @@ import type { Saved } from "@/lib/client";
 import { buzz, pick, reduced, requestTilt, slide } from "@/lib/feel";
 import { setAccent } from "./Ambient";
 import { CardBack } from "./Card";
+import { bottomGrip, reach, type Grip } from "./glove/glove";
 import { HowTo, howToSeen, subscribeHowTo } from "./HowTo";
 import { InstallInvite } from "./InstallInvite";
 import { Corner, Vine } from "./joker/JokerClassic";
@@ -15,6 +16,13 @@ import { Tap } from "./Tap";
 
 const GOLD = "#e0b54a";
 const GOLD_DEEP = "#a77a22";
+/** a word of welcome that follows the hour */
+const greetingNow = () => {
+  const h = new Date().getHours();
+  return h >= 5 && h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : h < 23 ? "Bonsoir" : "Une nuit blanche ?";
+};
+const noop = () => () => {};
+
 /** the card the deck shows on top, before any colour is drawn */
 const DECK = { color: 1, symbol: 0 };
 
@@ -39,6 +47,7 @@ export function Home({
   const leaving = useRef(false);
   const seen = useSyncExternalStore(subscribeHowTo, howToSeen, () => true);
   const [howTo, setHowTo] = useState(false);
+  const greeting = useSyncExternalStore(noop, greetingNow, () => "");
 
   useEffect(() => {
     setAccent("#d9b779");
@@ -68,6 +77,12 @@ export function Home({
           0.9,
         )
         .from("[data-label]", { opacity: 0, y: 8, duration: 0.6, stagger: 0.1 }, 1.6);
+
+      // a living deck: now and then its top card lifts a little, as if about to be dealt
+      gsap
+        .timeline({ repeat: -1, repeatDelay: 5.5, delay: 4.5 })
+        .to("[data-top]", { y: -10, x: 3, rotation: 3, duration: 0.5, ease: "power2.out" })
+        .to("[data-top]", { y: 0, x: 0, rotation: 0, duration: 0.7, ease: "power2.inOut" }, "+=0.35");
 
       // the cards on the table breathe a little
       gsap.utils.toArray<HTMLElement>("[data-float]").forEach((el, i) =>
@@ -115,12 +130,19 @@ export function Home({
     const dx = window.innerWidth / 2 - (box.left + box.width / 2);
     const dy = window.innerHeight * 0.45 - (box.top + box.height / 2);
     const others = gsap.utils.toArray<HTMLElement>("[data-pick]", root.current).filter((el) => el.dataset.pick !== which);
-    gsap
-      .timeline({ onComplete: go })
-      .to(others, { opacity: 0, y: 30, scale: 0.9, duration: 0.4, ease: "power2.in" }, 0)
-      .to("[data-title-block], [data-label], [data-invite]", { opacity: 0, y: -12, duration: 0.35, ease: "power2.in" }, 0)
-      .to(card, { x: dx, y: dy, scale: 1.5, rotation: 0, duration: 0.6, ease: "power3.inOut" }, 0)
-      .to(card, { opacity: 0, scale: "+=0.08", duration: 0.25 }, 0.5);
+    gsap.killTweensOf(card.querySelector("[data-top]"));
+    const leave = (grip?: Grip) =>
+      gsap
+        .timeline({ onComplete: go })
+        .to(others, { opacity: 0, y: 30, scale: 0.9, duration: 0.4, ease: "power2.in" }, 0)
+        .to("[data-title-block], [data-label], [data-invite]", { opacity: 0, y: -12, duration: 0.35, ease: "power2.in" }, 0)
+        // the glove carries the card to the middle of the table, then lets go
+        .to(card, { x: dx, y: dy, scale: 1.5, rotation: 0, duration: 0.6, ease: "power3.inOut", onUpdate: () => grip?.follow(bottomGrip(card)) }, 0)
+        .call(() => void grip?.release(), [], 0.5)
+        .to(card, { opacity: 0, scale: "+=0.08", duration: 0.25 }, 0.5);
+    // drawing: a white glove comes up and takes the top card off the deck
+    if (which === "draw") void reach(bottomGrip(card), { width: box.width * 0.75, side: 0.25 }).then(leave);
+    else leave();
   };
 
   const label = "display whitespace-nowrap text-[17px] leading-tight text-paper";
@@ -191,6 +213,11 @@ export function Home({
         <p data-latin className="display mt-3 text-[15px] italic text-paper/55">
           l&apos;un l&apos;autre, à tour de rôle
         </p>
+        {greeting && (
+          <p data-latin className="mt-4 text-[11px] uppercase tracking-[0.35em] text-gold/60">
+            {greeting}
+          </p>
+        )}
       </div>
 
       <InstallInvite />
@@ -236,7 +263,7 @@ export function Home({
                       <CardBack color={DECK.color} />
                     </div>
                   ))}
-                  <div className="absolute inset-0" style={{ filter: "drop-shadow(0 14px 18px rgba(0,0,0,.5))" }}>
+                  <div data-top className="absolute inset-0" style={{ filter: "drop-shadow(0 14px 18px rgba(0,0,0,.5))" }}>
                     <CardBack color={DECK.color} symbol={DECK.symbol} />
                   </div>
                 </div>

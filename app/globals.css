@@ -136,13 +136,38 @@ button {
   animation: sheet-fade 0.3s ease both;
 }
 
+/* the halo breathes like a candle: a slow swell with small irregular flickers */
 @keyframes breathe {
   0%,
   100% {
     opacity: 0.78;
   }
+  8% {
+    opacity: 0.86;
+  }
+  11% {
+    opacity: 0.8;
+  }
+  30% {
+    opacity: 0.95;
+  }
+  33% {
+    opacity: 0.89;
+  }
   50% {
     opacity: 1;
+  }
+  62% {
+    opacity: 0.93;
+  }
+  65% {
+    opacity: 0.98;
+  }
+  80% {
+    opacity: 0.84;
+  }
+  83% {
+    opacity: 0.88;
   }
 }
 

@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { useEffect, useRef } from "react";
 import { buzz, reduced, reveal, rustle, scratch, wax } from "@/lib/feel";
 import { ambient } from "./Ambient";
+import { bottomGrip, reach, type Grip } from "./glove/glove";
 import { Quill } from "./Card";
 
 const PAPER = "linear-gradient(165deg, #f8f0e3 0%, #eadcc6 100%)";
@@ -174,6 +175,12 @@ export function WordsReveal({
         .to("[data-word-card]", { scale: 1, duration: 0.6, ease: "back.out(2)" }, "<0.3")
         .fromTo("[data-word-text]", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.2 }, "<");
     }, root);
+    // two gloves, one from each side of the table, set the two sealed words down, then withdraw
+    const cards = root.current ? Array.from(root.current.querySelectorAll("[data-word-card]")) : [];
+    const grips: Promise<Grip>[] = cards.map((c, i) =>
+      reach(bottomGrip(c), { width: c.getBoundingClientRect().width * 0.5, side: i === 0 ? -1 : 1, mirror: i === 0, duration: 0.6 }),
+    );
+    grips.forEach((g) => void g.then((grip) => grip.release(Math.max(0.3, delayMs / 1000 - 0.4))));
     return () => ctx.revert();
     // plays once per mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
