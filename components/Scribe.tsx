@@ -177,11 +177,20 @@ export function WordsReveal({
     }, root);
     // two gloves, one from each side of the table, set the two sealed words down, then withdraw
     const cards = root.current ? Array.from(root.current.querySelectorAll("[data-word-card]")) : [];
-    const grips: Promise<Grip>[] = cards.map((c, i) =>
-      reach(bottomGrip(c), { width: c.getBoundingClientRect().width * 0.5, side: i === 0 ? -1 : 1, mirror: i === 0, duration: 0.6 }),
-    );
-    grips.forEach((g) => void g.then((grip) => grip.release(Math.max(0.3, delayMs / 1000 - 0.4))));
-    return () => ctx.revert();
+    let grips: Promise<Grip>[] = [];
+    // a beat after mounting, so a mount that is immediately undone never sends any glove
+    const start = window.setTimeout(() => {
+      grips = cards.map((c, i) =>
+        reach(bottomGrip(c), { width: c.getBoundingClientRect().width * 0.5, side: i === 0 ? -1 : 1, mirror: i === 0, duration: 0.6 }),
+      );
+      grips.forEach((g) => void g.then((grip) => grip.release(Math.max(0.3, delayMs / 1000 - 0.5))));
+    }, 60);
+    return () => {
+      window.clearTimeout(start);
+      // leaving early: the gloves go at once
+      grips.forEach((g) => void g.then((grip) => grip.release()));
+      ctx.revert();
+    };
     // plays once per mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

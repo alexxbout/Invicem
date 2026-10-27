@@ -21,7 +21,7 @@ import { COLORS, SYMBOLS } from "@/lib/palette";
 import { ambient, setAccent } from "./Ambient";
 import { Card, GLINT_MASK } from "./Card";
 import { DuoPanel, WordOnCard } from "./Duo";
-import { bottomGrip, reach, type Grip } from "./glove/glove";
+import { leftGrip, reach, type Grip } from "./glove/glove";
 import { Criteria } from "./Criteria";
 import { Depth, Hand, type HandHandle } from "./Hand";
 import { QuillWait, WordSeal, WordsReveal, WriteCard } from "./Scribe";
@@ -677,8 +677,8 @@ export function Stage({
   }, [roomDepth]);
   useEffect(() => () => ambient.depth(2), []);
 
-  // showing the drawn card across the table: a glove holds it up by its bottom edge
-  // for as long as it waits to be found, following it as it floats
+  // showing the drawn card across the table: a glove holds it up by its left edge, coming in
+  // from the side so the words under the card stay clear, for as long as it waits to be found
   useEffect(() => {
     if (mode !== "waiting") return;
     let grip: Grip | null = null;
@@ -686,12 +686,12 @@ export function Stage({
     const cardEl = () => wrapRef.current?.querySelector<HTMLElement>("[style*='perspective']") ?? null;
     const hold = () => {
       const el = cardEl();
-      if (grip && el) grip.follow(bottomGrip(el));
+      if (grip && el) grip.follow(leftGrip(el));
     };
     const t = window.setTimeout(() => {
       const el = cardEl();
       if (!el) return;
-      void reach(bottomGrip(el), { width: el.getBoundingClientRect().width * 0.42, duration: 0.7 }).then((g) => {
+      void reach(leftGrip(el), { width: el.getBoundingClientRect().width * 0.42, angle: 90, duration: 0.7 }).then((g) => {
         if (gone) return void g.release();
         grip = g;
         gsap.ticker.add(hold);

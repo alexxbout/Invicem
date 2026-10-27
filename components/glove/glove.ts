@@ -86,16 +86,33 @@ export type Grip = {
   release: (delay?: number) => Promise<void>;
 };
 
+/** the grip point on an element's left edge, a little inside, just below the middle */
+export function leftGrip(target: Element): Box {
+  const r = target.getBoundingClientRect();
+  return { x: r.left + r.width * 0.05, y: r.top + r.height * 0.55 };
+}
+
 /**
- * The glove comes up from below the screen to (x, y) and grips there. Resolves once it holds.
- * `side` tilts it a little so it seems to come from that side of the table.
+ * The glove reaches in to (x, y) and grips there. Resolves once it holds. `angle` is the way
+ * the fingers point, in degrees (0 = up, coming from below; 90 = right, coming from the left
+ * edge). `side` tilts it a little so it seems to come from that side of the table.
  */
-export function reach(p: Box, { width = 110, side = 0, duration = 0.55, mirror = false } = {}): Promise<Grip> {
+export function reach(
+  p: Box,
+  { width = 110, side = 0, angle = 0, duration = 0.55, mirror = false, from = 0 } = {},
+): Promise<Grip> {
   if (reduced()) return Promise.resolve({ follow: () => {}, release: () => Promise.resolve() });
   const g = place(width, mirror);
   const target = g.at(p);
-  const startY = window.innerHeight + 20;
-  gsap.set(g.el, { x: target.x + side * 60, y: startY, rotation: side * 14 });
+  // it comes from behind the fingers' direction, from off screen
+  const rad = (angle * Math.PI) / 180;
+  const back = { x: -Math.sin(rad), y: Math.cos(rad) };
+  // how far off it starts: `from` in px, or far enough to come from off screen
+  const far = from || Math.max(window.innerWidth, window.innerHeight) * 0.7;
+  const rest = angle + side * 4;
+  gsap.set(g.el, { x: target.x + back.x * far + side * 60, y: target.y + back.y * far, rotation: angle + side * 14 });
+  // a second release (a later one overtaking a delayed one) just hurries the first
+  let leaving: gsap.core.Tween | null = null;
   const grip: Grip = {
     follow: (q) => {
       const t = g.at(q);
@@ -103,10 +120,14 @@ export function reach(p: Box, { width = 110, side = 0, duration = 0.55, mirror =
     },
     release: (delay = 0) =>
       new Promise((done) => {
-        gsap.to(g.el, {
-          y: window.innerHeight + 30,
-          x: `+=${side * 50}`,
-          rotation: side * 12,
+        if (leaving) {
+          if (delay === 0) leaving.delay(0).restart(true);
+          return void leaving.then(() => done());
+        }
+        leaving = gsap.to(g.el, {
+          x: `+=${back.x * far + side * 50}`,
+          y: `+=${back.y * far}`,
+          rotation: angle + side * 12,
           duration: 0.5,
           delay,
           ease: "power2.in",
@@ -118,7 +139,7 @@ export function reach(p: Box, { width = 110, side = 0, duration = 0.55, mirror =
       }),
   };
   return new Promise((resolve) => {
-    gsap.to(g.el, { x: target.x, y: target.y, rotation: side * 4, duration, ease: "power3.out", onComplete: () => resolve(grip) });
+    gsap.to(g.el, { x: target.x, y: target.y, rotation: rest, duration, ease: "power3.out", onComplete: () => resolve(grip) });
   });
 }
 

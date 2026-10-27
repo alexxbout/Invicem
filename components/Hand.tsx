@@ -155,11 +155,16 @@ export function Hand({
       .to(chosen, { x: `+=${dx}`, y: `+=${dy + 18}`, scale, duration: 0.66, ease: "power3.inOut" }, 0.1)
       // the halo is drawn once and only its opacity moves: an animated box-shadow repaints every frame
       .to(chosen.querySelector("[data-glow]"), { opacity: 1, duration: 0.35, yoyo: true, repeat: 1 }, 0.2);
-    // a glove pinches the card by its bottom edge, lifts it with the motion, and lets go near the middle
+    // a glove comes up, pinches the card by its bottom edge, and only then lifts it with the
+    // motion, letting go near the middle
     let grip: Grip | null = null;
-    void reach(bottomGrip(chosen), { width: box.width * 0.55, duration: 0.28 }).then((g) => {
-      grip = g;
-    });
+    if (!reduced()) {
+      tl.pause();
+      void reach(bottomGrip(chosen), { width: box.width * 0.55, duration: 0.3, from: 260 }).then((g) => {
+        grip = g;
+        tl.play();
+      });
+    }
     tl.eventCallback("onUpdate", () => grip?.follow(bottomGrip(chosen)));
     tl.call(() => void grip?.release(), [], 0.62);
     pickSound();
