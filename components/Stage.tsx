@@ -151,6 +151,8 @@ function Frise({ view, onOpen }: { view: SessionView; onOpen: () => void }) {
 
 function QuestionFace({ question, play, slot }: { question: Question; play: boolean; slot?: React.ReactNode }) {
   const ref = useRef<HTMLParagraphElement>(null);
+  /** the words have been revealed at least once on this face */
+  const shownOnce = useRef(false);
   const themeLabel = question.rare ? `✦ Carte rare · ${question.theme} ✦` : question.written ? "Carte blanche" : question.theme;
 
   // words surface one after another once the card is turned; a handwritten question
@@ -158,9 +160,14 @@ function QuestionFace({ question, play, slot }: { question: Question; play: bool
   useEffect(() => {
     const parts = ref.current?.querySelectorAll("[data-w]");
     if (!parts) return;
-    // turning away, the words stay printed: the face hides them as it turns, so blanking them
-    // here would show an empty card for a moment before the flip
-    if (!play) return;
+    if (!play) {
+      // before the first turn the words stay blank: some browsers let them show through the
+      // card's back, mirrored, while it turns. Turning away later, they stay printed, so the
+      // card never looks empty before the flip hides it
+      if (!shownOnce.current) gsap.set(parts, { opacity: 0 });
+      return;
+    }
+    shownOnce.current = true;
     if (reduced()) {
       gsap.set(parts, { opacity: 1, y: 0, filter: "none", scale: 1 });
       return;
@@ -207,7 +214,7 @@ function QuestionFace({ question, play, slot }: { question: Question; play: bool
                 // letters animate one by one, but each word stays unbreakable
                 <span key={i} className="inline-block whitespace-nowrap">
                   {[...w].map((ch, j) => (
-                    <span key={j} data-w className="inline-block">
+                    <span key={j} data-w className="inline-block [backface-visibility:hidden]">
                       {ch}
                     </span>
                   ))}
@@ -216,7 +223,7 @@ function QuestionFace({ question, play, slot }: { question: Question; play: bool
               ))
             : question.text.split(" ").map((w, i) => (
                 <span key={i}>
-                  <span data-w className="inline-block">
+                  <span data-w className="inline-block [backface-visibility:hidden]">
                     {w}
                   </span>{" "}
                 </span>

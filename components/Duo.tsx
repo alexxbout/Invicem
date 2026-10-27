@@ -181,6 +181,7 @@ function ScaleReveal({ low, high, mine, theirs }: { low: string; high: string; m
   }, []);
   const left = Math.min(mine, theirs);
   const width = Math.abs(mine - theirs);
+  const same = notchOf(mine) === notchOf(theirs);
   return (
     <div ref={ref} className="flex w-full max-w-[320px] flex-col items-center gap-3">
       <div className="relative mt-7 h-[2px] w-full rounded bg-paper/20">
@@ -189,20 +190,28 @@ function ScaleReveal({ low, high, mine, theirs }: { low: string; high: string; m
           className="absolute -top-[1px] h-[4px] origin-left rounded"
           style={{ left: `${left}%`, width: `${width}%`, background: "var(--accent)", boxShadow: "0 0 12px var(--accent)" }}
         />
-        {[
-          { at: mine, label: "Toi", gold: true },
-          { at: theirs, label: "En face", gold: false },
-        ].map((m) => (
+        {/* on the same notch, one shared mark instead of two on top of each other */}
+        {(same
+          ? [{ at: mine, label: "Vous deux", gold: true }]
+          : [
+              { at: mine, label: "Toi", gold: true },
+              { at: theirs, label: "En face", gold: false },
+            ]
+        ).map((m) => (
           <div key={m.label} data-mark className="absolute top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center" style={{ left: `${m.at}%` }}>
             <span className={`absolute bottom-[14px] whitespace-nowrap text-[11px] ${m.gold ? "text-gold" : "text-paper/70"}`}>{m.label}</span>
             <span className={`size-3.5 rounded-full border-2 ${m.gold ? "border-gold bg-[#2a1d0a]" : "border-paper bg-[#1d1727]"}`} />
           </div>
         ))}
       </div>
-      <div className="grid w-full grid-cols-2 gap-2 text-center">
-        <p className="text-[13px] text-gold">Toi : {notches(low, high)[notchOf(mine)]}</p>
-        <p className="text-[13px] text-paper/75">En face : {notches(low, high)[notchOf(theirs)]}</p>
-      </div>
+      {same ? (
+        <p className="text-[13px] text-gold">Vous deux : {notches(low, high)[notchOf(mine)]}</p>
+      ) : (
+        <div className="grid w-full grid-cols-2 gap-2 text-center">
+          <p className="text-[13px] text-gold">Toi : {notches(low, high)[notchOf(mine)]}</p>
+          <p className="text-[13px] text-paper/75">En face : {notches(low, high)[notchOf(theirs)]}</p>
+        </div>
+      )}
     </div>
   );
 }
