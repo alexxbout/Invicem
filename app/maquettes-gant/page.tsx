@@ -8,8 +8,8 @@ export default function GloveMockup() {
   const right = useRef<HTMLDivElement>(null);
   const left = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    right.current!.innerHTML = gloveSvg();
-    left.current!.innerHTML = gloveSvg(true);
+    right.current!.innerHTML = gloveSvg(false, "gold");
+    left.current!.innerHTML = gloveSvg(false, "red");
   }, []);
   return (
     <main className="grid min-h-dvh place-items-center bg-[#1a1420] p-10">

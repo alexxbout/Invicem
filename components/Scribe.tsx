@@ -181,7 +181,7 @@ export function WordsReveal({
     // a beat after mounting, so a mount that is immediately undone never sends any glove
     const start = window.setTimeout(() => {
       grips = cards.map((c, i) =>
-        reach(bottomGrip(c), { width: c.getBoundingClientRect().width * 0.5, side: i === 0 ? -1 : 1, mirror: i === 0, duration: 0.6 }),
+        reach(bottomGrip(c), { width: c.getBoundingClientRect().width * 0.5, side: i === 0 ? -1 : 1, mirror: i === 0, duration: 0.6, tone: i === 0 ? "gold" : "red" }),
       );
       grips.forEach((g) => void g.then((grip) => grip.release(Math.max(0.3, delayMs / 1000 - 0.5))));
     }, 60);

@@ -90,7 +90,7 @@ export function Hand({
       const launches: gsap.core.Tween[] = [];
       if (!calm && hold && mid) {
         const base = canPick ? 0 : 180;
-        void reach(hold, { width: mid.width * 0.6, angle: base + leanOf(order[0]), duration: 0.28, from: 200 }).then((g) => {
+        void reach(hold, { width: mid.width * 0.6, angle: base + leanOf(order[0]), duration: 0.28, from: 200, tone: canPick ? "gold" : "red" }).then((g) => {
           const el = g.el;
           if (!el) return order.forEach((i) => launches[i]?.play());
           const hx = Number(gsap.getProperty(el, "x"));
@@ -207,7 +207,7 @@ export function Hand({
     held.current = null;
     if (!reduced()) {
       tl.pause();
-      void (pre ?? reach(bottomGrip(chosen), { width: box.width * 0.55, duration: 0.3, from: 260 })).then((g) => {
+      void (pre ?? reach(bottomGrip(chosen), { width: box.width * 0.55, duration: 0.3, from: 260, tone: canPick ? "gold" : "red" })).then((g) => {
         grip = g;
         tl.play();
       });

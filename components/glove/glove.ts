@@ -10,22 +10,30 @@ import { reduced } from "@/lib/feel";
 
 let uid = 0;
 
+/** my glove is trimmed in gold; the one across the table, in red */
+export type GloveTone = "gold" | "red";
+const TRIM: Record<GloveTone, { stops: [string, string, string]; line: string; shine: string }> = {
+  gold: { stops: ["#fff1c2", "#e0b54a", "#a77a22"], line: "#4a3210", shine: "#fff1c2" },
+  red: { stops: ["#ffc9c4", "#d0384a", "#7a1424"], line: "#4a0f18", shine: "#ffd9d4" },
+};
+
 /** the glove's markup; `mirror` gives the left hand */
-export function gloveSvg(mirror = false) {
+export function gloveSvg(mirror = false, tone: GloveTone = "gold") {
+  const trim = TRIM[tone];
   const id = `glv${uid++}`;
   const gold = `url(#${id}g)`;
   return `
 <svg viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;${mirror ? "transform:scaleX(-1);" : ""}overflow:visible">
   <defs>
     <linearGradient id="${id}g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100" y2="150">
-      <stop offset="0" stop-color="#fff1c2"/><stop offset=".45" stop-color="#e0b54a"/><stop offset="1" stop-color="#a77a22"/>
+      <stop offset="0" stop-color="${trim.stops[0]}"/><stop offset=".45" stop-color="${trim.stops[1]}"/><stop offset="1" stop-color="${trim.stops[2]}"/>
     </linearGradient>
     <radialGradient id="${id}w" cx=".38" cy=".3" r=".9">
       <stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#f4efe6"/><stop offset="1" stop-color="#dcd4c6"/>
     </radialGradient>
   </defs>
   <!-- a magician's glove: round, bold shapes and a thick outline, no fussy detail -->
-  <g fill="url(#${id}w)" stroke="#4a3210" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round">
+  <g fill="url(#${id}w)" stroke="${trim.line}" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round">
     <!-- four fingers side by side, fanning slightly, the middle one longest -->
     <rect x="27" y="22" width="13" height="50" rx="6.5" transform="rotate(-7 33 72)"/>
     <rect x="39.5" y="13" width="13" height="59" rx="6.5" transform="rotate(-2 46 72)"/>
@@ -43,17 +51,17 @@ export function gloveSvg(mirror = false) {
     <path d="M62 98 L62 76"/>
   </g>
   <!-- a wide rolled cuff in gold -->
-  <path d="M19 108 Q50 98 81 108 L83 140 Q50 150 17 140 Z" fill="${gold}" stroke="#4a3210" stroke-width="3.2" stroke-linejoin="round"/>
-  <path d="M21 121 Q50 112 79 121" fill="none" stroke="#fff1c2" stroke-width="1.6" opacity=".7"/>
+  <path d="M19 108 Q50 98 81 108 L83 140 Q50 150 17 140 Z" fill="${gold}" stroke="${trim.line}" stroke-width="3.2" stroke-linejoin="round"/>
+  <path d="M21 121 Q50 112 79 121" fill="none" stroke="${trim.shine}" stroke-width="1.6" opacity=".7"/>
 </svg>`;
 }
 
 type Box = { x: number; y: number };
 
 /** a glove placed on the page, fixed, its fingertip pinch at (x, y) */
-function place(width: number, mirror = false) {
+function place(width: number, mirror = false, tone: GloveTone = "gold") {
   const el = document.createElement("div");
-  el.innerHTML = gloveSvg(mirror);
+  el.innerHTML = gloveSvg(mirror, tone);
   Object.assign(el.style, {
     position: "fixed",
     left: "0",
@@ -106,11 +114,11 @@ export function leftGrip(target: Element): Box {
  */
 export function reach(
   p: Box,
-  { width = 110, side = 0, angle = 0, duration = 0.55, mirror = false, from = 0 } = {},
+  { width = 110, side = 0, angle = 0, duration = 0.55, mirror = false, from = 0, tone = "gold" as GloveTone } = {},
 ): Promise<Grip> {
   if (reduced())
     return Promise.resolve({ follow: () => {}, flick: () => {}, push: () => {}, release: () => Promise.resolve(), el: null, base: angle });
-  const g = place(width, mirror);
+  const g = place(width, mirror, tone);
   const target = g.at(p);
   // it comes from behind the fingers' direction, from off screen
   const rad = (angle * Math.PI) / 180;
