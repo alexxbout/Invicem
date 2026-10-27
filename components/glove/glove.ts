@@ -84,6 +84,8 @@ export type Grip = {
   follow: (p: Box) => void;
   /** a small snap of the wrist, as when tossing a card */
   flick: () => void;
+  /** a short push forward, turned `toward` degrees from where the fingers point */
+  push: (toward: number) => void;
   /** let go and slide back out of the screen */
   release: (delay?: number) => Promise<void>;
 };
@@ -103,7 +105,7 @@ export function reach(
   p: Box,
   { width = 110, side = 0, angle = 0, duration = 0.55, mirror = false, from = 0 } = {},
 ): Promise<Grip> {
-  if (reduced()) return Promise.resolve({ follow: () => {}, flick: () => {}, release: () => Promise.resolve() });
+  if (reduced()) return Promise.resolve({ follow: () => {}, flick: () => {}, push: () => {}, release: () => Promise.resolve() });
   const g = place(width, mirror);
   const target = g.at(p);
   // it comes from behind the fingers' direction, from off screen
@@ -123,6 +125,15 @@ export function reach(
     flick: () => {
       if (leaving) return;
       gsap.fromTo(g.el, { rotation: rest - 9 }, { rotation: rest, duration: 0.22, ease: "back.out(3)", overwrite: "auto" });
+    },
+    push: (toward) => {
+      if (leaving) return;
+      // a short push forward, the wrist turned towards where the card goes, then back
+      const rad2 = ((rest + toward) * Math.PI) / 180;
+      gsap
+        .timeline()
+        .to(g.el, { x: `+=${Math.sin(rad2) * 16}`, y: `-=${Math.cos(rad2) * 16}`, rotation: rest + toward, duration: 0.14, ease: "power2.out" })
+        .to(g.el, { x: `-=${Math.sin(rad2) * 16}`, y: `+=${Math.cos(rad2) * 16}`, rotation: rest, duration: 0.3, ease: "power2.inOut" });
     },
     release: (delay = 0) =>
       new Promise((done) => {

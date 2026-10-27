@@ -77,32 +77,21 @@ export function Hand({
       }
       const fromY = canPick ? 160 : -160;
       const t = motion.tempo();
-      // a glove deals like a croupier: it sweeps along the row (left to right on my side; the
-      // other's left to right, so right to left as seen from here) and lays each card down
-      // as it passes over its place, then withdraws
+      // a glove deals from where it stays, low on my side (or high, across the table): each
+      // card leaves it for its place in the fan, sent with a short push of the hand angled
+      // towards that place; once the hand is dealt, the glove withdraws
       const boxes = cards.map((el) => el.getBoundingClientRect());
       const order = canPick ? boxes.map((_, i) => i) : boxes.map((_, i) => boxes.length - 1 - i);
-      const step = 0.16 * t;
-      const lead = calm || !boxes.length ? 0 : 0.4;
+      const step = 0.24 * t;
+      const lead = calm || !boxes.length ? 0 : 0.45;
       const slot = new Map(order.map((idx, k) => [idx, k]));
-      if (!calm && boxes.length) {
-        const a = boxes[order[0]];
-        const z = boxes[order[order.length - 1]];
-        // the glove's fingertips run just under (or, from across, just over) the cards' edge
-        const yAt = (b: DOMRect) => (canPick ? b.bottom + 10 : b.top - 10);
-        const sweep = { x: a.left + a.width / 2, y: yAt(a) };
-        void reach({ ...sweep }, { width: a.width * 0.55, angle: canPick ? 0 : 180, duration: lead, from: 220 }).then((g) =>
-          gsap
-            .timeline({ onComplete: () => void g.release() })
-            .to(sweep, {
-              x: z.left + z.width / 2,
-              y: yAt(z),
-              duration: step * (boxes.length - 1) + 0.12,
-              ease: "none",
-              onUpdate: () => g.follow(sweep),
-            })
-            .to({}, { duration: 0.15 }),
-        );
+      const mid = boxes.length ? boxes[Math.floor(boxes.length / 2)] : null;
+      const hold = mid ? { x: mid.left + mid.width / 2, y: canPick ? mid.bottom + mid.height * 0.55 : mid.top - mid.height * 0.55 } : null;
+      let dealer: Promise<Grip> | null = null;
+      if (!calm && hold && mid) {
+        dealer = reach(hold, { width: mid.width * 0.6, angle: canPick ? 0 : 180, duration: lead, from: 200 });
+        const done = lead + step * (boxes.length - 1) + 0.6;
+        void dealer.then((g) => g.release(Math.max(0, done - lead)));
       }
       cards.forEach((el, i) => {
         const p = pose(i, cards.length);
@@ -114,20 +103,27 @@ export function Hand({
           gsap.set(el, { rotation: p.rotation, y: p.y, opacity: 1 });
           return;
         }
-        // each card slides out from under the glove as it passes, and settles in the fan
+        // each card leaves the glove and lands in its place in the fan
+        const b = boxes[i];
+        const from = hold ? { x: hold.x - (b.left + b.width / 2), y: hold.y - (b.top + b.height / 2) } : { x: 0, y: fromY };
+        // the push leans the hand towards the card's place, a little to the side
+        const lean = hold ? Math.max(-28, Math.min(28, ((b.left + b.width / 2 - hold.x) / b.width) * 22)) * (canPick ? 1 : -1) : 0;
         gsap.fromTo(
           el,
-          { x: canPick ? -36 : 36, y: fromY * 0.25, rotation: p.rotation + (canPick ? -14 : 14), scale: 0.9, opacity: 0 },
+          { x: from.x, y: from.y, rotation: canPick ? 0 : 180, scale: 0.6, opacity: 0 },
           {
             x: 0,
             y: p.y,
             rotation: p.rotation,
             scale: 1,
             opacity: 1,
-            duration: motion.vary(0.55 * t, 0.06),
+            duration: motion.vary(0.6 * t, 0.06),
             ease: motion.settle(),
             delay: lead + (slot.get(i) ?? i) * step,
-            onStart: () => slide(),
+            onStart: () => {
+              slide();
+              void dealer?.then((g) => g.push(lean));
+            },
             onComplete: float,
           },
         );
