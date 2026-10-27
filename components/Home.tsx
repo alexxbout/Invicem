@@ -187,11 +187,11 @@ export function Home({
       <div data-depth="9" data-title-block className="mt-[9dvh] flex flex-col items-center text-center">
         {/* wide light capitals in gold, with a soft shadow copy set a little deeper for relief */}
         <h1
-          className="relative pb-1 pl-[0.32em] text-[clamp(34px,10.5vw,46px)] font-semibold uppercase leading-none tracking-[0.32em]"
+          className="relative pb-1 pl-[0.26em] text-[clamp(40px,12.5vw,58px)] font-semibold uppercase leading-none tracking-[0.26em]"
           style={{ fontFamily: "var(--font-cormorant), Georgia, serif" }}
           aria-label="Invicem"
         >
-          <span aria-hidden data-depth="-4" className="absolute inset-x-0 top-[5px] flex pl-[0.32em] text-black/55 blur-[3px]">
+          <span aria-hidden data-depth="-4" className="absolute inset-x-0 top-[5px] flex pl-[0.26em] text-black/55 blur-[3px]">
             Invicem
           </span>
           <span className="gold-engrave relative flex overflow-hidden">
