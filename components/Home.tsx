@@ -16,6 +16,22 @@ import { Tap } from "./Tap";
 
 const GOLD = "#e0b54a";
 const GOLD_DEEP = "#a77a22";
+/** small, sharp lights far behind the table (percent of the screen, px size, opacity) */
+const FAR_LIGHTS = [
+  { x: 12, y: 18, s: 10, o: 0.5 },
+  { x: 78, y: 12, s: 8, o: 0.45 },
+  { x: 88, y: 34, s: 12, o: 0.35 },
+  { x: 22, y: 40, s: 7, o: 0.4 },
+  { x: 60, y: 28, s: 6, o: 0.35 },
+  { x: 40, y: 8, s: 9, o: 0.3 },
+];
+/** big, blurred lights in front of everything, like candle flames out of focus */
+const NEAR_LIGHTS = [
+  { x: -10, y: 52, s: 190, c: "rgba(255,190,110,.55)", o: 0.75 },
+  { x: 80, y: 66, s: 230, c: "rgba(255,170,90,.5)", o: 0.65 },
+  { x: 68, y: -6, s: 160, c: "rgba(255,214,150,.5)", o: 0.6 },
+];
+
 /** the card the deck shows on top, before any colour is drawn */
 const DECK = { color: 1, symbol: 0 };
 
@@ -142,12 +158,45 @@ export function Home({
 
   return (
     <div ref={root} className="app-h relative mx-auto flex w-full max-w-md flex-col items-center overflow-hidden px-5">
+      {/* depth: far lights, a lamp's pool of light, a felt table in perspective, and soft
+          out-of-focus lights in front. Each layer has its own data-depth for the parallax. */}
+      <div data-depth="3" aria-hidden className="pointer-events-none absolute -inset-[30px]">
+        {FAR_LIGHTS.map((l, i) => (
+          <span
+            key={i}
+            className="absolute rounded-full"
+            style={{ left: `${l.x}%`, top: `${l.y}%`, width: l.s, height: l.s, background: "radial-gradient(circle, rgba(255,214,140,.9), rgba(255,214,140,0) 70%)", opacity: l.o }}
+          />
+        ))}
+      </div>
+      {/* the lamp above the table: a soft cone, and its pool of light on the felt */}
+      <div
+        data-depth="6"
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-[-10%] h-[95%] w-[150%] -translate-x-1/2"
+        style={{ background: "conic-gradient(from 180deg at 50% 0%, transparent 158deg, rgba(255,214,150,.1) 170deg, rgba(255,222,170,.17) 180deg, rgba(255,214,150,.1) 190deg, transparent 202deg)" }}
+      />
+      <div data-depth="12" aria-hidden className="pointer-events-none absolute inset-x-[-20%] bottom-[-4%] h-[70%]" style={{ perspective: 700 }}>
+        {/* the felt, laid flat and running away from us */}
+        <div
+          className="absolute inset-0 origin-bottom rounded-[50%_50%_0_0/18%_18%_0_0]"
+          style={{
+            transform: "rotateX(46deg)",
+            background:
+              "radial-gradient(ellipse 40% 45% at 50% 46%, rgba(255,214,150,.34), rgba(255,214,150,0) 72%), radial-gradient(ellipse 70% 80% at 50% 50%, #47243a 0%, #2a1422 60%, #170b13 100%)",
+            boxShadow: "inset 0 0 0 4px rgba(224,181,74,.6), inset 0 0 0 10px rgba(0,0,0,.3), inset 0 0 0 12px rgba(224,181,74,.25), inset 0 30px 60px rgba(0,0,0,.45)",
+          }}
+        />
+      </div>
+
       {/* gilded frame around the whole screen */}
       <div
         data-depth="5"
         className="pointer-events-none absolute inset-x-[10px] bottom-[max(10px,env(safe-area-inset-bottom))] top-[max(10px,env(safe-area-inset-top))]"
         aria-hidden
       >
+        {/* the frame stands in front of the table: it casts a shadow inwards, like a window */}
+        <div className="absolute inset-0 rounded-[22px]" style={{ boxShadow: "inset 0 0 40px 12px rgba(0,0,0,.55), inset 0 0 6px 2px rgba(0,0,0,.4)" }} />
         <div data-frame-line className="absolute inset-0 rounded-[22px] border-2" style={{ borderColor: `${GOLD}66` }} />
         <div data-frame-line className="absolute inset-[7px] rounded-[17px] border" style={{ borderColor: `${GOLD}33` }} />
         <div data-frame-line className="absolute inset-[11px] rounded-[14px] border border-dashed" style={{ borderColor: "#b3243a55" }} />
@@ -244,6 +293,8 @@ export function Home({
           >
             <div data-deal className="w-full">
               <div data-float className="relative w-full">
+                {/* its shadow on the felt slides the other way when the phone tilts */}
+                <div data-depth="-7" aria-hidden className="pointer-events-none absolute inset-x-[8%] -bottom-[6%] h-[14%] rounded-[50%]" style={{ background: "radial-gradient(ellipse, rgba(0,0,0,.85), rgba(0,0,0,0) 70%)" }} />
                 <div data-card className="relative aspect-[5/7] w-full -rotate-[5deg]">
                   {[3, 2, 1].map((k) => (
                     <div key={k} className="absolute inset-0" style={{ transform: `translate(${k * 2.5}px, ${k * 2.5}px)`, filter: "brightness(.6)" }}>
@@ -271,6 +322,7 @@ export function Home({
           >
             <div data-deal className="w-full">
               <div data-float className="relative w-full">
+                <div data-depth="-7" aria-hidden className="pointer-events-none absolute inset-x-[8%] -bottom-[6%] h-[14%] rounded-[50%]" style={{ background: "radial-gradient(ellipse, rgba(0,0,0,.85), rgba(0,0,0,0) 70%)" }} />
                 <div
                   data-card
                   className="relative aspect-[5/7] w-full rotate-[5deg] overflow-hidden rounded-[7%/5%]"
@@ -313,6 +365,17 @@ export function Home({
             </div>
           </Tap>
         </div>
+      </div>
+
+      {/* in front: big soft out-of-focus lights, moving fastest with the tilt */}
+      <div data-depth="34" aria-hidden className="pointer-events-none absolute -inset-[40px] z-40">
+        {NEAR_LIGHTS.map((l, i) => (
+          <span
+            key={i}
+            className="absolute rounded-full"
+            style={{ left: `${l.x}%`, top: `${l.y}%`, width: l.s, height: l.s, background: `radial-gradient(circle, ${l.c}, transparent 68%)`, opacity: l.o }}
+          />
+        ))}
       </div>
 
       {(howTo || !seen) && <HowTo onClose={() => setHowTo(false)} />}
