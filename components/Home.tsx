@@ -16,13 +16,6 @@ import { Tap } from "./Tap";
 
 const GOLD = "#e0b54a";
 const GOLD_DEEP = "#a77a22";
-/** a word of welcome that follows the hour */
-const greetingNow = () => {
-  const h = new Date().getHours();
-  return h >= 5 && h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : h < 23 ? "Bonsoir" : "Une nuit blanche ?";
-};
-const noop = () => () => {};
-
 /** the card the deck shows on top, before any colour is drawn */
 const DECK = { color: 1, symbol: 0 };
 
@@ -47,7 +40,6 @@ export function Home({
   const leaving = useRef(false);
   const seen = useSyncExternalStore(subscribeHowTo, howToSeen, () => true);
   const [howTo, setHowTo] = useState(false);
-  const greeting = useSyncExternalStore(noop, greetingNow, () => "");
 
   useEffect(() => {
     setAccent("#d9b779");
@@ -213,11 +205,6 @@ export function Home({
         <p data-latin className="display mt-3 text-[15px] italic text-paper/55">
           l&apos;un l&apos;autre, à tour de rôle
         </p>
-        {greeting && (
-          <p data-latin className="mt-4 text-[11px] uppercase tracking-[0.35em] text-gold/60">
-            {greeting}
-          </p>
-        )}
       </div>
 
       <InstallInvite />
