@@ -6,6 +6,7 @@ import type { HandCard } from "@/lib/client";
 import { buzz, pick as pickSound, reduced, slide } from "@/lib/feel";
 import { motion } from "@/lib/motion";
 import { BlankBack, CardBack, RareBack } from "./Card";
+import { bottomGrip, reach, type Grip } from "./glove/glove";
 import { Tap } from "./Tap";
 
 export function Depth({ depth }: { depth: number }) {
@@ -54,6 +55,8 @@ export function Hand({
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
   const picked = useRef(false);
+  /** a card held down: which one, and the glove that came under it */
+  const held = useRef<{ slot: number; grip: Promise<Grip> | null; timer: number } | null>(null);
 
   const inners = () => gsap.utils.toArray<HTMLElement>("[data-inner]", rowRef.current);
 
@@ -154,6 +157,21 @@ export function Hand({
       .to(chosen, { x: `+=${dx}`, y: `+=${dy + 18}`, scale, duration: 0.66, ease: "power3.inOut" }, 0.1)
       // the halo is drawn once and only its opacity moves: an animated box-shadow repaints every frame
       .to(chosen.querySelector("[data-glow]"), { opacity: 1, duration: 0.35, yoyo: true, repeat: 1 }, 0.2);
+    // a glove comes up, pinches the card by its bottom edge, and only then lifts it with the
+    // motion, letting go near the middle
+    let grip: Grip | null = null;
+    // a long press may already have brought the glove under this card: it carries on from there
+    const pre = held.current?.slot === slot ? held.current.grip : null;
+    held.current = null;
+    if (!reduced()) {
+      tl.pause();
+      void (pre ?? reach(bottomGrip(chosen), { width: box.width * 0.55, duration: 0.3, from: 260 })).then((g) => {
+        grip = g;
+        tl.play();
+      });
+    }
+    tl.eventCallback("onUpdate", () => grip?.follow(bottomGrip(chosen)));
+    tl.call(() => void grip?.release(), [], 0.62);
     pickSound();
     return tl.then();
   };
@@ -164,6 +182,27 @@ export function Hand({
     if (!canPick || picked.current) return;
     buzz(14);
     onPick(slot, animatePick(slot));
+  };
+
+  /** held down a moment, a card gets the glove under it at once, ready to take it */
+  const holdStart = (slot: number, el: HTMLElement | null) => {
+    if (!canPick || picked.current || !el || reduced()) return;
+    const h = { slot, grip: null as Promise<Grip> | null, timer: 0 };
+    h.timer = window.setTimeout(() => {
+      h.grip = reach(bottomGrip(el), { width: el.getBoundingClientRect().width * 0.55, duration: 0.22, from: 140 });
+    }, 220);
+    held.current = h;
+  };
+  const holdEnd = () => {
+    const h = held.current;
+    if (!h) return;
+    window.clearTimeout(h.timer);
+    // a tap that picks the card follows the release: the pick then keeps the glove
+    window.setTimeout(() => {
+      if (picked.current) return;
+      void h.grip?.then((g) => g.release());
+      if (held.current === h) held.current = null;
+    }, 90);
   };
 
   /** the card rises under the finger before the tap completes */
@@ -179,9 +218,18 @@ export function Hand({
           key={i}
           disabled={!canPick}
           onClick={() => pick(i)}
-          onPointerDown={(e) => press(e.currentTarget.querySelector("[data-inner]"), true)}
-          onPointerUp={(e) => press(e.currentTarget.querySelector("[data-inner]"), false)}
-          onPointerLeave={(e) => press(e.currentTarget.querySelector("[data-inner]"), false)}
+          onPointerDown={(e) => {
+            press(e.currentTarget.querySelector("[data-inner]"), true);
+            holdStart(i, e.currentTarget.querySelector("[data-inner]"));
+          }}
+          onPointerUp={(e) => {
+            press(e.currentTarget.querySelector("[data-inner]"), false);
+            holdEnd();
+          }}
+          onPointerLeave={(e) => {
+            press(e.currentTarget.querySelector("[data-inner]"), false);
+            holdEnd();
+          }}
           aria-label={h.blank ? "Carte blanche : écrire sa propre question" : `${h.rare ? "Carte rare, " : ""}${h.theme}, profondeur ${h.depth}`}
           className="relative flex w-[var(--w)] flex-none flex-col items-center gap-6 aria-disabled:cursor-default"
           style={
