@@ -27,9 +27,8 @@ const FAR_LIGHTS = [
 ];
 /** big, blurred lights in front of everything, like candle flames out of focus */
 const NEAR_LIGHTS = [
-  { x: -10, y: 52, s: 190, c: "rgba(255,190,110,.55)", o: 0.75 },
-  { x: 80, y: 66, s: 230, c: "rgba(255,170,90,.5)", o: 0.65 },
-  { x: 68, y: -6, s: 160, c: "rgba(255,214,150,.5)", o: 0.6 },
+  { x: -14, y: 70, s: 170, c: "rgba(255,190,120,.35)", o: 0.5 },
+  { x: 84, y: 8, s: 130, c: "rgba(255,214,150,.3)", o: 0.45 },
 ];
 
 /** the card the deck shows on top, before any colour is drawn */
@@ -169,22 +168,37 @@ export function Home({
           />
         ))}
       </div>
-      {/* the lamp above the table: a soft cone, and its pool of light on the felt */}
+      {/* the lamp above the table: one source, straight above the cards. Its cone, then its
+          pool on the felt; everything else falls off into the dark. */}
       <div
         data-depth="6"
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[-10%] h-[95%] w-[150%] -translate-x-1/2"
-        style={{ background: "conic-gradient(from 180deg at 50% 0%, transparent 158deg, rgba(255,214,150,.1) 170deg, rgba(255,222,170,.17) 180deg, rgba(255,214,150,.1) 190deg, transparent 202deg)" }}
+        className="pointer-events-none absolute left-1/2 top-[-6%] h-[90%] w-[140%] -translate-x-1/2"
+        style={{
+          background: "conic-gradient(from 180deg at 50% 0%, transparent 162deg, rgba(255,220,160,.07) 172deg, rgba(255,226,175,.12) 180deg, rgba(255,220,160,.07) 188deg, transparent 198deg)",
+          maskImage: "linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%)",
+        }}
       />
-      <div data-depth="12" aria-hidden className="pointer-events-none absolute inset-x-[-20%] bottom-[-4%] h-[70%]" style={{ perspective: 700 }}>
-        {/* the felt, laid flat and running away from us */}
+      <div data-depth="12" aria-hidden className="pointer-events-none absolute inset-x-[-70%] bottom-[-6%] h-[80%]" style={{ perspective: 800 }}>
+        {/* the felt, laid flat and running away from us, wider than the screen so only its
+            far edge shows; the sides fade into the dark instead of ending */}
         <div
-          className="absolute inset-0 origin-bottom rounded-[50%_50%_0_0/18%_18%_0_0]"
+          className="absolute inset-0 origin-bottom rounded-[50%_50%_0_0/14%_14%_0_0]"
           style={{
-            transform: "rotateX(46deg)",
-            background:
-              "radial-gradient(ellipse 40% 45% at 50% 46%, rgba(255,214,150,.34), rgba(255,214,150,0) 72%), radial-gradient(ellipse 70% 80% at 50% 50%, #47243a 0%, #2a1422 60%, #170b13 100%)",
-            boxShadow: "inset 0 0 0 4px rgba(224,181,74,.6), inset 0 0 0 10px rgba(0,0,0,.3), inset 0 0 0 12px rgba(224,181,74,.25), inset 0 30px 60px rgba(0,0,0,.45)",
+            transform: "rotateX(52deg)",
+            background: [
+              // the lamp's pool, right under the cards
+              "radial-gradient(ellipse 22% 38% at 50% 52%, rgba(255,214,150,.42), rgba(255,214,150,.14) 50%, rgba(255,214,150,0) 80%)",
+              // the felt's nap: fine noise, then a faint weave
+              `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .35 0 0 0 0 .3 0 0 0 1.1 -.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+              "repeating-linear-gradient(45deg, rgba(255,255,255,.04) 0 1px, transparent 1px 3px)",
+              "repeating-linear-gradient(-45deg, rgba(0,0,0,.14) 0 1px, transparent 1px 3px)",
+              "radial-gradient(ellipse 40% 70% at 50% 55%, #5a2c45 0%, #34192a 50%, #180b14 85%)",
+            ].join(", "),
+            boxShadow: "inset 0 0 0 3px rgba(224,181,74,.5), inset 0 0 0 8px rgba(0,0,0,.35), inset 0 0 0 9px rgba(224,181,74,.2), inset 0 40px 50px rgba(0,0,0,.5)",
+            maskImage: "linear-gradient(to right, transparent 14%, #000 30%, #000 70%, transparent 86%)",
+            WebkitMaskImage: "linear-gradient(to right, transparent 14%, #000 30%, #000 70%, transparent 86%)",
           }}
         />
       </div>
