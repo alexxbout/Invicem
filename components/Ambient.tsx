@@ -37,7 +37,25 @@ const charge = { v: 0 };
 /** average chosen depth, 1 (light) to 3 (deep): fewer, slower motes and a denser, darker haze when deep */
 const mood = { depth: 2 };
 let burstPending = false;
-let constellationPending = false;
+let constellationPending: false | "random" | "jester" = false;
+
+/**
+ * The jester's face in stars, in a box from -1 to 1 (y down): a three-pointed hat with a bell
+ * on each tip, the cheeks and chin, two eyes and a smile. Lines join the points by index.
+ */
+const JESTER = {
+  pts: [
+    [-0.55, -0.12], [-1, -0.62], [-0.3, -0.38], [0, -1.05], [0.3, -0.38], [1, -0.62], [0.55, -0.12],
+    [-0.5, 0.32], [0, 0.78], [0.5, 0.32],
+    [-0.22, 0.12], [0.22, 0.12],
+    [-0.28, 0.42], [0, 0.54], [0.28, 0.42],
+  ],
+  segs: [
+    [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [0, 6],
+    [0, 7], [7, 8], [8, 9], [9, 6],
+    [12, 13], [13, 14],
+  ],
+} as const;
 
 /** Retint the motes, the mist and the halo; call from any screen. */
 export function setAccent(hex: string) {
@@ -54,11 +72,11 @@ export const ambient = {
   /** the peak: everything is blown outwards, and a constellation draws itself */
   burst() {
     burstPending = true;
-    constellationPending = true;
+    constellationPending ||= "random";
   },
-  /** a constellation draws itself in the sky, then fades */
-  constellation() {
-    constellationPending = true;
+  /** a constellation draws itself in the sky, then fades; "jester" draws the joker's face */
+  constellation(kind: "random" | "jester" = "random") {
+    constellationPending = kind;
   },
   /** average depth of the chosen mood, 1 to 3 */
   depth(avg: number) {
@@ -117,7 +135,8 @@ export function Ambient() {
     // now and then a shooting star; on each reveal, a constellation drawn for a moment
     let shooting: { x: number; y: number; vx: number; vy: number; born: number } | null = null;
     let nextShot = 4 + Math.random() * 8;
-    let constellation: { pts: number[]; born: number } | null = null;
+    type Pt = { x: number; y: number; depth: number };
+    let constellation: { pts: Pt[]; segs: (readonly [number, number])[]; born: number; star: number } | null = null;
     let nextConstellation = 20 + Math.random() * 25;
     const rand = (n: number) => Math.floor(Math.random() * n);
     let sprite = makeSprite(tint.r, tint.g, tint.b);
@@ -257,17 +276,35 @@ export function Ambient() {
         }
       }
 
-      // a new constellation each time: a bright star somewhere in the sky, and four to seven of
-      // its neighbours joined one to the next. Also now and then on its own.
-      if (!constellation && t > nextConstellation) constellationPending = true;
+      // a new constellation each time: one of the bright stars near the middle of the sky, and
+      // four to seven of its neighbours joined one to the next. Also now and then on its own.
+      if (!constellation && t > nextConstellation) constellationPending = "random";
       // a called one replaces whatever is drawn
-      if (constellationPending && stars.length) {
+      if (constellationPending === "jester") {
         constellationPending = false;
         nextConstellation = t + 35 + Math.random() * 40;
-        const bright = stars.map((st, i) => i).filter((i) => stars[i].y > h * 0.08 && stars[i].y < h * 0.45 && stars[i].base > 0.45);
-        const seed = bright.length ? bright[rand(bright.length)] : rand(stars.length);
+        // drawn with stars of its own, right in the middle, over where the joker burned
+        const scale = Math.min(w, h * 0.6) * 0.26;
+        const cx0 = w / 2;
+        const cy0 = h * 0.42;
+        constellation = {
+          pts: JESTER.pts.map(([x, y]) => ({ x: cx0 + x * scale, y: cy0 + y * scale, depth: 8 })),
+          segs: [...JESTER.segs],
+          born: t,
+          star: 30,
+        };
+      } else if (constellationPending && stars.length) {
+        constellationPending = false;
+        nextConstellation = t + 35 + Math.random() * 40;
+        // among the bright stars, the ones closest to the middle of the sky
+        const bright = stars
+          .map((st, i) => ({ i, d: Math.hypot(st.x - w / 2, (st.y - h * 0.3) * 1.4) }))
+          .filter((p) => stars[p.i].base > 0.45 && stars[p.i].y > h * 0.08 && stars[p.i].y < h * 0.45)
+          .sort((p, q) => p.d - q.d)
+          .slice(0, 6);
+        const seed = bright.length ? bright[rand(bright.length)].i : rand(stars.length);
         const s0 = stars[seed];
-        const reach = Math.min(w, h) * 0.38;
+        const reach = Math.min(w, h) * 0.32;
         const near = stars
           .map((st, i) => ({ i, d: Math.hypot(st.x - s0.x, st.y - s0.y) }))
           .filter((p) => p.i !== seed && p.d < reach && p.d > 14)
@@ -281,39 +318,44 @@ export function Ambient() {
           rest.sort((p, q) => Math.hypot(stars[p].x - last.x, stars[p].y - last.y) - Math.hypot(stars[q].x - last.x, stars[q].y - last.y));
           order.push(rest.shift()!);
         }
-        if (order.length > 2) constellation = { pts: order, born: t };
+        if (order.length > 2)
+          constellation = { pts: order.map((i) => stars[i]), segs: order.slice(1).map((_, i) => [i, i + 1] as const), born: t, star: 26 };
       }
 
       if (constellation) {
-        const age = t - constellation.born;
-        if (age > 4) constellation = null;
+        const c = constellation;
+        const life = c.segs.length > 8 ? 5 : 4;
+        const age = t - c.born;
+        if (age > life) constellation = null;
         else {
-          const k = Math.min(1, age / 1.2);
-          const fade = age < 2.6 ? 1 : 1 - (age - 2.6) / 1.4;
+          const k = Math.min(1, age / (c.segs.length > 8 ? 1.8 : 1.2));
+          const fade = age < life - 1.4 ? 1 : 1 - (age - (life - 1.4)) / 1.4;
+          const at = (p: Pt) => ({ x: p.x + par.x * p.depth, y: p.y + par.y * p.depth });
           ctx.globalCompositeOperation = "lighter";
           ctx.strokeStyle = `rgba(${tint.r},${tint.g},${tint.b},${0.45 * fade})`;
           ctx.lineWidth = 0.8;
           ctx.globalAlpha = 1;
           ctx.beginPath();
-          const pts = constellation.pts;
-          // the lines draw themselves from star to star
-          const reach = k * (pts.length - 1);
-          for (let i = 0; i < pts.length - 1 && i < reach; i++) {
-            const a = stars[pts[i]];
-            const b = stars[pts[i + 1]];
+          // the lines draw themselves one after the other
+          const reach = k * c.segs.length;
+          for (let i = 0; i < c.segs.length && i < reach; i++) {
+            const a = at(c.pts[c.segs[i][0]]);
+            const b = at(c.pts[c.segs[i][1]]);
             const f = Math.min(1, reach - i);
-            const ax = a.x + par.x * a.depth;
-            const ay = a.y + par.y * a.depth;
-            ctx.moveTo(ax, ay);
-            ctx.lineTo(ax + (b.x + par.x * b.depth - ax) * f, ay + (b.y + par.y * b.depth - ay) * f);
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f);
           }
           ctx.stroke();
-          for (const i of pts) {
-            const st = stars[i];
-            const size = 26 * fade;
-            ctx.globalAlpha = fade;
-            ctx.drawImage(starSprite, st.x + par.x * st.depth - size / 2, st.y + par.y * st.depth - size / 2, size, size);
-          }
+          // each star lights as the drawing reaches it
+          c.pts.forEach((p, i) => {
+            const first = c.segs.findIndex(([a, b]) => a === i || b === i);
+            const on = first < 0 ? Math.min(1, k * 2) : Math.min(1, Math.max(0, reach - first + 1));
+            const size = c.star * fade * on;
+            if (size <= 0) return;
+            const q = at(p);
+            ctx.globalAlpha = fade * on;
+            ctx.drawImage(starSprite, q.x - size / 2, q.y - size / 2, size, size);
+          });
         }
       }
 
