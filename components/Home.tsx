@@ -67,7 +67,7 @@ export function Home({
         .timeline()
         .set(draws, { strokeDasharray: 1, strokeDashoffset: 1 })
         .from("[data-frame-line]", { opacity: 0, scale: 1.04, duration: 0.9, ease: "power2.out", stagger: 0.12 }, 0)
-        .to(draws, { strokeDashoffset: 0, duration: 1.6, ease: "power2.inOut", stagger: 0.01 }, 0.1)
+        .to(draws, { strokeDashoffset: 0, duration: 0.8, ease: "power2.inOut", stagger: 0.005 }, 0.1)
         .from("[data-letter]", { yPercent: 110, opacity: 0, duration: 0.9, ease: "power4.out", stagger: 0.06 }, 0.35)
         .from("[data-latin]", { opacity: 0, y: 8, duration: 0.8 }, 1)
         .from(
@@ -303,11 +303,13 @@ export function Home({
                 <div data-depth="-7" data-shadow aria-hidden className="pointer-events-none absolute inset-x-[8%] -bottom-[6%] h-[14%] rounded-[50%]" style={{ background: "radial-gradient(ellipse, rgba(0,0,0,.85), rgba(0,0,0,0) 70%)" }} />
                 <div data-card className="relative aspect-[5/7] w-full -rotate-[5deg]">
                   {[3, 2, 1].map((k) => (
-                    <div key={k} className="absolute inset-0" style={{ transform: `translate(${k * 2.5}px, ${k * 2.5}px)`, filter: "brightness(.6)" }}>
+                    <div key={k} className="absolute inset-0" style={{ transform: `translate(${k * 2.5}px, ${k * 2.5}px)` }}>
                       <CardBack color={DECK.color} />
+                      {/* darkened by a veil rather than a filter: filters repaint on every frame of the deal */}
+                      <div className="absolute inset-0 rounded-[7%/5%] bg-black/40" />
                     </div>
                   ))}
-                  <div data-top className="absolute inset-0" style={{ filter: "drop-shadow(0 14px 18px rgba(0,0,0,.5))" }}>
+                  <div data-top className="absolute inset-0 rounded-[7%/5%]" style={{ boxShadow: "0 14px 18px -4px rgba(0,0,0,.5)" }}>
                     <CardBack color={DECK.color} symbol={DECK.symbol} />
                   </div>
                 </div>
