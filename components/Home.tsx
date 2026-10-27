@@ -142,6 +142,8 @@ export function Home({
       gsap
         .timeline({ onComplete: go })
         .to(others, { opacity: 0, y: 30, scale: 0.9, duration: 0.4, ease: "power2.in" }, 0)
+        // the shadows on the felt go at once, so none is left behind the lifted card
+        .to("[data-shadow]", { opacity: 0, duration: 0.2, ease: "power1.out" }, 0)
         .to("[data-title-block], [data-label], [data-invite]", { opacity: 0, y: -12, duration: 0.35, ease: "power2.in" }, 0)
         // the glove carries the card to the middle of the table, then lets go
         .to(card, { x: dx, y: dy, scale: 1.5, rotation: 0, duration: 0.6, ease: "power3.inOut", onUpdate: () => grip?.follow(bottomGrip(card)) }, 0)
@@ -189,12 +191,14 @@ export function Home({
             transform: "rotateX(52deg)",
             background: [
               // the lamp's pool, right under the cards
-              "radial-gradient(ellipse 22% 38% at 50% 52%, rgba(255,214,150,.42), rgba(255,214,150,.14) 50%, rgba(255,214,150,0) 80%)",
+              "radial-gradient(ellipse 22% 38% at 50% 52%, rgba(255,214,150,.32), rgba(255,214,150,.1) 50%, rgba(255,214,150,0) 80%)",
               // the felt's nap: fine noise, then a faint weave
               `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .35 0 0 0 0 .3 0 0 0 1.1 -.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+              // violet ornaments woven into the felt
+              `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M60 14 C72 30 72 44 60 60 C48 44 48 30 60 14 Z M60 106 C72 90 72 76 60 60 C48 76 48 90 60 106 Z M14 60 C30 48 44 48 60 60 C44 72 30 72 14 60 Z M106 60 C90 48 76 48 60 60 C76 72 90 72 106 60 Z' stroke='%239b6cc9' stroke-opacity='.32' stroke-width='1.6'/%3E%3Ccircle cx='60' cy='60' r='26' stroke='%237a4fa8' stroke-opacity='.26' stroke-width='1.2'/%3E%3Ccircle cx='60' cy='60' r='4' fill='%23b98ae0' fill-opacity='.3'/%3E%3Cpath d='M0 0 C14 8 14 22 0 30 M120 0 C106 8 106 22 120 30 M0 120 C14 112 14 98 0 90 M120 120 C106 112 106 98 120 90 M0 0 C8 14 22 14 30 0 M120 0 C112 14 98 14 90 0 M0 120 C8 106 22 106 30 120 M120 120 C112 106 98 106 90 120' stroke='%236b3f96' stroke-opacity='.3' stroke-width='1.3'/%3E%3Ccircle cx='0' cy='0' r='5' fill='%235c3384' fill-opacity='.35'/%3E%3Ccircle cx='120' cy='0' r='5' fill='%235c3384' fill-opacity='.35'/%3E%3Ccircle cx='0' cy='120' r='5' fill='%235c3384' fill-opacity='.35'/%3E%3Ccircle cx='120' cy='120' r='5' fill='%235c3384' fill-opacity='.35'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 64px 64px`,
               "repeating-linear-gradient(45deg, rgba(255,255,255,.04) 0 1px, transparent 1px 3px)",
               "repeating-linear-gradient(-45deg, rgba(0,0,0,.14) 0 1px, transparent 1px 3px)",
-              "radial-gradient(ellipse 40% 70% at 50% 55%, #5a2c45 0%, #34192a 50%, #180b14 85%)",
+              "radial-gradient(ellipse 40% 70% at 50% 55%, #43203a 0%, #261220 50%, #11070e 85%)",
             ].join(", "),
             boxShadow: "inset 0 0 0 3px rgba(224,181,74,.5), inset 0 0 0 8px rgba(0,0,0,.35), inset 0 0 0 9px rgba(224,181,74,.2), inset 0 40px 50px rgba(0,0,0,.5)",
             maskImage: "linear-gradient(to right, transparent 14%, #000 30%, #000 70%, transparent 86%)",
@@ -308,7 +312,7 @@ export function Home({
             <div data-deal className="w-full">
               <div data-float className="relative w-full">
                 {/* its shadow on the felt slides the other way when the phone tilts */}
-                <div data-depth="-7" aria-hidden className="pointer-events-none absolute inset-x-[8%] -bottom-[6%] h-[14%] rounded-[50%]" style={{ background: "radial-gradient(ellipse, rgba(0,0,0,.85), rgba(0,0,0,0) 70%)" }} />
+                <div data-depth="-7" data-shadow aria-hidden className="pointer-events-none absolute inset-x-[8%] -bottom-[6%] h-[14%] rounded-[50%]" style={{ background: "radial-gradient(ellipse, rgba(0,0,0,.85), rgba(0,0,0,0) 70%)" }} />
                 <div data-card className="relative aspect-[5/7] w-full -rotate-[5deg]">
                   {[3, 2, 1].map((k) => (
                     <div key={k} className="absolute inset-0" style={{ transform: `translate(${k * 2.5}px, ${k * 2.5}px)`, filter: "brightness(.6)" }}>
@@ -336,7 +340,7 @@ export function Home({
           >
             <div data-deal className="w-full">
               <div data-float className="relative w-full">
-                <div data-depth="-7" aria-hidden className="pointer-events-none absolute inset-x-[8%] -bottom-[6%] h-[14%] rounded-[50%]" style={{ background: "radial-gradient(ellipse, rgba(0,0,0,.85), rgba(0,0,0,0) 70%)" }} />
+                <div data-depth="-7" data-shadow aria-hidden className="pointer-events-none absolute inset-x-[8%] -bottom-[6%] h-[14%] rounded-[50%]" style={{ background: "radial-gradient(ellipse, rgba(0,0,0,.85), rgba(0,0,0,0) 70%)" }} />
                 <div
                   data-card
                   className="relative aspect-[5/7] w-full rotate-[5deg] overflow-hidden rounded-[7%/5%]"
