@@ -240,7 +240,7 @@ export const DUO_QUESTIONS: Question[] = [
   { theme: "Regard", depth: 2, text: "Un mot que tu aimerais qu'on utilise pour te décrire.", duo: word },
   { theme: "Regard", depth: 1, text: "Un mot pour ta plus belle qualité.", duo: word },
   { theme: "Goûts", depth: 1, text: "Un mot pour ton lieu préféré.", duo: word },
-  { theme: "Souvenirs", depth: 1, text: "Un mot pour tes 15 ans.", duo: word },
+  { theme: "Souvenirs", depth: 1, text: "Un mot pour l'ado que tu étais à 15 ans.", duo: word },
   { theme: "Souvenirs", depth: 1, text: "Un mot pour la maison où tu as grandi.", duo: word },
   { theme: "Envies", depth: 2, text: "Un mot pour l'année qui vient.", duo: word },
   { theme: "Relation", depth: 2, text: "Un mot pour ce que tu apportes dans une relation.", duo: word },
